@@ -27,7 +27,7 @@ jobs:
       - name: Checkout samples
         uses: actions/checkout@v2
         with:
-          repository: opentok/opentok-react-native-samples
+          repository: Vonage/vonage-video-react-native-sdk-samples
           path: samples
       - name: Set up JDK
         if: ${{ matrix.platform == 'android' }}
