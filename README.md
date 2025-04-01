@@ -16,7 +16,7 @@ This library is now officially supported by Vonage.
 
 ## System requirements
 
-See the system requirements for the [OpenTok Android SDK](https://tokbox.com/developer/sdks/android/#requirements) and [OpenTok iOS SDK](https://tokbox.com/developer/sdks/ios/#system-requirements). (The OpenTok React Native SDK has the same requirements for Android and iOS.)
+See the system requirements for the [OpenTok Android SDK](https://developer.vonage.com/en/video/client-sdks/android/overview#developer-and-client-requirements) and [OpenTok iOS SDK](https://developer.vonage.com/en/video/client-sdks/ios/overview#system-requirements). (The OpenTok React Native SDK has the same requirements for Android and iOS.)
 
 ## Installation
 
@@ -142,11 +142,7 @@ See the [docs](https://developer.vonage.com/en/video/client-sdks/react-native/ov
 
 ## Samples
 
-To see this library in action, check out the [opentok-react-native-samples](https://github.com/opentok/opentok-react-native-samples) repo. **Important:** These samples were written for the OpenTok version of the React Native client SDK for Vonage Video. You will need to modify references the sample apps to work with this version of the client SDK (@vonage/client-sdk-video-react-native) for use with Vonage applications:
-
-* In the source code, change `opentok-react-native` references to `@vonage/client-sdk-video-react-native`.
-
-* For the `apiKey` prop of the `OTSession` component, pass in a Vonage *application ID* (*not* an OpenTok API key or a Vonage API key).
+To see this library in action, check out the [vonage-video-react-native-sdk-samples](https://github.com/Vonage/vonage-video-react-native-sdk-samples) repo. 
 
 ## Development and Contributing
 

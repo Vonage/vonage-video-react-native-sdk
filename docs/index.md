@@ -10,7 +10,7 @@ The Vonage React Native SDK documentation is now maitained at https://developer.
 
 ## Samples
 
-See https://github.com/opentok/opentok-react-native-samples. Note that you need to adjust these samples to load the the `@vonage/client-sdk-video-react-native` Node module (instead of the `opentok-react-native` module). And you should use a Vonage application ID (not an API key) for the `apiKey` property in the App.js files.
+See https://github.com/Vonage/vonage-video-react-native-sdk-samples.
 
 ## Reference docs 
 
@@ -24,4 +24,4 @@ See https://developer.vonage.com/en/video/client-sdks/react-native/overview#unsu
 
 For full documentation on using the Vonage Video API, see the [Vonage developer center](https://developer.vonage.com/en/video/overview).
 
-See the [opentok-react-native-samples](https://github.com/opentok/opentok-react-native-samples) repo.
+See the [vonage-video-react-native-sdk-samples](https://github.com/Vonage/vonage-video-react-native-sdk-samples) repo.
