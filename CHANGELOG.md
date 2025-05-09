@@ -1,6 +1,6 @@
 # 2.30.0 (May 2025)
 
-- [Update]: This version updates the Vonage Video Android SDK and iOS SDK to version 2.30.0. For more information, see the [Android SDK release notes](https://tokbox.com/developer/sdks/android/release-notes.html) and the [iOS SDK release notes](https://tokbox.com/developer/sdks/ios/release-notes.html).
+- [Update]: This version updates the Vonage Video Android SDK and iOS SDK to version 2.30.0. For more information, see the [Android SDK release notes](https://developer.vonage.com/en/video/client-sdks/android/release-notes) and the [iOS SDK release notes](https://developer.vonage.com/en/video/client-sdks/ios/release-notes).
 
 - [Update]: This version adds support for enabling the camera torch (flashlight) and setting the zoom factor for the Publisher camera. See the `cameraTorch` and `cameraZoomFactor` properties of the `properties` prop of the OTPublisher component.
 
@@ -19,11 +19,11 @@
   />
   ```
 
-  Note that -- unlike the other `iceConfig` settings -- this setting does *not* require the [configurable TURN server](https://tokbox.com/developer/guides/configurable-turn-servers/) add-on feature.
+  Note that -- unlike the other `iceConfig` settings -- this setting does *not* require the [configurable TURN server](https://developer.vonage.com/en/video/guides/configurable-turn-servers) add-on feature.
 
-  For more information see [this documentation](https://tokbox.com/developer/guides/mobile/ios/#ios-14-networking).
+  For more information see [this documentation](https://developer.vonage.com/en/video/client-sdks/ios/release-notes#important-changes-to-ios-14-networking-affecting-relayed-sessions).
 
-- [Update]: This version adds support for session migration. Set the `sessionMigration` property of the `options` prop of the OTSession component to `true`. For more information see [this documentation](https://tokbox.com/developer/guides/server-rotation). This is a beta feature.
+- [Update]: This version adds support for session migration. Set the `sessionMigration` property of the `options` prop of the OTSession component to `true`. For more information see [this documentation](https://developer.vonage.com/en/video/guides/server-rotation). This is a beta feature.
 
 # 2.29.1 (March 2025)
 

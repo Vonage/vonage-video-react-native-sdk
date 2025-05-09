@@ -238,7 +238,6 @@ declare module "@vonage/client-sdk-video-react-native" {
 
     /**
      * Enable session migration for the client.
-     * See https://tokbox.com/developer/guides/server-rotation/.
      */
     sessionMigration?: boolean;
   }
