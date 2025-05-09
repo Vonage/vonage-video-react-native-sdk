@@ -223,6 +223,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     iceConfig?: {
       includeServers: 'all' | 'custom';
       transportPolicy: 'all' | 'relay';
+      filterOutLanCandidates: boolean;
       customServers: {
         urls: string[];
         username?: string;
@@ -234,6 +235,11 @@ declare module "@vonage/client-sdk-video-react-native" {
      * Enable single peer connection for the client.
      */
     enableSinglePeerConnection?: boolean;
+
+    /**
+     * Enable session migration for the client.
+     */
+    sessionMigration?: boolean;
   }
 
   interface OTSessionEventHandlers {
@@ -393,6 +399,16 @@ declare module "@vonage/client-sdk-video-react-native" {
      * The preferred camera position. When setting this property, if the change is possible, the publisher will use the camera with the specified position. Valid Inputs: 'front' or 'back'
      */
     cameraPosition?: "front" | "back";
+
+    /**
+     * Whether the publisher should enable or disable the camera's torch when available.
+     */
+    cameraTorch?: number;
+
+    /**
+     * The preferred zoom factor for the camera.
+     */
+    cameraZoomFactor?: number;
 
     /**
      * Whether to enable Opus DTX. The default value is false. Setting this to true can reduce bandwidth usage in streams that have long periods of silence.
