@@ -94,7 +94,7 @@ If you try to archive the app and it fails, please do the following:
 6. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your app/build.gradle file:
 
    ```
-   implementation "com.vonage:client-sdk-video-transformers:2.28.0"
+   implementation "com.vonage:client-sdk-video-transformers:2.30.1"
    ```
 
 #### Bintray sunset
