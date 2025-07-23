@@ -100,7 +100,8 @@ export default class OTSession extends Component {
   }
 
   initComponent = () => {
-    this.initSession(this.props.apiKey, this.props.sessionId, this.props.token);
+    const { apiKey, applicationId, token, sessionId} = this.props;
+    this.initSession(applicationId || apiKey, sessionId, token);
   };
 
   signal(signalObj) {
@@ -117,7 +118,8 @@ export default class OTSession extends Component {
   }
 
   render() {
-    const { style, children, sessionId, apiKey, token } = this.props;
+    const { style, children, sessionId, applicationId, token } = this.props;
+    const apiKey = applicationId || this.props.apiKey;
 
     if (children && sessionId && apiKey && token) {
       return (
