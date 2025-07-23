@@ -14,7 +14,7 @@ This Beta version is only supported in the React Native new architecture. It is 
 
 This beta pre-release version is not intended for use in final production apps.
 
-### Registering the OpenTok packages in your application
+### Registering the Vonage Video packages in your application
 
 For Android, register the `OpentokReactNativePackage`, `OTPublisherViewNativePackage`, and `OTSubscriberViewNativePackage` packages in the MainActivity file for your app. See step 6 of the "Android Installation" section below.
 
@@ -37,7 +37,7 @@ The following are known issues in this beta version:
 
 ## System requirements
 
-See the system requirements for the [OpenTok Android SDK](https://developer.vonage.com/en/video/client-sdks/android/overview#developer-and-client-requirements) and [OpenTok iOS SDK](https://developer.vonage.com/en/video/client-sdks/ios/overview#system-requirements). (The OpenTok React Native SDK has the same requirements for Android and iOS.)
+See the system requirements for the [Vonage Video Android SDK](https://developer.vonage.com/en/video/client-sdks/android/overview#developer-and-client-requirements) and [Vonage Video iOS SDK](https://developer.vonage.com/en/video/client-sdks/ios/overview#system-requirements). (The Vonage Video React Native SDK has the same requirements for Android and iOS.)
 
 ## Installation
 
@@ -80,9 +80,9 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
    <string>Your message to user when the microphone is accessed for the first time</string>
    ```
 
-  When you create an archive of your app, the [privacy manifest settings required by Apple's App store](https://developer.apple.com/support/third-party-SDK-requirements) are added automatically with this version of the OpenTok React Native SDK.
+  When you create an archive of your app, the [privacy manifest settings required by Apple's App store](https://developer.apple.com/support/third-party-SDK-requirements) are added automatically with this version of the Vonage Video React Native SDK.
 
-4. Register the OpenTok OTPublisherViewNative and OTSubscriberViewNative classes. Do this by modifying the AppDelegate implementation.
+4. Register the OTPublisherViewNative and OTSubscriberViewNative classes. Do this by modifying the AppDelegate implementation.
 
    * If you app has an Objective-C++ AppDelegate file (AppDelegate.mm), add these classes to the list of packages in the NSMutableDictionary returned by the `thirdPartyFabricComponents()` function:
 
@@ -135,7 +135,7 @@ If you try to archive the app and it fails, please do the following:
 
 5. The SDK automatically adds Android permissions it requires. You do not need to add these to your app manifest. However, certain permissions require you to prompt the user. See the [full list of required permissions](https://developer.vonage.com/en/video/client-sdks/android/overview#permissions) in the Vonage Video API Android SDK documentation.
 
-6. In the MainActivity.kt file for you app, register the OpenTok OpentokReactNativePackage, OTPublisherViewNativePackage, and OTSubscriberViewNativePackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
+6. In the MainActivity.kt file for you app, register the OpentokReactNativePackage, OTPublisherViewNativePackage, and OTSubscriberViewNativePackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
 
     ```
     override fun getPackages(): List<ReactPackage> =
