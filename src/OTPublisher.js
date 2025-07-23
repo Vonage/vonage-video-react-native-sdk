@@ -1,232 +1,218 @@
-import React, { Component } from 'react';
+import React from 'react';
+import { Platform, View } from 'react-native';
+import { ViewPropTypes } from 'deprecated-react-native-prop-types';
 import PropTypes from 'prop-types';
-import { View, Platform } from 'react-native';
-import { isNull } from 'underscore';
+import { isEqual } from 'underscore';
 import uuid from 'react-native-uuid';
+import { checkAndroidPermissions, OT } from './OT';
+import OTPublisherViewNative from './OTPublisherViewNativeComponent';
 import {
-  checkAndroidPermissions,
-  OT,
-  removeNativeEvents,
-  nativeEvents,
-  setNativeEvents,
-} from './OT';
-import {
-  sanitizeProperties,
-  sanitizePublisherEvents,
-} from './helpers/OTPublisherHelper';
-import OTPublisherView from './views/OTPublisherView';
-import { getOtrnErrorEventHandler } from './helpers/OTHelper';
-import { isConnected } from './helpers/OTSessionHelper';
+  addEventListener,
+  removeEventListener,
+  dispatchEvent,
+  isConnected,
+} from './helpers/OTSessionHelper';
+import { sanitizeProperties } from './helpers/OTPublisherHelper';
 import OTContext from './contexts/OTContext';
 
-class OTPublisher extends Component {
-  constructor(props, context) {
-    super(props, context);
+export default class OTPublisher extends React.Component {
+  eventHandlers = {};
+  publisherProperties = {};
+
+  constructor(props) {
+    super(props);
+    const mergedProperties = {
+      ...OTPublisher.defaultProps.properties,
+      ...props.properties,
+    };
     this.state = {
-      initError: null,
-      publisher: null,
       publisherId: uuid.v4(),
+      publishVideo: mergedProperties.publishVideo,
+      permissionsGranted: Platform.OS === 'ios',
+      publisherProperties: sanitizeProperties(mergedProperties),
     };
-    this.initComponent();
+    this.eventHandlers = props.eventHandlers;
+    this.initComponent(props.eventHandlers);
   }
-  initComponent = () => {
-    this.componentEvents = {
-      publisherStreamCreated: 'publisherStreamCreated',
-      publisherStreamDestroyed: 'publisherStreamDestroyed:',
-      sessionConnected:
-        Platform.OS === 'android'
-          ? 'session:onConnected'
-          : 'session:sessionDidConnect',
-    };
-    this.componentEventsArray = Object.values(this.componentEvents);
-    this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers);
-    this.publisherEvents = sanitizePublisherEvents(
-      this.state.publisherId,
-      this.props.eventHandlers
-    );
-    setNativeEvents(this.publisherEvents);
-    OT.setJSComponentEvents(this.componentEventsArray);
-    this.publisherStreamCreated = nativeEvents.addListener(
-      'publisherStreamCreated',
-      stream => this.publisherStreamCreatedHandler(stream)
-    );
-    this.publisherStreamDestroyed = nativeEvents.addListener(
-      'publisherStreamDestroyed',
-      stream => this.publisherStreamDestroyedHandler(stream)
-    );
-    if (this.context.sessionId) {
-      this.sessionConnected = nativeEvents.addListener(
-        `${this.context.sessionId}:${this.componentEvents.sessionConnected}`,
-        () => this.sessionConnectedHandler()
-      );
-    }
-  };
-  componentDidMount() {
-    this.createPublisher();
-  }
-  componentDidUpdate(previousProps) {
-    const useDefault = (value, defaultValue) =>
-      value === undefined ? defaultValue : value;
-    const shouldUpdate = (key, defaultValue) => {
-      const previous = useDefault(previousProps.properties[key], defaultValue);
-      const current = useDefault(this.props.properties[key], defaultValue);
-      return previous !== current;
-    };
 
-    const updatePublisherProperty = (key, defaultValue) => {
-      if (shouldUpdate(key, defaultValue)) {
-        const value = useDefault(this.props.properties[key], defaultValue);
-        if (key === 'cameraPosition') {
-          OT.changeCameraPosition(this.state.publisherId, value);
-        } else if (key === 'videoContentHint') {
-          OT.changeVideoContentHint(this.state.publisherId, value);
-        } else {
-          OT[key](this.state.publisherId, value);
-        }
-      }
-    };
-
-    updatePublisherProperty('publishAudio', true);
-    updatePublisherProperty('publishVideo', true);
-    updatePublisherProperty('publishCaptions', false);
-    updatePublisherProperty('cameraPosition', 'front');
-    updatePublisherProperty('cameraTorch', false);
-    updatePublisherProperty('cameraZoomFactor', 1);
-    updatePublisherProperty('videoContentHint', '');
-  }
-  componentWillUnmount() {
-    OT.destroyPublisher(this.state.publisherId, (error) => {
-      if (error) {
-        this.otrnEventHandler(error);
-      } else {
-        this.sessionConnected.remove();
-        OT.removeJSComponentEvents(this.componentEventsArray);
-        removeNativeEvents(this.publisherEvents);
-      }
-    });
-  }
-  sessionConnectedHandler = () => {
-    if (isNull(this.state.publisher) && isNull(this.state.initError)) {
-      this.publish();
+  componentDidUpdate() {
+    const { properties } = this.props;
+    const sanitizedProperties = sanitizeProperties(properties);
+    if (!isEqual(this.state.publisherProperties, sanitizedProperties)) {
+      this.setState((prevState) => ({
+        publisherProperties: sanitizedProperties,
+      }));
     }
-  };
-  createPublisher() {
-    const publisherProperties = sanitizeProperties(this.props.properties);
+  }
+
+  onSessionConnected = () => {
     if (Platform.OS === 'android') {
-      const { audioTrack, videoTrack, videoSource } = publisherProperties;
-      const isScreenSharing = (videoSource === 'screen');
+      const { audioTrack, videoTrack, videoSource } =
+        this.state.publisherProperties;
+      const isScreenSharing = videoSource === 'screen';
       checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
         .then(() => {
-          this.initPublisher(publisherProperties);
+          OT.publish(this.state.publisherId);
+          this.setState({
+            permissionsGranted: true,
+          });
         })
         .catch((error) => {
-          this.otrnEventHandler(error);
+          // this.otrnEventHandler(error);
         });
     } else {
-      this.initPublisher(publisherProperties);
+      OT.publish(this.state.publisherId);
     }
-  }
-  initPublisher(publisherProperties) {
-    OT.initPublisher(
-      this.state.publisherId,
-      publisherProperties,
-      (initError) => {
-        if (initError) {
-          this.setState({
-            initError,
-          });
-          this.otrnEventHandler(initError);
-        } else {
-          if (this.context.sessionId) {
-            OT.getSessionInfo(this.context.sessionId, (session) => {
-              if (
-                !isNull(session) &&
-                isNull(this.state.publisher) &&
-                isConnected(session.connectionStatus)
-              ) {
-                this.publish();
-              }
-            });
+  };
+
+  initComponent = () => {
+    addEventListener('sessionConnected', this.onSessionConnected);
+    this.eventHandlers.streamCreated = this.props.eventHandlers?.streamCreated;
+    this.eventHandlers.streamDestroyed =
+      this.props.eventHandlers?.streamDestroyed;
+    this.eventHandlers.error = this.props.eventHandlers?.error;
+    this.eventHandlers.audioLevel = this.props.eventHandlers?.audioLevel;
+    this.eventHandlers.audioNetworkStats =
+      this.props.eventHandlers?.audioNetworkStats;
+    this.eventHandlers.rtcStatsReport =
+      this.props.eventHandlers?.rtcStatsReport;
+    this.eventHandlers.videoDisabled = this.props.eventHandlers?.videoDisabled;
+    this.eventHandlers.videoDisableWarning =
+      this.props.eventHandlers?.videoDisableWarning;
+    this.eventHandlers.videoDisableWarningLifted =
+      this.props.eventHandlers?.videoDisableWarningLifted;
+    this.eventHandlers.videoEnabled = this.props.eventHandlers?.videoEnabled;
+    this.eventHandlers.videoNetworkStats =
+      this.props.eventHandlers?.videoNetworkStats;
+    this.publisherProperties = sanitizeProperties(this.props.properties);
+
+    if (Platform.OS === 'android') {
+      const { audioTrack, videoTrack, videoSource } = this.props;
+      const isScreenSharing = videoSource === 'screen';
+      checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
+        .then(() => {
+          if (isConnected()) {
+            setTimeout(() => OT.publish(this.state.publisherId), 0);
           }
-        }
-      }
-    );
-  }
-  publish() {
-    OT.publish(
-      this.context.sessionId,
-      this.state.publisherId,
-      (publishError) => {
-        if (publishError) {
-          this.otrnEventHandler(publishError);
-        } else {
           this.setState({
-            publisher: true,
+            permissionsGranted: true,
           });
-        }
-      }
-    );
-  }
+        })
+        .catch((error) => {
+          // this.otrnEventHandler(error);
+        });
+    } else if (isConnected()) {
+      setTimeout(() => OT.publish(this.state.publisherId), 100);
+    }
+  };
+
   getRtcStatsReport() {
-    OT.getRtcStatsReport(this.state.publisherId);
+    //NOSONAR - this method is exposed externally
+    OT.getPublisherRtcStatsReport(this.state.publisherId);
   }
 
-  publisherStreamCreatedHandler = (stream) => {
-    if (
-      this.props.eventHandlers
-      && this.props.eventHandlers.streamCreated
-      && stream.publisherId === this.state.publisherId
-    ) {
-      this.props.eventHandlers.streamCreated(stream);
-    }
+  componentWillUnmount() {
+    OT.unpublish(this.state.publisherId);
+    removeEventListener('sessionConnected', this.onSessionConnected);
   }
 
-  publisherStreamDestroyedHandler = (stream) => {
-    if (
-      this.props.eventHandlers
-      && this.props.eventHandlers.streamDestroyed
-      && stream.publisherId === this.state.publisherId
-    ) {
-      this.props.eventHandlers.streamDestroyed(stream);
-    }
-  }
-
-  setAudioTransformers(audioTransformers) {
-    OT.setAudioTransformers(this.state.publisherId, audioTransformers);
-  }
-
-  setVideoTransformers(videoTransformers) {
-    OT.setVideoTransformers(this.state.publisherId, videoTransformers);
-  }
+  getPrePermissionViewStyle = (props) => ({
+    backgroundColor: '#000',
+    ...this.props.style,
+  });
 
   render() {
-    const { publisher, publisherId } = this.state;
-    const { sessionId } = this.context;
-    if (publisher && publisherId) {
-      return (
-        <OTPublisherView
-          publisherId={publisherId}
-          sessionId={sessionId}
-          {...this.props}
-        />
-      );
-    }
-    return <View />;
+    return this.state.permissionsGranted ? (
+      <OTPublisherViewNative
+        sessionId={this.context.sessionId}
+        publisherId={this.state.publisherId}
+        onError={(event) => {
+          this.props.eventHandlers?.error?.(event.nativeEvent);
+        }}
+        onStreamCreated={(event) => {
+          dispatchEvent('publisherStreamCreated', event.nativeEvent);
+          this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
+        }}
+        onStreamDestroyed={(event) => {
+          dispatchEvent('publisherStreamDestroyed', event);
+          this.props.eventHandlers?.streamDestroyed?.(event.nativeEvent);
+        }}
+        onAudioLevel={(event) => {
+          this.props.eventHandlers?.audioLevel?.(event.nativeEvent);
+        }}
+        onAudioNetworkStats={(event) => {
+          // TODO - remove workaround for Android stats prop
+          const eventData = event.nativeEvent.jsonStats
+            ? JSON.parse(event.nativeEvent.jsonStats)
+            : event.nativeEvent.stats;
+          this.props.eventHandlers?.audioNetworkStats?.(eventData);
+        }}
+        onRtcStatsReport={(event) => {
+          this.props.eventHandlers?.rtcStatsReport?.(
+            JSON.parse(event.nativeEvent.jsonStats)
+          );
+        }}
+        onVideoDisabled={(event) => {
+          this.props.eventHandlers?.videoDisabled?.(event.nativeEvent);
+        }}
+        onVideoDisableWarning={(event) => {
+          this.props.eventHandlers?.videoDisableWarning?.(event.nativeEvent);
+        }}
+        onVideoDisableWarningLifted={(event) => {
+          this.props.eventHandlers?.videoDisableWarningLifted?.(
+            event.nativeEvent
+          );
+        }}
+        onVideoEnabled={(event) => {
+          this.props.eventHandlers?.videoEnabled?.(event.nativeEvent);
+        }}
+        onVideoNetworkStats={(event) => {
+          // TODO - remove workaround for Android stats prop
+          const eventData = event.nativeEvent.jsonStats
+            ? JSON.parse(event.nativeEvent.jsonStats)
+            : event.nativeEvent.stats;
+          this.props.eventHandlers?.videoNetworkStats?.(eventData);
+        }}
+        style={this.props.style}
+        {...this.state.publisherProperties}
+      />
+    ) : (
+      <View style={this.getPrePermissionViewStyle()} />
+    );
   }
 }
-const viewPropTypes = View.propTypes;
+
 OTPublisher.propTypes = {
-  ...viewPropTypes,
-  properties: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  eventHandlers: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  getRtcStatsReport: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  setAudioTransformers: PropTypes.func, // eslint-disable-line react/forbid-prop-types
-  setVideoTransformers: PropTypes.func, // eslint-disable-line react/forbid-prop-types
+  eventHandlers: PropTypes.object,
+  properties: PropTypes.object,
+  style: ViewPropTypes.style,
 };
+
 OTPublisher.defaultProps = {
-  properties: {},
   eventHandlers: {},
-  getRtcStatsReport: {},
+  properties: {
+    publishAudio: true,
+    publishVideo: true,
+    audioBitrate: 40000,
+    audioFallback: {
+      publisher: false,
+      subscriber: true,
+    },
+    audioTrack: true,
+    cameraPosition: 'front',
+    enableDtx: false,
+    frameRate: 30,
+    name: '',
+    publishCaptions: false,
+    scalableScreenshare: false,
+    resolution: 'MEDIUM',
+    videoTrack: true,
+    videoSource: 'camera',
+    videoContentHint: '',
+  },
+  style: {
+    flex: 1,
+  },
 };
+
 OTPublisher.contextType = OTContext;
-export default OTPublisher;

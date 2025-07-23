@@ -1,12 +1,12 @@
 declare module "@vonage/client-sdk-video-react-native" {
-  import React from "react";
-  import { ViewProps } from "react-native";
+  import React from 'react';
+  import { ViewProps } from 'react-native';
 
   type Callback<T = void> = () => T;
 
   type CallbackWithParam<P, T = void> = (param: P) => T;
 
-  type VideoSource = "screen" | "camera";
+  type VideoSource = 'screen' | 'camera';
 
   interface SessionConnectEvent {
     sessionId: string;
@@ -58,7 +58,11 @@ declare module "@vonage/client-sdk-video-react-native" {
   interface StreamPropertyChangedEvent {
     newValue: any;
     oldValue: any;
-    changedProperty: "hasAudio" | "hasCaptions" | "hasVideo" | "videoDimensions";
+    changedProperty:
+      | 'hasAudio'
+      | 'hasCaptions'
+      | 'hasVideo'
+      | 'videoDimensions';
     stream: Stream;
   }
 
@@ -74,45 +78,45 @@ declare module "@vonage/client-sdk-video-react-native" {
   }
 
   interface SubscriberCaptionEvent {
-    text: string,
-    isFinal: boolean,
+    text: string;
+    isFinal: boolean;
   }
 
   interface SubscriberAudioStatsEvent {
-    audioBytesReceived: number,
-    audioPacketsLost: number,
-    audioPacketsReceived: number,
-    timeStamp: number,
+    audioBytesReceived: number;
+    audioPacketsLost: number;
+    audioPacketsReceived: number;
+    timeStamp: number;
   }
 
   interface VideoNetworkStatsEvent {
-    videoPacketsLost: number,
-    videoBytesReceived: number,
-    videoPacketsReceived: number,
-    timestamp: number,
+    videoPacketsLost: number;
+    videoBytesReceived: number;
+    videoPacketsReceived: number;
+    timestamp: number;
   }
 
   interface PublisherAudioNetworkStats {
-    connectionId?: string,
-    subscriberId?: string,
-    audioPacketsLost: number,
-    audioBytesSent: number,
-    audioPacketsSent: number,
-    timeStamp: number,
+    connectionId?: string;
+    subscriberId?: string;
+    audioPacketsLost: number;
+    audioBytesSent: number;
+    audioPacketsSent: number;
+    timeStamp: number;
   }
 
   interface PublisherVideoNetworkStats {
-    connectionId?: string,
-    subscriberId?: string,
-    videoPacketsLost: number,
-    videoBytesSent: number,
-    videoPacketsSent: number,
-    timestamp: number,
+    connectionId?: string;
+    subscriberId?: string;
+    videoPacketsLost: number;
+    videoBytesSent: number;
+    videoPacketsSent: number;
+    timestamp: number;
   }
 
   interface PublisherRtcStatsReport {
-    connectionId: string,
-    jsonArrayOfReports: string,
+    connectionId: string;
+    jsonArrayOfReports: string;
   }
 
   interface SignalEvent {
@@ -161,18 +165,17 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Used to get details about the session
      */
-    getSessionInfo?: any
+    getSessionInfo?: any;
 
     /**
      * Event handlers passed into the native session instance.
      */
     eventHandlers?: OTSessionEventHandlers;
 
-
     /**
      * Used to set the encryption secret in a session that uses end-to-end encryption.
      */
-    encryptionSecret?: string
+    encryptionSecret?: string;
   }
 
   interface OTSessionSessionOptions {
@@ -189,12 +192,12 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Android only - valid options are 'mediaOverlay' or 'onTop'
      */
-    androidZOrder?: "mediaOverlay" | "onTop";
+    androidZOrder?: 'mediaOverlay' | 'onTop';
 
     /**
      * Android only - valid options are 'publisher' or 'subscriber'
      */
-    androidOnTop?: "publisher" | "subscriber";
+    androidOnTop?: 'publisher' | 'subscriber';
 
     /**
      * Android only - default is false
@@ -330,27 +333,32 @@ declare module "@vonage/client-sdk-video-react-native" {
       canForceMute: boolean;
       canPublish: boolean;
       canSubscribe: boolean;
-    }>
+    }>;
 
     /**
      * Mutes all streams in the session.
      */
-    forceMuteAll: (excludedStreamIds: string[]) => Promise<void>
+    forceMuteAll: (excludedStreamIds: string[]) => Promise<void>;
 
     /**
      * Mutes a stream in the session.
      */
-    forceMuteStream: (streamId: string) => Promise<void>
+    forceMuteStream: (streamId: string) => Promise<void>;
 
     /**
      * Disables the force mute state for the session.
      */
-    disableForceMute: () => Promise<void>
+    disableForceMute: () => Promise<void>;
 
     /**
      * Used to report an issue
      */
-    reportIssue: () => Promise<string>
+    reportIssue: () => Promise<string>;
+
+    /**
+     * Send a signal
+     */
+    signal: (signal: any) => void;
   }
 
   interface OTPublisherProps extends ViewProps {
@@ -398,12 +406,12 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * The preferred camera position. When setting this property, if the change is possible, the publisher will use the camera with the specified position. Valid Inputs: 'front' or 'back'
      */
-    cameraPosition?: "front" | "back";
+    cameraPosition?: 'front' | 'back';
 
     /**
      * Whether the publisher should enable or disable the camera's torch when available.
      */
-    cameraTorch?: number;
+    cameraTorch?: boolean;
 
     /**
      * The preferred zoom factor for the camera.
@@ -443,7 +451,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * The desired resolution of the video. The format of the string is "widthxheight", where the width and height are represented in pixels. Valid values are "1920x1080", "1280x720", "640x480", and "352x288". The published video will only use the desired resolution if the client configuration supports it. Some devices and clients do not support each of these resolution settings.
      */
-    resolution?: "1920x1080" | "1280x720" | "640x480" | "352x288";
+    resolution?: '1920x1080' | '1280x720' | '640x480' | '352x288';
 
     /**
      * If this property is set to false, the video subsystem will not be initialized for the publisher, and setting the publishVideo property will have no effect. If your application does not require the use of video, it is recommended to set this property rather than use the publishVideo property, which only temporarily disables the video track.
@@ -500,7 +508,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Sent when the publisher stops sending video because of publisher audio fallback.
      */
-    videoDisabled?: CallbackWithParam<{reason: string}, any>;
+    videoDisabled?: CallbackWithParam<{ reason: string }, any>;
 
     /**
      * Sent when the publisher is close to going to audio-only fallback becuase of declining network conditions.
@@ -515,7 +523,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Sent when the publisher resumes sending video after it was disabled because of publisher audio fallback.
      */
-    videoEnabled?: CallbackWithParam<{reason: string}, any>;
+    videoEnabled?: CallbackWithParam<{ reason: string }, any>;
 
     /**
      * Sent when publisher video stats are available.
@@ -537,24 +545,28 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Sets audio transformers for the publisher (or clears them if passed an empty array).
      * To use this method, add `pod 'VonageClientSDKVideoTransformers'` to your
-     * Podfile and add `implementation "com.vonage:client-sdk-video-transformers:2.28.0"`
+     * Podfile and add `implementation "com.vonage:client-sdk-video-transformers:2.x.x"`
      * to your your app/build.gradle file.
      */
-    setAudioTransformers: (transformers: Array<{
-      name: string,
-      properties?: string,
-    }>) => void;
+    setAudioTransformers: (
+      transformers: Array<{
+        name: string;
+        properties?: string;
+      }>
+    ) => void;
 
     /**
      * Sets video transformers for the publisher (or clears them if passed an empty array).
      * To use this method, add `pod 'VonageClientSDKVideoTransformers'` to your
-     * Podfile and add `implementation "com.vonage:client-sdk-video-transformers:2.28.0"`
+     * Podfile and add `implementation "com.vonage:client-sdk-video-transformers:2.x.X"`
      * to your your app/build.gradle file.
      */
-    setVideoTransformers: (transformers: Array<{
-      name: string,
-      properties?: string,
-    }>) => void;
+    setVideoTransformers: (
+      transformers: Array<{
+        name: string;
+        properties?: string;
+      }>
+    ) => void;
   }
 
   interface OTSubscriberProps extends ViewProps {
@@ -671,22 +683,22 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * This message is sent when the subscriber stops receiving video. Check the reason parameter for the reason why the video stopped.
      */
-    videoDisabled?: CallbackWithParam<{reason: string; stream: Stream}, any>;
+    videoDisabled?: CallbackWithParam<{ reason: string; stream: Stream }, any>;
 
     /**
      * This message is sent when the Vonge Video API Media Router determines that the stream quality has degraded and the video will be disabled if the quality degrades further. If the quality degrades further, the subscriber disables the video and the videoDisabled message is sent. If the stream quality improves, the videoDisableWarningLifted message is sent.
      */
-    videoDisableWarning?: CallbackWithParam<{stream: Stream}, any>;
+    videoDisableWarning?: CallbackWithParam<{ stream: Stream }, any>;
 
     /**
      * This message is sent when the subscriber’s video stream starts (when there previously was no video) or resumes (after video was disabled). Check the reason parameter for the reason why the video started (or resumed).
      */
-    videoDisableWarningLifted?: CallbackWithParam<{stream: Stream}, any>;
+    videoDisableWarningLifted?: CallbackWithParam<{ stream: Stream }, any>;
 
     /**
      * This message is sent when the subscriber’s video stream starts (when there previously was no video) or resumes (after video was disabled). Check the reason parameter for the reason why the video started (or resumed).
      */
-    videoEnabled?: CallbackWithParam<{reason: string; stream: Stream}, any>;
+    videoEnabled?: CallbackWithParam<{ reason: string; stream: Stream }, any>;
 
     /**
      * Sent periodically to report video statistics for the subscriber.
@@ -704,11 +716,17 @@ declare module "@vonage/client-sdk-video-react-native" {
   /**
    * Used when rendering subscribers individually.
    */
-  export class OTSubscriberView extends React.Component<OTSubscriberViewProps, unknown> {}
+  export class OTSubscriberView extends React.Component<
+    OTSubscriberViewProps,
+    unknown
+  > {}
   /**
    * Represents the subscribers to the session.
    */
-  export class OTSubscriber extends React.Component<OTSubscriberProps, unknown> {
+  export class OTSubscriber extends React.Component<
+    OTSubscriberProps,
+    unknown
+  > {
     /**
      * Gets the RTC stats report for the subscribers. This is an asynchronous operation.
      * The OTSubscriber object dispatches rtcStatsReport events when RTC statistics for

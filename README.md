@@ -6,6 +6,27 @@ React Native library for using the [Vonage Video API](https://developer.vonage.c
 
 This library is now officially supported by Vonage.
 
+**Important:** This version is a beta build of the Vonage Video React Native SDK with support for the [React Native new architecture](https://reactnative.dev/architecture/landing-page). Be sure to read the next section ("Beta version notes") for important details on using this beta version.
+
+## Beta version notes
+
+This Beta version is only supported in the React Native new architecture. It is not supported in apps that use the old architecture.
+
+This beta pre-release version is not intended for use in final production apps.
+
+### Registering the OpenTok packages in your application
+
+For Android, register the `OpentokReactNativePackage`, `OTPublisherViewNativePackage`, and `OTSubscriberViewNativePackage` packages in the MainActivity file for your app. See step 6 of the "Android Installation" section below.
+
+For iOS, register the `OpentokReactNativePackage`, `OTPublisherViewNativePackage`, and `OTSubscriberViewNativePackage` packages in the MainActivity file for your app. See step 4 of the "iOS Installation" section below.
+
+### Known issues
+
+The following are known issues in this beta version:
+
+* Subscriber video freezes frequently when using VP9 or H264.
+* `otrnError` events are missing.
+
 ## Prerequisites
 
 1. Install [node.js](https://nodejs.org/)
@@ -22,10 +43,10 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
 
 1. In your terminal, change into your React Native project's directory.
 
-2. Add the library using `npm` or `yarn`:
+2. Add the beta versioin of the library using `npm` or `yarn`:
 
-- `npm install @vonage/client-sdk-video-react-native`
-- `yarn add @vonage/client-sdk-video-react-native`
+  * `npm install @vonage/client-sdk-video-react-native@2.31.0-beta.0`
+  * `yarn add @vonage/client-sdk-video-react-native@2.31.0-beta.0`
 
 ### iOS Installation
 
@@ -42,7 +63,7 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
      ```
      target '<YourProjectName>' do
          # Pods for <YourProject>
-         pod 'VonageClientSDKVideo', '2.29.1'
+         pod 'VonageClientSDKVideo', '2.30.1'
      end
      ```
    
@@ -59,9 +80,32 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
    <string>Your message to user when the microphone is accessed for the first time</string>
    ```
 
-When you create an archive of your app, the [privacy manifest settings required by Apple's App store](https://developer.apple.com/support/third-party-SDK-requirements) are added automatically with this version of the OpenTok React Native SDK.
+  When you create an archive of your app, the [privacy manifest settings required by Apple's App store](https://developer.apple.com/support/third-party-SDK-requirements) are added automatically with this version of the OpenTok React Native SDK.
 
-3. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your Podfile:
+4. Register the OpenTok OTPublisherViewNative and OTSubscriberViewNative classes. Do this by modifying the AppDelegate implementation.
+
+   * If you app has an Objective-C++ AppDelegate file (AppDelegate.mm), add these classes to the list of packages in the NSMutableDictionary returned by the `thirdPartyFabricComponents()` function:
+
+    <pre>
+        #import "OTPublisherViewNativeComponentView.h"
+        #import "OTSubscriberViewNativeComponentView.h"
+
+        @implementation AppDelegate
+            // ...
+            - (NSDictionary<NSString *,Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
+        {
+        NSMutableDictionary * dictionary = [super thirdPartyFabricComponents].mutableCopy;
+        dictionary[@"OTPublisherViewNative"] = [OTPublisherViewNativeComponentView class];
+        dictionary[@"OTSubscriberViewNative"] = [OTSubscriberViewNativeComponentView class];
+        return dictionary;
+        }
+        
+        @end
+    </pre>
+
+   * If your app uses a Swift AppDelegate file (AppDelegate.swift), you will need to have its implementation of the `RCTAppDelegate.application(_, didFinishLaunchingWithOptions)` method use a bridging header to call a method in an Objective-C++ file that calls the `[RCTComponentViewFactory registerComponentViewClass:]` method, passing in the `OTPublisherViewNativeComponentView` and `OTSubscriberViewNativeComponentView` classes.
+
+5. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your Podfile:
 
    ```
    pod 'VonageClientSDKVideoTransformers'
@@ -91,7 +135,19 @@ If you try to archive the app and it fails, please do the following:
 
 5. The SDK automatically adds Android permissions it requires. You do not need to add these to your app manifest. However, certain permissions require you to prompt the user. See the [full list of required permissions](https://developer.vonage.com/en/video/client-sdks/android/overview#permissions) in the Vonage Video API Android SDK documentation.
 
-6. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your app/build.gradle file:
+6. In the MainActivity.kt file for you app, register the OpenTok OpentokReactNativePackage, OTPublisherViewNativePackage, and OTSubscriberViewNativePackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
+
+    ```
+    override fun getPackages(): List<ReactPackage> =
+        PackageList(this).packages.apply {
+            add(OTPublisherViewNativePackage())
+            add(OTSubscriberViewNativePackage())
+            add(OpentokReactNativePackage())
+        }
+        // ...
+    ```
+
+7. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your app/build.gradle file:
 
    ```
    implementation "com.vonage:client-sdk-video-transformers:2.30.1"

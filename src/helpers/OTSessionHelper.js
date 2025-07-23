@@ -1,15 +1,8 @@
 import { Platform } from 'react-native';
-import { reassignEvents } from './OTHelper';
-import { handleSignalError, handleError } from '../OTError';
-import {
-  each,
-  isNull,
-  isEmpty,
-  isString,
-  isBoolean,
-  isObject,
-  isArray
-} from 'underscore';
+
+import { each, isString, isBoolean, isObject, isArray } from 'underscore';
+
+import { handleError } from '../OTError';
 
 const validateString = (value) => (isString(value) ? value : '');
 
@@ -19,45 +12,69 @@ const validateObject = (value) => (isObject(value) ? value : {});
 
 const validateArray = (value) => (isArray(value) ? value : []);
 
-const sanitizeSessionEvents = (sessionId, events) => {
-  if (typeof events !== 'object') {
-    return {};
+const eventHandlers = {};
+
+let streams = [];
+
+let publisherStream;
+
+let connected = false;
+
+const setIsConnected = (value) => {
+  connected = value;
+};
+
+const addStream = (streamId) => {
+  if (!streams.includes(streamId)) {
+    streams.push(streamId);
   }
-  const customEvents = {
-    ios: {
-      streamCreated: 'streamCreated',
-      streamDestroyed: 'streamDestroyed',
-      sessionConnected: 'sessionDidConnect',
-      sessionDisconnected: 'sessionDidDisconnect',
-      signal: 'signal',
-      connectionCreated: 'connectionCreated',
-      connectionDestroyed: 'connectionDestroyed',
-      error: 'didFailWithError',
-      sessionReconnected: 'sessionDidReconnect',
-      sessionReconnecting: 'sessionDidBeginReconnecting',
-      archiveStarted: 'archiveStartedWithId',
-      archiveStopped: 'archiveStoppedWithId',
-      streamPropertyChanged: 'streamPropertyChanged',
-      muteForced: 'muteForced',
-    },
-    android: {
-      streamCreated: 'onStreamReceived',
-      streamDestroyed: 'onStreamDropped',
-      sessionConnected: 'onConnected',
-      sessionDisconnected: 'onDisconnected',
-      signal: 'onSignalReceived',
-      connectionCreated: 'onConnectionCreated',
-      connectionDestroyed: 'onConnectionDestroyed',
-      error: 'onError',
-      sessionReconnected: 'onReconnected',
-      sessionReconnecting: 'onReconnecting',
-      archiveStarted: 'onArchiveStarted',
-      archiveStopped: 'onArchiveStopped',
-      streamPropertyChanged: 'onStreamPropertyChanged',
-      muteForced: 'onMuteForced',
-    }
-  };
-  return reassignEvents('session', customEvents, events, sessionId);
+};
+
+const removeStream = (streamId) => {
+  const index = streams.findIndex((obj) => obj === streamId);
+  if (index !== -1) {
+    streams.splice(index, 1);
+  }
+};
+
+const clearStreams = () => {
+  streams = [];
+};
+
+const getStreams = () => streams;
+
+const getPublisherStream = () => publisherStream;
+
+const isConnected = () => connected;
+
+const dispatchEvent = (type, event) => {
+  const listeners = eventHandlers[type];
+  if (listeners) {
+    listeners.forEach((listener) => {
+      listener(event);
+    });
+  }
+  if (type === 'publisherStreamCreated') {
+    publisherStream = event.streamId;
+  }
+  if (type === 'publisherStreamDestroyed') {
+    publisherStream = undefined;
+  }
+};
+
+const addEventListener = (type, listener) => {
+  if (!eventHandlers[type]) {
+    eventHandlers[type] = [listener];
+  } else {
+    eventHandlers[type].push(listener);
+  }
+};
+
+const removeEventListener = (type, listener) => {
+  if (!eventHandlers[type]) {
+    const newArray = eventHandlers[type].filter((el) => el !== listener);
+    eventHandlers[type] = newArray;
+  }
 };
 
 const sanitizeCustomTurnOptions = (options) => {
@@ -69,15 +86,17 @@ const sanitizeCustomTurnOptions = (options) => {
     includeServers: 'string',
     transportPolicy: 'string',
     filterOutLanCandidates: 'boolean',
-    customServers: 'Array'
+    customServers: 'Array',
   };
 
+  /*
   const customTurnOptions = {
     includeServers: 'all',
     transportPolicy: 'all',
     filterOutLanCandidates: 'boolean',
-    customServers: []
+    customServers: [],
   };
+  */
 
   each(options, (value, key) => {
     const optionType = validCustomTurnOptions[key];
@@ -179,83 +198,16 @@ const sanitizeSessionOptions = (options) => {
   return sessionOptions;
 };
 
-const sanitizeSignalData = (signal) => {
-  if (typeof signal !== 'object') {
-    return {
-      signal: {
-        type: '',
-        data: '',
-        to: ''
-      },
-      errorHandler: handleSignalError
-    };
-  }
-  return {
-    signal: {
-      type: validateString(signal.type),
-      data: validateString(signal.data),
-      to: validateString(signal.to)
-    },
-    errorHandler:
-      typeof signal.errorHandler !== 'function'
-        ? handleSignalError
-        : signal.errorHandler,
-  };
-};
-
-const sanitizeEncryptionSecret = (secret) => {
-  if (typeof secret !== undefined) {
-    return String(secret);
-  }
-};
-
-const sanitizeCredentials = (credentials) => {
-  const _credentials = {};
-  if (!credentials.applicationId && !credentials.apiKey) {
-    handleError('Please add the applicationId');
-  }
-
-  if (credentials.applicationId) {
-    credentials.apiKey = credentials.applicationId;
-    delete credentials.applicationId;
-  }
-
-  each(credentials, (value, key) => {
-    if (!isString(value) || isEmpty(value) || isNull(value)) {
-      handleError(`Please add the ${key}`);
-    } else {
-      _credentials[key] = value;
-    }
-  });
-  return _credentials;
-};
-
-const getConnectionStatus = (connectionStatus) => {
-  switch (connectionStatus) {
-    case 0:
-      return 'not connected';
-    case 1:
-      return 'connected';
-    case 2:
-      return 'connecting';
-    case 3:
-      return 'reconnecting';
-    case 4:
-      return 'disconnecting';
-    case 5:
-      return 'failed';
-  }
-};
-
-const isConnected = (connectionStatus) =>
-  getConnectionStatus(connectionStatus) === 'connected';
-
 export {
-  sanitizeSessionEvents,
+  addStream,
+  removeStream,
+  clearStreams,
+  getStreams,
+  getPublisherStream,
+  isConnected,
+  setIsConnected,
+  dispatchEvent,
+  addEventListener,
+  removeEventListener,
   sanitizeSessionOptions,
-  sanitizeSignalData,
-  sanitizeEncryptionSecret,
-  sanitizeCredentials,
-  getConnectionStatus,
-  isConnected
 };

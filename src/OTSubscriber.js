@@ -1,147 +1,167 @@
 import React, { Component } from 'react';
-import { View, Platform } from 'react-native';
+import { View } from 'react-native';
 import PropTypes from 'prop-types';
-import { isNull, isUndefined, each, isEqual, isEmpty } from 'underscore';
-import { OT, nativeEvents, setNativeEvents, removeNativeEvents } from './OT';
-import OTSubscriberView from './views/OTSubscriberView';
-import { sanitizeSubscriberEvents, sanitizeProperties, sanitizeFrameRate, sanitizeResolution, sanitizeAudioVolume } from './helpers/OTSubscriberHelper';
-import { getOtrnErrorEventHandler, sanitizeBooleanProperty } from './helpers/OTHelper';
+import { isEqual } from 'underscore';
+import { OT } from './OT';
+import {
+  addEventListener,
+  removeEventListener,
+  getStreams,
+  getPublisherStream,
+} from './helpers/OTSessionHelper';
+import OTSubscriberView from './OTSubscriberView';
+
+import {
+  sanitizeProperties,
+  sanitizeStreamProperties,
+} from './helpers/OTSubscriberHelper';
+
 import OTContext from './contexts/OTContext';
 
 export default class OTSubscriber extends Component {
+  sessionId = this.context.sessionId;
+  // sessionInfo = this.context.sessionInfo;
+
   constructor(props, context) {
     super(props, context);
+    let initialStreams = getStreams();
+    let initialPublisherStream = getPublisherStream();
+    if (props.subscribeToSelf && initialPublisherStream) {
+      initialStreams.push(initialPublisherStream);
+    }
+    sanitizeStreamProperties(props.streamProperties);
     this.state = {
-      streams: [],
-      subscribeToSelf: props.subscribeToSelf || false
+      streams: initialStreams,
+      properties: props.properties,
+      streamProperties: props.streamProperties,
+      subscribeToSelf: props.subscribeToSelf || false,
     };
-    this.componentEvents = {
-      streamDestroyed: Platform.OS === 'android' ? 'session:onStreamDropped' : 'session:streamDestroyed',
-      streamCreated: Platform.OS === 'android' ? 'session:onStreamReceived' : 'session:streamCreated',
-      captionReceived: Platform.OS === 'android' ? 'session:onCaptionText' : 'subscriber:subscriberCaptionReceived:',
-      publisherStreamCreated: 'publisherStreamCreated',
-      publisherStreamDestroyed: 'publisherStreamDestroyed'
-    };
-    this.componentEventsArray = Object.values(this.componentEvents);
-    this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers);
+    // this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers);
     this.initComponent();
   }
+
   initComponent = () => {
-    const { eventHandlers } = this.props;
-    const { sessionId } = this.context;
-    if (sessionId) {
-      this.streamCreated = nativeEvents.addListener(`${sessionId}:${this.componentEvents.streamCreated}`,
-        stream => this.streamCreatedHandler(stream));
-      this.streamDestroyed = nativeEvents.addListener(`${sessionId}:${this.componentEvents.streamDestroyed}`,
-        stream => this.streamDestroyedHandler(stream));
-      const subscriberEvents = sanitizeSubscriberEvents(eventHandlers);
-      OT.setJSComponentEvents(this.componentEventsArray);
-      setNativeEvents(subscriberEvents);
-    }
-    this.publisherStreamCreated = nativeEvents.addListener(
+    addEventListener('streamCreated', this.streamCreatedHandler);
+    addEventListener(
       'publisherStreamCreated',
-      stream => this.publisherStreamCreatedHandler(stream)
+      this.publisherStreamCreatedHandler
     );
-    this.publisherStreamDestroyed = nativeEvents.addListener(
+    addEventListener(
       'publisherStreamDestroyed',
-      stream => this.publisherStreamDestroyedHandler(stream)
+      this.publisherStreamDestroyedHandler
     );
-  }
+    addEventListener('streamDestroyed', this.streamDestroyedHandler);
+    addEventListener('subscriberConnected', this.subscriberConnectedHandler);
+  };
+
   componentDidUpdate() {
-    const { streamProperties } = this.props;
-    if (!isEqual(this.state.streamProperties, streamProperties)) {
-      each(streamProperties, (individualStreamProperties, streamId) => {
-        const { subscribeToAudio, subscribeToVideo, subscribeToCaptions, preferredResolution, preferredFrameRate, audioVolume } = individualStreamProperties;
-        if (subscribeToAudio !== undefined) {
-          OT.subscribeToAudio(streamId, sanitizeBooleanProperty(subscribeToAudio));
-        }
-        if (subscribeToVideo !== undefined) {
-          OT.subscribeToVideo(streamId, sanitizeBooleanProperty(subscribeToVideo));
-        }
-        if (subscribeToCaptions !== undefined) {
-          OT.subscribeToCaptions(streamId, sanitizeBooleanProperty(subscribeToCaptions));
-        }
-        if (preferredResolution !== undefined) {
-          OT.setPreferredResolution(streamId, sanitizeResolution(preferredResolution));
-        }
-        if (preferredFrameRate !== undefined) {
-          OT.setPreferredFrameRate(streamId, sanitizeFrameRate(preferredFrameRate));
-        }
-        if (audioVolume !== undefined) {
-          OT.setAudioVolume(streamId, sanitizeAudioVolume(audioVolume));
-        }
-      });
-      this.setState({ streamProperties });
-    }
-  }
-  componentWillUnmount() {
-    this.streamCreated.remove();
-    this.streamDestroyed.remove();
-    this.publisherStreamCreated.remove();
-    this.publisherStreamDestroyed.remove();
-    OT.removeJSComponentEvents(this.componentEventsArray);
-    const events = sanitizeSubscriberEvents(this.props.eventHandlers);
-    removeNativeEvents(events);
-  }
-  streamCreatedHandler = (stream) => {
-    const { subscribeToSelf } = this.state;
     const { streamProperties, properties } = this.props;
-    const { sessionId, sessionInfo } = this.context;
-    const subscriberProperties = streamProperties[stream.streamId] ?
-      sanitizeProperties(streamProperties[stream.streamId]) :
+    if (!isEqual(this.state.properties, properties)) {
       sanitizeProperties(properties);
-      // Subscribe to streams. If subscribeToSelf is true, subscribe also to his own stream
-    const sessionInfoConnectionId = sessionInfo && sessionInfo.connection ? sessionInfo.connection.connectionId : null;
-    if (subscribeToSelf || (sessionInfoConnectionId !== stream.connectionId)) {
-      OT.subscribeToStream(stream.streamId, sessionId, subscriberProperties, (error) => {
-        if (error) {
-          this.otrnEventHandler(error);
-        } else {
-          this.setState({
-            streams: [...this.state.streams, stream.streamId],
-          });
-        }
-      });
+      this.setState((prevState) => ({
+        properties,
+      }));
+    }
+
+    if (!isEqual(this.state.streamProperties, streamProperties)) {
+      sanitizeStreamProperties(streamProperties);
+      this.setState((prevState) => ({
+        streamProperties,
+      }));
     }
   }
-  streamDestroyedHandler = (stream) => {
-    OT.removeSubscriber(stream.streamId, (error) => {
-      if (error) {
-        this.otrnEventHandler(error);
-      } else {
-        const indexOfStream = this.state.streams.indexOf(stream.streamId);
-        const newState = this.state.streams.slice();
-        newState.splice(indexOfStream, 1);
-        this.setState({
-          streams: newState,
-        });
-      }
-    });
-  }
+
   publisherStreamCreatedHandler = (stream) => {
-    if (this.state.subscribeToSelf) {
+    if (this.props.subscribeToSelf) {
       this.streamCreatedHandler(stream);
     }
-  }
+  };
+
+  streamCreatedHandler = (stream) => {
+    this.setState((prevState) => {
+      const modifiedStreams = prevState.streams;
+      if (!modifiedStreams.includes(stream.streamId)) {
+        modifiedStreams.push(stream.streamId);
+      }
+      return { streams: modifiedStreams };
+    });
+  };
+  streamDestroyedHandler = (stream) => {
+    this.setState((prevState) => ({
+      streams: prevState.streams.filter((item) => item !== stream.streamId),
+    }));
+  };
+
+  subscriberConnectedHandler = (event) => {
+    this.props.eventHandlers?.subscriberConnected?.(event.nativeEvent);
+  };
+
   publisherStreamDestroyedHandler = (stream) => {
     if (this.state.subscribeToSelf) {
       this.streamDestroyedHandler(stream);
     }
-  }
+  };
   getRtcStatsReport() {
     OT.getSubscriberRtcStatsReport();
   }
+
+  componentWillUnmount() {
+    removeEventListener('streamCreated', this.streamCreatedHandler);
+    removeEventListener(
+      'publisherStreamCreated',
+      this.publisherStreamCreatedHandler
+    );
+    removeEventListener(
+      'publisherStreamDestroyed',
+      this.publisherStreamDestroyedHandler
+    );
+    removeEventListener('streamDestroyed', this.streamDestroyedHandler);
+    removeEventListener('subscriberConnected', this.subscriberConnectedHandler);
+  }
+
   render() {
     if (!this.props.children) {
       const containerStyle = this.props.containerStyle;
       const childrenWithStreams = this.state.streams.map((streamId) => {
-        const streamProperties = this.props.streamProperties[streamId];
-        const style = isEmpty(streamProperties) ? this.props.style : (isUndefined(streamProperties.style) || isNull(streamProperties.style)) ? this.props.style : streamProperties.style;
-        return <OTSubscriberView key={streamId} streamId={streamId} style={style} />
+        const style = this.state.style;
+        return (
+          <OTContext.Provider
+            value={{
+              sessionId: this.sessionId,
+              subscriberProperties: this.state.properties,
+              streamProperties: this.state.streamProperties,
+              eventHandlers: this.props.eventHandlers,
+              style: this.props.style,
+            }}
+            key={streamId}
+          >
+            <OTSubscriberView
+              streamId={streamId}
+              style={style}
+              {...this.props.properties}
+            />
+          </OTContext.Provider>
+        );
       });
       return <View style={containerStyle}>{childrenWithStreams}</View>;
     }
-    return this.props.children(this.state.streams) || null;
+    if (this.props.children(this.state.streams)) {
+      return this.props.children(this.state.streams).map((elem) => (
+        <OTContext.Provider
+          value={{
+            sessionId: this.sessionId,
+            subscriberProperties: this.state.properties,
+            streamProperties: this.state.streamProperties,
+            style: this.props.style,
+            eventHandlers: this.props.eventHandlers,
+          }}
+          key={elem.props.streamId}
+        >
+          {elem}
+        </OTContext.Provider>
+      ));
+    }
+    return null;
   }
 }
 
@@ -149,12 +169,12 @@ const viewPropTypes = View.propTypes;
 OTSubscriber.propTypes = {
   ...viewPropTypes,
   children: PropTypes.func,
-  properties: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  eventHandlers: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  streamProperties: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  containerStyle: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  getRtcStatsReport: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-  subscribeToSelf: PropTypes.bool
+  properties: PropTypes.object,
+  eventHandlers: PropTypes.object,
+  streamProperties: PropTypes.object,
+  containerStyle: PropTypes.object,
+  getRtcStatsReport: PropTypes.object,
+  subscribeToSelf: PropTypes.bool,
 };
 
 OTSubscriber.defaultProps = {
@@ -164,7 +184,6 @@ OTSubscriber.defaultProps = {
   containerStyle: {},
   subscribeToSelf: false,
   getRtcStatsReport: {},
-  subscribeToCaptions: false,
 };
 
 OTSubscriber.contextType = OTContext;
