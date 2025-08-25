@@ -1,0 +1,14 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vonage-video-react-native-sdk
+  description: OpenTok React Native - a library for OpenTok iOS and Android SDKs
+  annotations:
+    github.com/project-slug: vonage/vonage-video-react-native-sdk
+    backstage.io/techdocs-ref: dir:../docs/
+spec:
+  type: service
+  lifecycle: production
+  owner: orgdata/vdt
+  domain: video
+    
