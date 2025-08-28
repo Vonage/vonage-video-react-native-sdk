@@ -17,6 +17,10 @@ import React
     @objc public func initSession(
         _ apiKey: String, sessionId: String, sessionOptions: [String: Any]
     ) {
+        guard !sessionId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("[OpentokReactNative] Invalid sessionId: sessionId is nil or empty. Session will not be created.")
+            return
+        }
         let enableStereoOutput: Bool = Utils.sanitizeBooleanProperty(
             sessionOptions["enableStereoOutput"] as Any)
         if enableStereoOutput == true {
@@ -46,7 +50,11 @@ import React
         otSession = OTSession(
             apiKey: apiKey, sessionId: sessionId,
             delegate: sessionDelegateHandler, settings: settings)
-        OTRN.sharedState.sessions.updateValue(otSession!, forKey: sessionId)
+        guard let otSession = otSession else {
+            print("[OpentokReactNative] Failed to create OTSession for sessionId: \(sessionId)")
+            return
+        }
+        OTRN.sharedState.sessions.updateValue(otSession, forKey: sessionId)
     }
 
     @objc public func connect(
