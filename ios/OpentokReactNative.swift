@@ -5,7 +5,6 @@ import React
 @objc public class OpentokReactNativeImpl: NSObject {
 
     var ot: OpentokReactNative?
-    var otSession: OTSession?
     fileprivate var sessionDelegateHandler: SessionDelegateHandler?
 
     @objc public init(ot: OpentokReactNative) {
@@ -47,10 +46,10 @@ import React
         settings.sessionMigration = Utils.sanitizeBooleanProperty(
             sessionOptions["sessionMigration"] as Any)
         sessionDelegateHandler = SessionDelegateHandler(impl: self)
-        otSession = OTSession(
+        let session = OTSession(
             apiKey: apiKey, sessionId: sessionId,
             delegate: sessionDelegateHandler, settings: settings)
-        guard let otSession = otSession else {
+        guard let otSession = session else {
             print("[OpentokReactNative] Failed to create OTSession for sessionId: \(sessionId)")
             return
         }
@@ -186,42 +185,18 @@ import React
         }
     }
 
-    //@objc public func publish(_ publisherId: String,
-    //                         resolve: @escaping RCTPromiseResolveBlock,
-    //                         reject: @escaping RCTPromiseRejectBlock) -> Void {
-    //    var error: OTError?
-    //
-    //    guard let publisher = OTRN.sharedState.publishers[publisherId] else {
-    //        reject("ERROR", "Error publishing. Could not find native publisher instance", nil)
-    //        return
-    //    }
-    //
-    //    guard let otSession = otSession else {
-    //        reject("ERROR", "Error connecting to session. Could not find native session instance", nil)
-    //        return
-    //    }
-    //
-    //    otSession.publish(publisher, error: &error)
-    //
-    //    if let err = error {
-    //        reject("ERROR", err.localizedDescription, err)
-    //    } else {
-    //        resolve(nil)
-    //    }
-    //}
-
-    @objc public func publish(_ publisherId: String) {
+    @objc public func publish(_ sessionId: String, publisherId: String) {
         var error: OTError?
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             return
         }
 
-        guard let otSession = otSession else {
+        guard let session = OTRN.sharedState.sessions[sessionId] else {
             return
         }
 
-        otSession.publish(publisher, error: &error)
+        session.publish(publisher, error: &error)
 
         if let err = error {
 
@@ -230,25 +205,25 @@ import React
         }
     }
 
-    @objc public func unpublish(_ publisherId: String) {
+    @objc public func unpublish(_ sessionId: String, publisherId: String) {
         var error: OTError?
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             return
         }
 
-        guard let otSession = otSession else {
+        guard let session = OTRN.sharedState.sessions[sessionId] else {
             return
         }
 
-        otSession.unpublish(publisher, error: &error)
+        session.unpublish(publisher, error: &error)
         OTRN.sharedState.publishers.removeValue(forKey: publisherId)
     }
 
-    @objc public func removeSubscriber(_ streamId: String) {
+    @objc public func removeSubscriber(_ sessionId: String, streamId: String) {
         var error: OTError?
 
-        guard let otSession = otSession else {
+        guard let session = OTRN.sharedState.sessions[sessionId] else {
             return
         }
 
@@ -258,7 +233,7 @@ import React
             return
         }
 
-        otSession.unsubscribe(subscriber, error: &error)
+        session.unsubscribe(subscriber, error: &error)
         OTRN.sharedState.subscribers.removeValue(forKey: streamId)
     }
 

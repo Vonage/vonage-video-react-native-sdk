@@ -147,9 +147,9 @@ export interface Spec extends TurboModule {
       properties?: string;
     }>
   ): void;
-  publish(publisherId: string): void;
-  unpublish(publisherId: string): void;
-  removeSubscriber(streamId: string): void;
+  publish(sessionId: string, publisherId: string): void;
+  unpublish(sessionId: string, publisherId: string): void;
+  removeSubscriber(sessionId: string, streamId: string): void;
   sendSignal(sessionId: string, type: string, data: string, to: string): void;
   setEncryptionSecret(sessionId: string, secret: string): Promise<void>;
   reportIssue(sessionId: string): Promise<string>;
