@@ -44,6 +44,9 @@ export default class OTSession extends Component {
       sessionId,
       sanitizeSessionOptions(this.props.options)
     );
+    if (this.props.encryptionSecret) {
+      this.setEncryptionSecret(this.props.encryptionSecret);
+    }
     OT.onStreamCreated((event) => {
       if (event.sessionId !== sessionId) return;
       this.eventHandlers?.streamCreated?.(event);
@@ -117,6 +120,26 @@ export default class OTSession extends Component {
     this.initSession(this.props.apiKey, this.props.sessionId, this.props.token);
   };
 
+  reportIssue() {
+    return OT.reportIssue(this.props.sessionId);
+  }
+
+  getCapabilities() {
+    return OT.getCapabilities(this.props.sessionId);
+  }
+
+  forceMuteAll(excludedStreamIds) {
+    return OT.forceMuteAll(this.props.sessionId, excludedStreamIds || []);
+  }
+
+  forceMuteStream(streamId) {
+    return OT.forceMuteStream(this.props.sessionId, streamId);
+  }
+
+  disableForceMute() {
+    return OT.disableForceMute(this.props.sessionId);
+  }
+
   signal(signalObj) {
     OT.sendSignal(
       this.props.sessionId,
@@ -128,6 +151,32 @@ export default class OTSession extends Component {
 
   disconnectSession(sessionId) {
     OT.disconnect(sessionId);
+  }
+
+  componentDidUpdate(previousProps) {
+    const shouldUseDefault = (value, defaultValue) =>
+      value === undefined ? defaultValue : value;
+
+    const shouldUpdate = (key, defaultValue) => {
+      const previous = shouldUseDefault(previousProps[key], defaultValue);
+      const current = shouldUseDefault(this.props[key], defaultValue);
+      return previous !== current;
+    };
+
+    const updateSessionProperty = (key, defaultValue) => {
+      if (shouldUpdate(key, defaultValue)) {
+        const value = shouldUseDefault(this.props[key], defaultValue);
+        if (key === 'signal') {
+          this.signal(value);
+        }
+        if (key === 'encryptionSecret') {
+          this.setEncryptionSecret(value);
+        }
+      }
+    };
+
+    updateSessionProperty('signal', {});
+    updateSessionProperty('encryptionSecret', undefined);
   }
 
   componentWillUnmount() {
