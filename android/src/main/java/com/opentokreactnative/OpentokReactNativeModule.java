@@ -194,12 +194,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             return;
         }
         ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
-        ConcurrentHashMap<String, Stream> streams = sharedState.getSubscriberStreams();
         Subscriber subscriber = subscribers.get(streamId);
         if (subscriber != null) {
             mSession.unsubscribe(subscriber);
             subscribers.remove(subscriber);
-            streams.remove(streamId);
         }
     }
 
