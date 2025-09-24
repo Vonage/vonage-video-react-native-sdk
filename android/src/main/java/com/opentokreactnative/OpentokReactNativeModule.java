@@ -235,6 +235,24 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
+    public void forceDisconnect(String sessionId, String connectionId, Promise promise) {
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+        Session mSession = mSessions.get(sessionId);
+        ConcurrentHashMap<String, Connection> connections = sharedState.getConnections();
+        if (mSession == null) {
+            promise.reject("Session not found.");
+            return;
+        }
+        Connection mConnection = connections.get(connectionId);
+        if (mConnection == null) {
+            promise.reject("Connection not found.");
+            return;
+        }
+        mSession.forceDisconnect(mConnection);
+        promise.resolve(null);
+    }
+
+    @Override
     public void getPublisherRtcStatsReport(String publisherId) {
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
@@ -277,6 +295,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         sessionCapabilitiesMap.putBoolean("canPublish", sessionCapabilities.canPublish);
         // Bug in OT Android SDK. This should always be true, but it is set to false:
         sessionCapabilitiesMap.putBoolean("canSubscribe", true);
+        sessionCapabilitiesMap.putBoolean("canForceDisconnect", sessionCapabilities.canForceDisconnect);
         promise.resolve(sessionCapabilitiesMap);
     }
 

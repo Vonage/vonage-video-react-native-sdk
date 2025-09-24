@@ -152,6 +152,19 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         )
     }
 
+    public fun setMaxVideoBitrate(value: Int) {
+        publisher?.setMaxVideoBitrate(value)
+    }
+
+    public fun setVideoBitratePreset(value: String?) {
+        if (value == "") {
+            return
+        }
+        publisher?.setVideoBitratePreset(
+            Utils.convertVideoBitratePreset(value)
+        )
+    }
+
     @Suppress("UNUSED_PARAMETER")
     public fun setEnableDtx(value: Boolean) {
         // Ignore -- set as initialization option only
@@ -177,6 +190,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         // Ignore -- set as initialization option only
     }
 
+    public fun setAllowAudioCaptureWhileMuted(value: Boolean) {
+        // Ignore -- set as initialization option only
+    }
+
     private fun publishStream(/*session: Session*/) {
         var pubOrSub: String? = ""
         var zOrder: String? = ""
@@ -194,6 +211,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 .videoTrack(this.props?.get("videoTrack") as Boolean)
                 .enableOpusDtx(this.props?.get("enableDtx") as Boolean)
                 .scalableScreenshare(this.props?.get("scalableScreenshare") as Boolean)
+                .allowAudioCaptureWhileMuted(this.props?.get("allowAudioCaptureWhileMuted") as Boolean)
                 .capturer(OTScreenCapturer(this))
                 .build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen)
