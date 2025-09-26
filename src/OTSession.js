@@ -149,6 +149,10 @@ export default class OTSession extends Component {
     );
   }
 
+  setEncryptionSecret(value) {
+    OT.setEncryptionSecret(this.props.sessionId, value);
+  }
+
   disconnectSession(sessionId) {
     OT.disconnect(sessionId);
   }
