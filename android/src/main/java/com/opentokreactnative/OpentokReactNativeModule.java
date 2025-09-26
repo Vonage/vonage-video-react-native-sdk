@@ -149,7 +149,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
-    public void getSubscriberRtcStatsReport() {
+    public void getSubscriberRtcStatsReport(String sessionId) {
         ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
         ArrayList<Subscriber> subscriberList = new ArrayList<>(subscribers.values());
         for (Subscriber subscriber : subscriberList) {
@@ -255,7 +255,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
-    public void getPublisherRtcStatsReport(String publisherId) {
+    public void getPublisherRtcStatsReport(String sessionId, String publisherId) {
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
@@ -264,7 +264,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     // @Override Move this to publisher code
-    public void setAudioTransformers(String publisherId, ReadableArray audioTransformers) {
+    public void setAudioTransformers(String sessionId, String publisherId, ReadableArray audioTransformers) {
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
@@ -274,7 +274,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     //@Override Move this to publisher code
-    public void setVideoTransformers(String publisherId, ReadableArray videoTransformers) {
+    public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers) {
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {

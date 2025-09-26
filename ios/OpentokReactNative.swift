@@ -5,7 +5,6 @@ import React
 @objc public class OpentokReactNativeImpl: NSObject {
 
     var ot: OpentokReactNative?
-    fileprivate var sessionDelegateHandler: SessionDelegateHandler?
 
     @objc public init(ot: OpentokReactNative) {
         self.ot = ot
@@ -45,15 +44,18 @@ import React
             sessionOptions["enableSinglePeerConnection"] as Any)
         settings.sessionMigration = Utils.sanitizeBooleanProperty(
             sessionOptions["sessionMigration"] as Any)
-        sessionDelegateHandler = SessionDelegateHandler(impl: self)
+        let sessionDelegateHandler = SessionDelegateHandler(impl: self)
+
+        OTRN.sharedState.sessionDelegateHandlers[sessionId] = sessionDelegateHandler
         let session = OTSession(
             apiKey: apiKey, sessionId: sessionId,
             delegate: sessionDelegateHandler, settings: settings)
-        guard let otSession = session else {
+        guard let session = session else {
             print("[OpentokReactNative] Failed to create OTSession for sessionId: \(sessionId)")
+            OTRN.sharedState.sessionDelegateHandlers.removeValue(forKey: sessionId)
             return
         }
-        OTRN.sharedState.sessions.updateValue(otSession, forKey: sessionId)
+        OTRN.sharedState.sessions.updateValue(session, forKey: sessionId)
     }
 
     @objc public func connect(
@@ -70,7 +72,7 @@ import React
                 nil)
             return
         }
-
+        
         session.connect(withToken: token, error: &error)
         if let err = error {
             reject("ERROR", err.localizedDescription, err)
@@ -217,12 +219,7 @@ import React
         }
 
         session.publish(publisher, error: &error)
-
-        if let err = error {
-
-        } else {
-
-        }
+        // Handle error if needed
     }
 
     @objc public func unpublish(_ sessionId: String, publisherId: String) {
@@ -247,9 +244,7 @@ import React
             return
         }
 
-        guard
-            let subscriber = OTRN.sharedState.subscribers[streamId]
-        else {
+        guard let subscriber = OTRN.sharedState.subscribers[streamId] else {
             return
         }
 
@@ -330,15 +325,22 @@ import React
         resolve(true)
     }
 
-    @objc public func getPublisherRtcStatsReport(_ publisherId: String) {
+    @objc public func getPublisherRtcStatsReport(_ sessionId: String, publisherId: String) {
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             return
         }
+        guard let session = OTRN.sharedState.sessions[sessionId] else {
+            return
+        }
         publisher.getRtcStatsReport()
+        // If session context is needed, use session here
     }
 
-    @objc public func getSubscriberRtcStatsReport() -> Void {
+    @objc public func getSubscriberRtcStatsReport(_ sessionId: String) -> Void {
         var error: OTError?
+        guard let session = OTRN.sharedState.sessions[sessionId] else {
+            return
+        }
         for subscriber in OTRN.sharedState.subscribers {
             if let streamId = subscriber.value.stream?.streamId,
                OTRN.sharedState.subscriberStreams[streamId] != nil {
@@ -350,12 +352,12 @@ import React
         }
     }
 
-    @objc public func setAudioTransformers(_ publisherId: String, transformers: NSArray) -> Void {
+    @objc public func setAudioTransformers(_ sessionId: String, publisherId: String, transformers: NSArray) -> Void {
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             print("ERROR: Could not find publisher with ID \(publisherId)")
             return
         }
-        
+        // Optionally use sessionId for session-specific logic
         var nativeTransformers: [OTAudioTransformer] = []
 
         for case let transformer as [String: Any] in transformers {
@@ -380,12 +382,12 @@ import React
         publisher.audioTransformers = nativeTransformers
     }
 
-    @objc public func setVideoTransformers(_ publisherId: String, transformers: NSArray) -> Void {
+    @objc public func setVideoTransformers(_ sessionId: String, publisherId: String, transformers: NSArray) -> Void {
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             print("ERROR: Could not find publisher with ID \(publisherId)")
             return
         }
-        
+        // Optionally use sessionId for session-specific logic
         var nativeTransformers: [OTVideoTransformer] = []
 
         for case let transformer as [String: Any] in transformers {
@@ -439,6 +441,11 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     public func sessionDidConnect(_ session: OTSession) {
         OTRN.sharedState.connections.updateValue(
             session.connection!, forKey: session.connection!.connectionId)
+        // Multi-session: resolve promise callback if present
+        if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
+            callback(nil)
+            OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId)
+        }
         let sessionInfo = EventUtils.prepareJSSessionEventData(session);
         impl?.ot?.emit(onSessionConnected: sessionInfo)
     }
@@ -465,11 +472,16 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
 
     public func sessionDidDisconnect(_ session: OTSession) {
         let sessionInfo = EventUtils.prepareJSSessionEventData(session);
+        // Multi-session: resolve promise callback if present
+        if let callback = OTRN.sharedState.sessionDisconnectCallbacks[session.sessionId] {
+            callback(nil)
+            OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId)
+        }
         impl?.ot?.emit(onSessionDisconnected: sessionInfo)
 
-        // Cleanup session state
         session.delegate = nil
         OTRN.sharedState.sessions.removeValue(forKey: session.sessionId)
+        OTRN.sharedState.sessionDelegateHandlers.removeValue(forKey: session.sessionId)
     }
 
 

@@ -131,9 +131,10 @@ export interface Spec extends TurboModule {
   ): void;
   connect(sessionId: string, token: string): Promise<void>;
   disconnect(sessionId: string): Promise<void>;
-  getSubscriberRtcStatsReport(): void;
-  getPublisherRtcStatsReport(publisherId: string): void;
+  getSubscriberRtcStatsReport(sessionId: string): void;
+  getPublisherRtcStatsReport(sessionId: string, publisherId: string): void;
   setAudioTransformers(
+    sessionId: string,
     publisherId: string,
     transformers: Array<{
       name: string;
@@ -141,6 +142,7 @@ export interface Spec extends TurboModule {
     }>
   ): void;
   setVideoTransformers(
+    sessionId: string,
     publisherId: string,
     transformers: Array<{
       name: string;
