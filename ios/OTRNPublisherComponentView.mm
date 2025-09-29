@@ -47,7 +47,10 @@ using namespace facebook::react;
         @"audioFallbackEnabled" : @(viewProps.audioFallbackEnabled),
         @"publishAudio" : @(viewProps.publishAudio),
         @"publishVideo" : @(viewProps.publishVideo),
-        @"publishCaptions" : @(viewProps.publishCaptions)
+        @"publishCaptions" : @(viewProps.publishCaptions),
+        @"allowAudioCaptureWhileMuted" : @(viewProps.allowAudioCaptureWhileMuted),
+        @"maxVideoBitrate" : @(viewProps.maxVideoBitrate),
+        @"videoBitratePreset" : RCTNSStringFromString(viewProps.videoBitratePreset),
     };
 }
 
@@ -95,6 +98,14 @@ using namespace facebook::react;
 
     if (oldViewProps.videoContentHint != newViewProps.videoContentHint) {
         [_impl setVideoContentHint:RCTNSStringFromString(newViewProps.videoContentHint)];
+    }
+
+    if (oldViewProps.maxVideoBitrate != newViewProps.maxVideoBitrate) {
+        [_impl setMaxVideoBitrate:(newViewProps.maxVideoBitrate)];
+    }
+
+    if (oldViewProps.videoBitratePreset != newViewProps.videoBitratePreset) {
+        [_impl setVideoBitratePreset:RCTNSStringFromString(newViewProps.videoBitratePreset)];
     }
 
     if (oldViewProps.cameraTorch != newViewProps.cameraTorch) {

@@ -84,6 +84,27 @@ const sanitizeVideoContentHint = (videoContentHint = '') => {
   }
 };
 
+const sanitizeMaxVideoBitrate = (maxVideoBitrate) => {
+  if (maxVideoBitrate && !isNaN(maxVideoBitrate)) {
+    return Math.min(Math.max(maxVideoBitrate, 5000), 10000000);
+  }
+  return 0;
+};
+
+const sanitizeVideoBitratePreset = (videoBitratePreset, maxVideoBitrate) => {
+  if (maxVideoBitrate) {
+    return '';
+  }
+  switch (videoBitratePreset) {
+    case 'bw_saver':
+      return 'bw_saver';
+    case 'extra_bw_saver':
+      return 'extra_bw_saver';
+    default:
+      return 'default';
+  }
+};
+
 const sanitizeProperties = (properties) => {
   if (typeof properties !== 'object') {
     return {
@@ -105,6 +126,7 @@ const sanitizeProperties = (properties) => {
       videoContentHint: '',
       videoSource: 'camera',
       scalableScreenshare: false,
+      allowAudioCaptureWhileMuted: false,
     };
   }
 
@@ -145,6 +167,14 @@ const sanitizeProperties = (properties) => {
     videoContentHint: sanitizeVideoContentHint(properties.videoContentHint),
     videoSource: sanitizeVideoSource(properties.videoSource),
     scalableScreenshare: Boolean(properties.scalableScreenshare),
+    allowAudioCaptureWhileMuted: Boolean(
+      properties.allowAudioCaptureWhileMuted
+    ),
+    maxVideoBitrate: sanitizeMaxVideoBitrate(properties.videoBitratePreset),
+    videoBitratePreset: sanitizeVideoBitratePreset(
+      properties.videoBitratePreset,
+      properties.maxVideoBitrate
+    ),
   };
 };
 

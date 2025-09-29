@@ -20,6 +20,11 @@ function App(): React.JSX.Element {
   const [subscribeToStreams, setSubscribeToStreams] =
     React.useState<boolean>(true);
   const [streamProperties, setStreamProperties] = React.useState<Any>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [maxVideoBitrate, setMaxVideoBitrate] = React.useState<number>(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [videoBitratePreset, setVideoBitratePreset] =
+    React.useState<string>('bw_saver');
   const [signalProp, setSignalProp] = React.useState<Any>({
     type: 'greeting2',
     data: 'initial signal from React Native',
@@ -69,6 +74,11 @@ function App(): React.JSX.Element {
               data: 'hello again from React Native',
             });
             sessionRef.current
+              ?.getCapabilities()
+              .then((capabilities) =>
+                console.log('capabilities:', capabilities)
+              );
+            sessionRef.current
               ?.reportIssue()
               .then((id: any) => console.log('reportIssue ID', id))
               .catch((error: any) => console.log('reportIssue error', error));
@@ -82,7 +92,7 @@ function App(): React.JSX.Element {
               sessionRef.current?.signal({
                 type: 'internalGreeting',
                 data: 'hello to myself only',
-                to: event.connection.connectionId,
+                to: event.connectionId,
               });
               setSignalProp({
                 type: 'greeting2',
@@ -126,6 +136,9 @@ function App(): React.JSX.Element {
           error: (event: any) => console.log('error event', event),
           connectionCreated: (event: any) => {
             console.log('connectionCreated', event);
+            setTimeout(() => {
+              // sessionRef.current?.forceDisconnect(event.connectionId);
+            }, 5000);
             sessionRef.current?.signal({
               to: event.connectionId,
               data: `wecome to the session, connection ${event.connectionId}`,
@@ -153,6 +166,7 @@ function App(): React.JSX.Element {
             properties={{
               publishVideo: subscribeToVideo,
               publishAudio: subscribeToVideo,
+              allowAudioCaptureWhileMuted: true,
               // cameraZoomFactor: 2,
               // cameraTorch: false,
               // videoTrack: true,
@@ -161,14 +175,19 @@ function App(): React.JSX.Element {
               // enableDtx: true,
               name: 'OTRN',
               // videoContentHint: 'text',
+              // maxVideoBitrate,
+              // videoBitratePreset,
             }}
             eventHandlers={{
               error: (event: any) => console.log('pub error', event),
               streamCreated: (event: any) => {
                 console.log('pub streamCreated', event);
                 setTimeout(() => {
+                  // publisherRef.current?.getRtcStatsReport();
+                  setMaxVideoBitrate(2000000);
+                  setVideoBitratePreset('extra_bw_saver');
                   publisherRef.current?.getRtcStatsReport();
-                }, 4000);
+                }, 5000);
                 /*
                 sessionRef.current
                   ?.forceMuteAll([event.streamId])
