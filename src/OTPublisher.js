@@ -29,10 +29,22 @@ export default class OTPublisher extends React.Component {
       publisherId: uuid.v4(),
       publishVideo: mergedProperties.publishVideo,
       permissionsGranted: Platform.OS === 'ios',
+      componentMounted: false,
       publisherProperties: sanitizeProperties(mergedProperties),
     };
     this.eventHandlers = props.eventHandlers;
     this.initComponent(props.eventHandlers);
+  }
+
+  componentDidMount() {
+    addEventListener(
+      this.context.sessionId,
+      'sessionConnected',
+      this.onSessionConnected
+    );
+    this.setState({
+      componentMounted: true,
+    });
   }
 
   componentDidUpdate() {
@@ -66,7 +78,6 @@ export default class OTPublisher extends React.Component {
   };
 
   initComponent = () => {
-    addEventListener('sessionConnected', this.onSessionConnected);
     this.eventHandlers.streamCreated = this.props.eventHandlers?.streamCreated;
     this.eventHandlers.streamDestroyed =
       this.props.eventHandlers?.streamDestroyed;
@@ -135,7 +146,7 @@ export default class OTPublisher extends React.Component {
   });
 
   render() {
-    return this.state.permissionsGranted ? (
+    return this.state.permissionsGranted && this.state.componentMounted ? (
       <OTRNPublisher
         sessionId={this.context.sessionId}
         publisherId={this.state.publisherId}
