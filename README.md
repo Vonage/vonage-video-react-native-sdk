@@ -110,15 +110,15 @@ See the system requirements for the [OpenTok Android SDK](https://tokbox.com/dev
      #include "FabricComponentRegistrar.h"
      #import <React/RCTComponentViewFactory.h>
      #import <React/RCTViewComponentView.h>
-     #import "OTPublisherViewNativeComponentView.h"
-     #import "OTSubscriberViewNativeComponentView.h"
+     #import "OTRNPublisherComponentView.h"
+     #import "OTRNSubscriberComponentView.h"
      
      @implementation FabricComponentRegistrar
      
      + (void)registerCustomComponents {
          RCTComponentViewFactory *factory = [RCTComponentViewFactory currentComponentViewFactory];
-         [factory registerComponentViewClass:[OTPublisherViewNativeComponentView class]];
-         [factory registerComponentViewClass:[OTSubscriberViewNativeComponentView class]];
+         [factory registerComponentViewClass:[OTRNPublisherComponentView class]];
+         [factory registerComponentViewClass:[OTRNSubscriberComponentView class]];
      }
      </pre>
      
@@ -172,7 +172,7 @@ If you try to archive the app and it fails, please do the following:
 
 5. The SDK automatically adds Android permissions it requires. You do not need to add these to your app manifest. However, certain permissions require you to prompt the user. See the [full list of required permissions](https://tokbox.com/developer/sdks/android/#permissions) in the Vonage Video API Android SDK documentation.
 
-6. In the MainActivity.kt file for you app, register the OpenTok OpentokReactNativePackage, OTRNPublisherPackage, and OTRNSubscriberPackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
+6. In the MainApplication.kt file for your app, register the OpenTok OpentokReactNativePackage, OTRNPublisherPackage, and OTRNSubscriberPackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
 
     ```
     override fun getPackages(): List<ReactPackage> =
