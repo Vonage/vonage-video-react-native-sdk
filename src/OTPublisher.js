@@ -29,10 +29,22 @@ export default class OTPublisher extends React.Component {
       publisherId: uuid.v4(),
       publishVideo: mergedProperties.publishVideo,
       permissionsGranted: Platform.OS === 'ios',
+      componentMounted: false,
       publisherProperties: sanitizeProperties(mergedProperties),
     };
     this.eventHandlers = props.eventHandlers;
     this.initComponent(props.eventHandlers);
+  }
+
+  componentDidMount() {
+    addEventListener(
+      this.context.sessionId,
+      'sessionConnected',
+      this.onSessionConnected
+    );
+    this.setState({
+      componentMounted: true,
+    });
   }
 
   componentDidUpdate() {
@@ -52,7 +64,7 @@ export default class OTPublisher extends React.Component {
       const isScreenSharing = videoSource === 'screen';
       checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
         .then(() => {
-          OT.publish(this.state.publisherId);
+          OT.publish(this.context.sessionId, this.state.publisherId);
           this.setState({
             permissionsGranted: true,
           });
@@ -61,12 +73,11 @@ export default class OTPublisher extends React.Component {
           // this.otrnEventHandler(error);
         });
     } else {
-      OT.publish(this.state.publisherId);
+      OT.publish(this.context.sessionId, this.state.publisherId);
     }
   };
 
   initComponent = () => {
-    addEventListener('sessionConnected', this.onSessionConnected);
     this.eventHandlers.streamCreated = this.props.eventHandlers?.streamCreated;
     this.eventHandlers.streamDestroyed =
       this.props.eventHandlers?.streamDestroyed;
@@ -91,8 +102,11 @@ export default class OTPublisher extends React.Component {
       const isScreenSharing = videoSource === 'screen';
       checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
         .then(() => {
-          if (isConnected()) {
-            setTimeout(() => OT.publish(this.state.publisherId), 0);
+          if (this.context && isConnected(this.context.sessionId)) {
+            setTimeout(
+              () => OT.publish(this.context.sessionId, this.state.publisherId),
+              0
+            );
           }
           this.setState({
             permissionsGranted: true,
@@ -101,19 +115,29 @@ export default class OTPublisher extends React.Component {
         .catch((error) => {
           // this.otrnEventHandler(error);
         });
-    } else if (isConnected()) {
-      setTimeout(() => OT.publish(this.state.publisherId), 100);
+    } else if (this.context && isConnected(this.context.sessionId)) {
+      setTimeout(
+        () => OT.publish(this.context.sessionId, this.state.publisherId),
+        100
+      );
     }
   };
 
   getRtcStatsReport() {
     //NOSONAR - this method is exposed externally
-    OT.getPublisherRtcStatsReport(this.state.publisherId);
+    OT.getPublisherRtcStatsReport(
+      this.context.sessionId,
+      this.state.publisherId
+    );
   }
 
   componentWillUnmount() {
-    OT.unpublish(this.state.publisherId);
-    removeEventListener('sessionConnected', this.onSessionConnected);
+    OT.unpublish(this.context.sessionId, this.state.publisherId);
+    removeEventListener(
+      this.context.sessionId,
+      'sessionConnected',
+      this.onSessionConnected
+    );
   }
 
   getPrePermissionViewStyle = (props) => ({
@@ -122,7 +146,7 @@ export default class OTPublisher extends React.Component {
   });
 
   render() {
-    return this.state.permissionsGranted ? (
+    return this.state.permissionsGranted && this.state.componentMounted ? (
       <OTRNPublisher
         sessionId={this.context.sessionId}
         publisherId={this.state.publisherId}
@@ -130,11 +154,19 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.error?.(event.nativeEvent);
         }}
         onStreamCreated={(event) => {
-          dispatchEvent('publisherStreamCreated', event.nativeEvent);
+          dispatchEvent(
+            this.context.sessionId,
+            'publisherStreamCreated',
+            event.nativeEvent
+          );
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}
         onStreamDestroyed={(event) => {
-          dispatchEvent('publisherStreamDestroyed', event);
+          dispatchEvent(
+            this.context.sessionId,
+            'publisherStreamDestroyed',
+            event
+          );
           this.props.eventHandlers?.streamDestroyed?.(event.nativeEvent);
         }}
         onAudioLevel={(event) => {

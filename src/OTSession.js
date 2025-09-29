@@ -30,10 +30,11 @@ export default class OTSession extends Component {
       handleError('Please check your OpenTok credentials.');
     }
     OT.onSessionConnected((event) => {
+      if (event.sessionId !== sessionId) return;
       this.connectionId = event.connectionId;
-      setIsConnected(true);
+      setIsConnected(sessionId, true);
       this.eventHandlers?.sessionConnected?.(event);
-      dispatchEvent('sessionConnected', event);
+      dispatchEvent(sessionId, 'sessionConnected', event);
       if (Object.keys(this.props.signal).length > 0) {
         this.signal(this.props.signal);
       }
@@ -47,49 +48,62 @@ export default class OTSession extends Component {
       this.setEncryptionSecret(this.props.encryptionSecret);
     }
     OT.onStreamCreated((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.streamCreated?.(event);
       if (event.connectionId !== this.connectionId) {
-        addStream(event.streamId);
+        addStream(sessionId, event.streamId);
       }
-      dispatchEvent('streamCreated', event);
+      dispatchEvent(sessionId, 'streamCreated', event);
     });
 
     OT.onStreamDestroyed((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.streamDestroyed?.(event);
-      removeStream(event.streamId);
-      dispatchEvent('streamDestroyed', event);
+      removeStream(sessionId, event.streamId);
+      dispatchEvent(sessionId, 'streamDestroyed', event);
     });
 
     OT.onSignalReceived((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.signal?.(event);
     });
 
     OT.onSessionError((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.error?.(event);
     });
 
     OT.onConnectionCreated((event) => {
+      if (event.sessionId !== sessionId) return;
+
       this.eventHandlers?.connectionCreated?.(event);
     });
     OT.onConnectionDestroyed((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.connectionDestroyed?.(event);
     });
     OT.onArchiveStarted((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.archiveStarted?.(event);
     });
     OT.onArchiveStopped((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.archiveStopped?.(event);
     });
     OT.onMuteForced((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.muteForced?.(event);
     });
     OT.onSessionReconnecting((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.sessionReconnecting?.(event);
     });
     OT.onSessionReconnected((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.sessionReconnected?.(event);
     });
     OT.onStreamPropertyChanged((event) => {
+      if (event.sessionId !== sessionId) return;
       this.eventHandlers?.streamPropertyChanged?.(event);
     });
 
@@ -135,6 +149,10 @@ export default class OTSession extends Component {
     );
   }
 
+  setEncryptionSecret(value) {
+    OT.setEncryptionSecret(this.props.sessionId, value);
+  }
+
   forceDisconnect(connectionId) {
     return OT.forceDisconnect(this.props.sessionId, connectionId);
   }
@@ -171,7 +189,7 @@ export default class OTSession extends Component {
 
   componentWillUnmount() {
     this.disconnectSession(this.props.sessionId);
-    clearStreams();
+    clearStreams(this.props.sessionId);
   }
 
   render() {
