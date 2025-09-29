@@ -226,10 +226,13 @@ OTPublisher.defaultProps = {
     name: '',
     publishCaptions: false,
     scalableScreenshare: false,
+    allowAudioCaptureWhileMuted: false,
     resolution: 'MEDIUM',
     videoTrack: true,
     videoSource: 'camera',
     videoContentHint: '',
+    maxVideoBitrate: 0,
+    videoBitratePreset: 'default',
   },
   style: {
     flex: 1,

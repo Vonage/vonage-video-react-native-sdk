@@ -51,10 +51,13 @@ export interface NativeProps extends ViewProps {
   name?: string;
   resolution?: string;
   scalableScreenshare?: boolean;
+  allowAudioCaptureWhileMuted?: boolean;
   audioFallbackEnabled?: boolean;
   videoTrack?: boolean;
   videoSource?: string;
   videoContentHint?: string;
+  maxVideoBitrate?: Int32;
+  videoBitratePreset?: string;
 
   onError?: BubblingEventHandler<ErrorEvent> | null;
   onStreamCreated?: BubblingEventHandler<StreamEvent> | null;

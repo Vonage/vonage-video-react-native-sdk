@@ -77,6 +77,9 @@ import React
         settings.scalableScreenshare = Utils.sanitizeBooleanProperty(
             properties["scalableScreenshare"] as Any
         )
+        settings.allowAudioCaptureWhileMuted = Utils.sanitizeBooleanProperty(
+            properties["allowAudioCaptureWhileMuted"] as Any
+        )
 
         self.publisherId = Utils.sanitizeStringProperty(
             properties["publisherId"] as Any
@@ -146,6 +149,16 @@ import React
         publisher.publishCaptions = Utils.sanitizeBooleanProperty(
             properties["publishCaptions"] as Any
         )
+
+        if let maxVideoBitrate = properties["maxVideoBitrate"] as? Int32 {
+            publisher.maxVideoBitrate = maxVideoBitrate
+        }
+
+ 	    if let videoBitratePreset = properties["videoBitratePreset"] as? String {
+            if (videoBitratePreset != "") {
+                publisher.videoBitratePreset = Utils.convertVideoBitratePreset(videoBitratePreset)
+            }
+        }
 
         if let pubView = publisher.view {
             pubView.frame = strictUIViewContainer?.bounds ?? .zero
@@ -260,6 +273,49 @@ import React
 
         publisher.videoCapture?.videoContentHint =
             Utils.convertVideoContentHint(videoContentHint)
+    }
+
+    @objc public func setMaxVideoBitrate(_ maxVideoBitrate: Int32) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": "OTPublisherError",
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": "OTPublisherError",
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+
+        publisher.maxVideoBitrate = maxVideoBitrate
+    }
+
+    @objc public func setVideoBitratePreset(_ videoBitratePreset: String) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": "OTPublisherError",
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": "OTPublisherError",
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+
+        if (videoBitratePreset != "") {
+            publisher.videoBitratePreset = 
+                Utils.convertVideoBitratePreset(videoBitratePreset)
+        }
     }
 
     @objc public func cleanup() {
