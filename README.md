@@ -175,6 +175,11 @@ If you try to archive the app and it fails, please do the following:
 6. In the MainApplication.kt file for your app, register the OpenTok OpentokReactNativePackage, OTRNPublisherPackage, and OTRNSubscriberPackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
 
     ```
+    import com.opentokreactnative.OTRNPublisherPackage
+    import com.opentokreactnative.OTRNSubscriberPackage
+    import com.opentokreactnative.OpentokReactNativePackage;
+
+    // ... 
     override fun getPackages(): List<ReactPackage> =
         PackageList(this).packages.apply {
             add(OTRNPublisherPackage())
