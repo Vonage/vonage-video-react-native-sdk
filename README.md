@@ -12,11 +12,11 @@ In this repo, you'll find the OpenTok React Native library.
 
 This version supports the same API as the previous version. And it adds some new API enhancements. 
 
-The only difference from previous versions is that you will need to use a version of React Native that supports the new architecture (0.76+) and you will need to registering the OpenTok packages in your application
+The only difference from previous versions is that you need to use a version of React Native that supports the new architecture (0.76+) and you need to register the OpenTok React Native packages in your application:
 
-For Android, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the MainActivity file for your app. See step 6 of the "Android Installation" section below.
+* For Android, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the MainActivity file for your app. See step 6 of the "Android Installation" section below.
 
-For iOS, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the MainActivity file for your app. See step 4 of the "iOS Installation" section below.
+* For iOS, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the AppDelegate file for your app. See step 4 of the "iOS Installation" section below.
 
 ## Prerequisites
 
@@ -179,7 +179,8 @@ If you try to archive the app and it fails, please do the following:
     import com.opentokreactnative.OTRNSubscriberPackage
     import com.opentokreactnative.OpentokReactNativePackage;
 
-    // ... 
+    // ...
+
     override fun getPackages(): List<ReactPackage> =
         PackageList(this).packages.apply {
             add(OTRNPublisherPackage())
