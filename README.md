@@ -16,7 +16,7 @@ The only difference from previous versions is that you need to use a version of 
 
 * For Android, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the MainActivity file for your app. See step 6 of the "Android Installation" section below.
 
-* For iOS, register the `OpentokReactNativePackage`, `OTRNPublisherPackage`, and `OTRNSubscriberPackage` packages in the AppDelegate file for your app. See step 4 of the "iOS Installation" section below.
+* For iOS, register the `OTRNPublisherPackage` and `OTRNSubscriberPackage` packages in the AppDelegate file for your app. See step 4 of the "iOS Installation" section below.
 
 ## Prerequisites
 
@@ -68,14 +68,16 @@ See the system requirements for the [OpenTok Android SDK](https://tokbox.com/dev
         #import "OTRNSubscriberComponentView.h"
 
         @implementation AppDelegate
+     
             // ...
+     
             - (NSDictionary<NSString *,Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
-        {
-        NSMutableDictionary * dictionary = [super thirdPartyFabricComponents].mutableCopy;
-        dictionary[@"OTRNPublisher"] = [OTRNPublisherComponentView class];
-        dictionary[@"OTRNSubscriber"] = [OTRNSubscriberComponentView class];
-        return dictionary;
-        }
+            {
+              NSMutableDictionary * dictionary = [super thirdPartyFabricComponents].mutableCopy;
+              dictionary[@"OTRNPublisher"] = [OTRNPublisherComponentView class];
+              dictionary[@"OTRNSubscriber"] = [OTRNSubscriberComponentView class];
+              return dictionary;
+            }
         
         @end
     </pre>
@@ -172,7 +174,7 @@ If you try to archive the app and it fails, please do the following:
 
 5. The SDK automatically adds Android permissions it requires. You do not need to add these to your app manifest. However, certain permissions require you to prompt the user. See the [full list of required permissions](https://tokbox.com/developer/sdks/android/#permissions) in the Vonage Video API Android SDK documentation.
 
-6. In the MainApplication.kt file for your app, register the OpenTok OpentokReactNativePackage, OTRNPublisherPackage, and OTRNSubscriberPackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function
+6. In the MainApplication.kt file for your app, register the OpenTok OpentokReactNativePackage, OTRNPublisherPackage, and OTRNSubscriberPackage packages. Do this by modifying the MainApplication file by adding these to the list of packages returned by the `getPackages()` function:
 
     ```
     import com.opentokreactnative.OTRNPublisherPackage
