@@ -8,6 +8,7 @@ import com.opentok.android.PublisherKit.VideoTransformer;
 import com.opentok.android.PublisherKit.VideoBitratePreset;
 import com.opentok.android.Subscriber;
 import com.opentok.android.SubscriberKit;
+import com.opentok.android.BaseVideoRenderer;
 import com.opentok.android.Session.Builder.TransportPolicy;
 import com.opentok.android.Session.Builder.IncludeServers;
 import com.opentok.android.Session.Builder.IceServer;
@@ -147,7 +148,7 @@ public final class Utils {
         }
     }
 
-public static VideoBitratePreset convertVideoBitratePreset(String videoBitratePreset) {
+    public static VideoBitratePreset convertVideoBitratePreset(String videoBitratePreset) {
         switch (videoBitratePreset) {
             case "bw_saver":
                 return VideoBitratePreset.VideoBitratePresetBwSaver;

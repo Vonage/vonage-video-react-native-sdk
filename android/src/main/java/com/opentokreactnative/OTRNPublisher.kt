@@ -20,6 +20,7 @@ import com.opentok.android.PublisherKit.PublisherListener
 import com.opentok.android.Stream
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils
+import com.opentokreactnative.utils.toVideoScaleType;
 
 class OTRNPublisher : FrameLayout, PublisherListener,
     PublisherKit.AudioLevelListener,
@@ -194,7 +195,14 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         // Ignore -- set as initialization option only
     }
 
-    private fun publishStream(/*session: Session*/) {
+    public fun setScaleBehavior(value: String?) {
+        publisher?.setStyle(
+            BaseVideoRenderer.STYLE_VIDEO_SCALE,
+            value.toVideoScaleType()
+        )
+    }
+
+    private fun publishStream() {
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         if (this.props?.get("videoSource") == "screen") {
@@ -247,7 +255,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setPublishCaptions(this.props?.get("publishCaptions") as Boolean)
         publisher?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            BaseVideoRenderer.STYLE_VIDEO_FILL
+            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
