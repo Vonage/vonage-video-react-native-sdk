@@ -41,8 +41,8 @@ See the system requirements for the [Vonage Video Android SDK](https://developer
 2. Add the beta versioin of the library using `npm` or `yarn`:
 
 
-  * `npm install @vonage/client-sdk-video-react-native@2.31.0-beta.0`
-  * `yarn add @vonage/client-sdk-video-react-native@2.31.0-beta.0`
+  * `npm install @vonage/client-sdk-video-react-native@2.31.0-beta.1`
+  * `yarn add @vonage/client-sdk-video-react-native@2.31.0-beta.1`
 
 ### iOS Installation
 
