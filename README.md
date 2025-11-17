@@ -53,10 +53,6 @@ See the system requirements for the [Vonage Video Android SDK](https://developer
    bundle exec pod install
    ```
 
-2. Ensure you have enabled both camera and microphone usage by adding the following entries to the `Info.plist` file:
-   npx pod-install
-   ```
-
 2. **For React Native versions prior to 0.60**:
 
    * Add this to your Podfile:
@@ -84,7 +80,6 @@ See the system requirements for the [Vonage Video Android SDK](https://developer
   When you create an archive of your app, the [privacy manifest settings required by Apple's App store](https://developer.apple.com/support/third-party-SDK-requirements) are added automatically with this version of the Vonage Video React Native SDK.
 
 3. Register the OpenTok OTRNPublisher and OTRNSubscriber classes. Do this by modifying the AppDelegate implementation.
-4. Register the OTPublisherViewNative and OTSubscriberViewNative classes. Do this by modifying the AppDelegate implementation.
 
    * If you app has an Objective-C++ AppDelegate file (AppDelegate.mm), add these classes to the list of packages in the NSMutableDictionary returned by the `thirdPartyFabricComponents()` function:
 
@@ -170,7 +165,6 @@ See the system requirements for the [Vonage Video Android SDK](https://developer
    Register the FabricComponentRegistrar.mm file as a build file in XCode.
 
 4. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your Podfile:
-
    ```
    pod 'VonageClientSDKVideoTransformers'
    ```
