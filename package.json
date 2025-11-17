@@ -57,7 +57,10 @@
     "type": "git",
     "url": "https://github.com/Vonage/vonage-video-react-native-sdk.git"
   },
-  "author": "Jeff Swartz <jeff.swartz@vonage.com> (https://github.com/jeffswartz)",
+  "author": {
+    "name": "Vonage Video API",
+    "email": "support@api.vonage.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/opentok/opentok-react-native/issues"
