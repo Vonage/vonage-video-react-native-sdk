@@ -12,16 +12,27 @@ function App(): React.JSX.Element {
   const applicationId = '';
   const sessionId = '';
   const token = '';
+  const sessionId2 = '';
+  const token2 = '';
 
   const [subscribeToVideo, setSubscribeToVideo] = React.useState<boolean>(true);
   const [publishStream, setPublishStream] = React.useState<boolean>(true);
   const [subscribeToStreams, setSubscribeToStreams] =
     React.useState<boolean>(true);
   const [streamProperties, setStreamProperties] = React.useState<Any>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [maxVideoBitrate, setMaxVideoBitrate] = React.useState<number>(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [videoBitratePreset, setVideoBitratePreset] =
+    React.useState<string>('bw_saver');
+  const [signalProp, setSignalProp] = React.useState<Any>({
+    type: 'greeting2',
+    data: 'initial signal from React Native',
+  });
 
   const sessionRef = useRef<OTSession>(null);
   const subscriberRef = useRef<OTSubscriber>(null);
-  const publisherRef = useRef<OTPublisherView>(null);
+  const publisherRef = useRef<OTPublisher>(null);
   const toggleVideo = () => {
     setSubscribeToVideo((val) => !val);
   };
@@ -49,6 +60,12 @@ function App(): React.JSX.Element {
         token={token}
         sessionId={sessionId}
         ref={sessionRef}
+        options={
+          {
+            // connectionEventsSuppressed: false,
+            // enableSinglePeerConnection: true,
+          }
+        }
         eventHandlers={{
           sessionConnected: (event: any) => {
             console.log('sessionConnected', event);
@@ -56,6 +73,38 @@ function App(): React.JSX.Element {
               type: 'greeting2',
               data: 'hello again from React Native',
             });
+            sessionRef.current
+              ?.getCapabilities()
+              .then((capabilities) =>
+                console.log('capabilities:', capabilities)
+              );
+            sessionRef.current
+              ?.reportIssue()
+              .then((id: any) => console.log('reportIssue ID', id))
+              .catch((error: any) => console.log('reportIssue error', error));
+            sessionRef.current
+              ?.getCapabilities()
+              .then((id: any) => console.log('Session.getCapabilities()', id))
+              .catch((error: any) =>
+                console.log('Session.getCapabilities() error', error)
+              );
+            setTimeout(() => {
+              sessionRef.current?.signal({
+                type: 'internalGreeting',
+                data: 'hello to myself only',
+                to: event.connectionId,
+              });
+              setSignalProp({
+                type: 'greeting2',
+                data: 'another signal from React Native (via prop)',
+              });
+              /*
+              sessionRef.current
+                ?.forceMuteAll([])
+                .then(() => console.log('forceMuteAll success'))
+                .catch((e) => console.log('forceMuteAll error', e));
+              */
+            }, 1000);
           },
           streamCreated: (event: any) => {
             console.log('streamCreated', event);
@@ -72,13 +121,32 @@ function App(): React.JSX.Element {
                 audioVolume: 0.1,
               },
             }));
+            /*
+            sessionRef.current
+              ?.forceMuteStream(event.streamId)
+              .then(() =>
+                console.log('forceMuteStream success - stream', event.streamId)
+              )
+              .catch((e) => console.log('forceMuteStream error', e));
+            */
           },
           streamDestroyed: (event: any) =>
             console.log('streamDestroyed', event),
           signal: (event: any) => console.log('signal event', event),
           error: (event: any) => console.log('error event', event),
-          connectionCreated: (event: any) =>
-            console.log('connectionCreated event', event),
+          connectionCreated: (event: any) => {
+            console.log('connectionCreated', event);
+            setTimeout(() => {
+              // sessionRef.current?.forceDisconnect(event.connectionId);
+            }, 5000);
+            sessionRef.current?.signal({
+              to: event.connectionId,
+              data: `wecome to the session, connection ${event.connectionId}`,
+              type: 'connectionGreeting',
+            });
+          },
+          connectionDestroyed: (event: any) =>
+            console.log('connectionDestroyed', event),
           archiveStarted: (event: any) =>
             console.log('archiveStarted event', event),
           archiveStopped: (event: any) =>
@@ -87,10 +155,7 @@ function App(): React.JSX.Element {
           streamPropertyChanged: (event: any) =>
             console.log('streamPropertyChanged event', event),
         }}
-        signal={{
-          type: 'greeting2',
-          data: 'initial signal from React Native',
-        }}
+        signal={signalProp}
         style={styles.session}
       >
         {publishStream ? (
@@ -101,6 +166,7 @@ function App(): React.JSX.Element {
             properties={{
               publishVideo: subscribeToVideo,
               publishAudio: subscribeToVideo,
+              allowAudioCaptureWhileMuted: true,
               // cameraZoomFactor: 2,
               // cameraTorch: false,
               // videoTrack: true,
@@ -109,14 +175,30 @@ function App(): React.JSX.Element {
               // enableDtx: true,
               name: 'OTRN',
               // videoContentHint: 'text',
+              // maxVideoBitrate,
+              // videoBitratePreset,
             }}
             eventHandlers={{
               error: (event: any) => console.log('pub error', event),
               streamCreated: (event: any) => {
                 console.log('pub streamCreated', event);
                 setTimeout(() => {
+                  // publisherRef.current?.getRtcStatsReport();
+                  setMaxVideoBitrate(2000000);
+                  setVideoBitratePreset('extra_bw_saver');
                   publisherRef.current?.getRtcStatsReport();
-                }, 4000);
+                }, 5000);
+                /*
+                sessionRef.current
+                  ?.forceMuteAll([event.streamId])
+                  .then(() =>
+                    console.log(
+                      'forcemuteAll success - excluded stream',
+                      event.streamId
+                    )
+                  )
+                  .catch((e) => console.log('forcemuteAll error', e));
+                */
               },
               streamDestroyed: (event: any) =>
                 console.log('pub streamDestroyed', event),
@@ -127,7 +209,7 @@ function App(): React.JSX.Element {
                 logAllEvents && console.log('pub audioNetworkStats', event);
               },
               rtcStatsReport: (event: any) => {
-                console.log('pub rtcStatsReport', event);
+                logAllEvents && console.log('pub rtcStatsReport', event);
               },
               videoDisabled: (event: any) => {
                 console.log('pub videoDisabled', event);
@@ -182,7 +264,7 @@ function App(): React.JSX.Element {
                 console.log('sub error', event);
               },
               rtcStatsReport: (event: any) => {
-                console.log('sub rtcStatsReport', event);
+                logAllEvents && console.log('sub rtcStatsReport', event);
               },
               subscriberConnected: (event: any) => {
                 console.log('subscriberConnected', event);
@@ -229,6 +311,26 @@ function App(): React.JSX.Element {
           </OTSubscriber>
         ) : null}
       </OTSession>
+      {sessionId2 ? (
+        <OTSession
+          apiKey={apiKey}
+          sessionId={sessionId2}
+          token={token2}
+          eventHandlers={{
+            error: (e) => console.log('s2 error', e),
+            sessionConnected: (e) => console.log('s2 connected', e),
+            signal: (e) => console.log('s2 signal', e),
+            connectionCreated: (e) => console.log('s2 connectionCreated', e),
+            streamCreated: (e) => console.log('s2 streamCreated', e),
+          }}
+          signal={{
+            type: 'session2',
+            data: 'signal from React Native session 2',
+          }}
+        >
+          <OTSubscriber style={styles.videoview} />
+        </OTSession>
+      ) : null}
       <Button onPress={() => toggleSubscribe()} title="Toggle subscribe" />
       <Button onPress={() => togglePublish()} title="Toggle publish" />
       <Button onPress={() => toggleVideo()} title="Toggle audio/video" />

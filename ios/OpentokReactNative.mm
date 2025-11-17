@@ -4,9 +4,9 @@
 
 
 
-typedef JS::NativeOpentokReactNative::SessionOptions RN_SessionOptions;
+typedef JS::NativeOpentok::SessionOptions RN_SessionOptions;
 
-@interface OpentokReactNative : NativeOpentokReactNativeSpecBase <NativeOpentokReactNativeSpec>
+@interface OpentokReactNative : NativeOpentokSpecBase <NativeOpentokSpec>
 @end
 
 @implementation OpentokReactNative {
@@ -43,8 +43,51 @@ RCT_EXPORT_MODULE()
 - (void)initSession:(nonnull NSString *)apiKey
           sessionId:(nonnull NSString *)sessionId
             options:(RN_SessionOptions &)options   {
-  NSDictionary *optionsDict = @{};
-  [impl initSession:apiKey sessionId:sessionId sessionOptions: optionsDict];
+    NSMutableDictionary *optionsDict = [NSMutableDictionary dictionary];
+
+    if (options.connectionEventsSuppressed().has_value()) {
+        optionsDict[@"connectionEventsSuppressed"] = @(options.connectionEventsSuppressed().value());
+    }
+    if (options.enableStereoOutput().has_value()) {
+        optionsDict[@"enableStereoOutput"] = @(options.enableStereoOutput().value());
+    }
+    if (options.enableSinglePeerConnection().has_value()) {
+        optionsDict[@"enableSinglePeerConnection"] = @(options.enableSinglePeerConnection().value());
+    }
+    if (options.enableSinglePeerConnection().has_value()) {
+        optionsDict[@"sessionMigration"] = @(options.sessionMigration().value());
+    }
+    if (options.ipWhitelist().has_value()) {
+        optionsDict[@"ipWhitelist"] = @(options.ipWhitelist().value());
+    }
+    optionsDict[@"proxyUrl"] = options.proxyUrl();
+
+    if (options.iceConfig().has_value()) {
+        NSMutableDictionary *iceConfigDict = [NSMutableDictionary dictionary];
+        iceConfigDict[@"includeServers"] = options.iceConfig()->includeServers();
+        iceConfigDict[@"transportPolicy"] = options.iceConfig()->transportPolicy();
+        iceConfigDict[@"filterOutLanCandidates"] = @(options.iceConfig()->filterOutLanCandidates());
+
+        // Build customServers array
+        NSMutableArray *customServersArray = [NSMutableArray array];
+        const auto &customServers = options.iceConfig()->customServers();
+        for (const auto& server : customServers) {
+            NSMutableDictionary *serverDict = [NSMutableDictionary dictionary];
+                NSMutableArray *urlsArray = [NSMutableArray array];
+                for (auto it = server.urls().begin(); it != server.urls().end(); ++it) {
+                    [urlsArray addObject:*it];
+                }
+                serverDict[@"urls"] = urlsArray;
+                serverDict[@"username"] = server.username();
+                serverDict[@"credential"] = server.credential();
+            [customServersArray addObject:serverDict];
+        }
+        iceConfigDict[@"customServers"] = customServersArray;
+
+        optionsDict[@"iceConfig"] = iceConfigDict;
+    }
+
+    [impl initSession:apiKey sessionId:sessionId sessionOptions: optionsDict];
 }
 
 - (void)connect:(nonnull NSString *)sessionId 
@@ -64,10 +107,12 @@ RCT_EXPORT_MODULE()
 
 - (void)sendSignal:(nonnull NSString *)sessionId 
     type:(nonnull NSString *)type 
-    data:(nonnull NSString *)data { 
+    data:(nonnull NSString *)data
+    to:(nonnull NSString *)to { 
   NSDictionary *signal = @{
     @"type": type,
-    @"data": data
+    @"data": data,
+    @"to": to
   };
   [impl sendSignal:sessionId signal:signal resolve:^(id result) {
     // Success case - nothing needed
@@ -81,6 +126,12 @@ RCT_EXPORT_MODULE()
                    resolve:(nonnull RCTPromiseResolveBlock)resolve 
                     reject:(nonnull RCTPromiseRejectBlock)reject {
     [impl setEncryptionSecret:sessionId secret:secret resolve:resolve reject:reject];
+}
+
+- (void)getCapabilities:(nonnull NSString *)sessionId
+            resolve:(nonnull RCTPromiseResolveBlock)resolve
+             reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl getCapabilities:sessionId resolve:resolve reject:reject];
 }
 
 - (void)reportIssue:(nonnull NSString *)sessionId
@@ -103,38 +154,52 @@ RCT_EXPORT_MODULE()
     [impl forceMuteStream:sessionId streamId:streamId resolve:resolve reject:reject];
 }
 
+- (void)forceDisconnect:(nonnull NSString *)sessionId
+              connectionId:(nonnull NSString *)connectionId
+               resolve:(nonnull RCTPromiseResolveBlock)resolve
+                reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl forceDisconnect:sessionId connectionId:connectionId resolve:resolve reject:reject];
+}
+
 - (void)disableForceMute:(nonnull NSString *)sessionId
                 resolve:(nonnull RCTPromiseResolveBlock)resolve
                  reject:(nonnull RCTPromiseRejectBlock)reject {
     [impl disableForceMute:sessionId resolve:resolve reject:reject];
 }
 
-- (void)getPublisherRtcStatsReport:(nonnull NSString *)publisherId { 
-      [impl getPublisherRtcStatsReport:publisherId];
+// sessionId required for multi-session
+- (void)getPublisherRtcStatsReport:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId { 
+    [impl getPublisherRtcStatsReport:sessionId publisherId:publisherId];
 }
 
-- (void)getSubscriberRtcStatsReport { 
-      [impl getSubscriberRtcStatsReport];
+// sessionId required for multi-session
+- (void)getSubscriberRtcStatsReport:(nonnull NSString *)sessionId { 
+    [impl getSubscriberRtcStatsReport:sessionId];
 }
 
-- (void)publish:(nonnull NSString *)publisherId {
-    [impl publish:publisherId];
+// sessionId required for multi-session
+- (void)publish:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId {
+    [impl publish:sessionId publisherId:publisherId];
 }
 
-- (void)unpublish:(nonnull NSString *)publisherId {
-    [impl unpublish:publisherId];
+// sessionId required for multi-session
+- (void)unpublish:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId {
+    [impl unpublish:sessionId publisherId:publisherId];
 }
 
-- (void)removeSubscriber:(nonnull NSString *)streamId {
-    [impl removeSubscriber:streamId];
+// sessionId required for multi-session
+- (void)removeSubscriber:(nonnull NSString *)sessionId streamId:(nonnull NSString *)streamId {
+    [impl removeSubscriber:sessionId streamId:streamId];
 }
 
-- (void)setAudioTransformers:(nonnull NSString *)publisherId transformers:(nonnull NSArray *)transformers { 
-    [impl setAudioTransformers:publisherId transformers:transformers];
+// sessionId required for multi-session
+- (void)setAudioTransformers:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId transformers:(nonnull NSArray *)transformers { 
+    [impl setAudioTransformers:sessionId publisherId:publisherId transformers:transformers];
 }
 
-- (void)setVideoTransformers:(nonnull NSString *)publisherId transformers:(nonnull NSArray *)transformers { 
-    [impl setVideoTransformers:publisherId transformers:transformers];
+// sessionId required for multi-session
+- (void)setVideoTransformers:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId transformers:(nonnull NSArray *)transformers { 
+    [impl setVideoTransformers:sessionId publisherId:publisherId transformers:transformers];
 }
 
 
@@ -148,7 +213,7 @@ RCT_EXPORT_MODULE()
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
-    return std::make_shared<facebook::react::NativeOpentokReactNativeSpecJSI>(params);
+    return std::make_shared<facebook::react::NativeOpentokSpecJSI>(params);
 }
 
 

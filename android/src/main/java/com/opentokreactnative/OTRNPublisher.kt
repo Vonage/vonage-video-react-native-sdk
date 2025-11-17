@@ -20,8 +20,9 @@ import com.opentok.android.PublisherKit.PublisherListener
 import com.opentok.android.Stream
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils
+import com.opentokreactnative.utils.toVideoScaleType;
 
-class OTPublisherViewNative : FrameLayout, PublisherListener,
+class OTRNPublisher : FrameLayout, PublisherListener,
     PublisherKit.AudioLevelListener,
     PublisherKit.PublisherRtcStatsReportListener,
     PublisherKit.AudioStatsListener,
@@ -38,11 +39,11 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
     private var props: MutableMap<String, Any>? = null
 
     constructor(context: Context) : super(context) {
-        configureComponent(context)
+        configureComponent()
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        configureComponent(context)
+        configureComponent()
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
@@ -50,7 +51,7 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         attrs,
         defStyleAttr
     ) {
-        configureComponent(context)
+        configureComponent()
     }
 
     fun updateProperties(props: ReactStylesDiffMap?) {
@@ -65,7 +66,7 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         publishStream(/*session ?: return*/)
     }
 
-    private fun configureComponent(context: Context) {
+    private fun configureComponent() {
         var params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         this.setLayoutParams(params)
     }
@@ -98,23 +99,27 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         publisher?.setPublishCaptions(value)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setAudioBitrate(value: Int) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setAudioFallbackEnabled(value: Boolean) {
-        //audioFallbackEnabled = value
-        //publisher?.setAudioFallbackEnabled(value)
+        // Deprecated. Use publisherAudioFallback and subscriberAudioFallback
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setPublisherAudioFallback(value: Boolean) {
-        //publisherAudioFallback = value
+        // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setSubscriberAudioFallback(value: Boolean) {
-        //subscriberAudioFallback = value
+        // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setCameraPosition(value: String?) {
         publisher?.cycleCamera()
     }
@@ -127,14 +132,17 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         publisher?.setCameraZoomFactor(value)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setAudioTrack(value: Boolean) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setVideoTrack(value: Boolean) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setVideoSource(value: String?) {
         // Ignore -- set as initialization option only
     }
@@ -145,27 +153,56 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         )
     }
 
+    public fun setMaxVideoBitrate(value: Int) {
+        publisher?.setMaxVideoBitrate(value)
+    }
+
+    public fun setVideoBitratePreset(value: String?) {
+        if (value == "") {
+            return
+        }
+        publisher?.setVideoBitratePreset(
+            Utils.convertVideoBitratePreset(value)
+        )
+    }
+
+    @Suppress("UNUSED_PARAMETER")
     public fun setEnableDtx(value: Boolean) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setFrameRate(value: Int) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setName(value: String?) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setResolution(value: String?) {
         // Ignore -- set as initialization option only
     }
 
+    @Suppress("UNUSED_PARAMETER")
     public fun setScalableScreenshare(value: Boolean) {
         // Ignore -- set as initialization option only
     }
 
-    private fun publishStream(/*session: Session*/) {
+    public fun setAllowAudioCaptureWhileMuted(value: Boolean) {
+        // Ignore -- set as initialization option only
+    }
+
+    public fun setScaleBehavior(value: String?) {
+        publisher?.setStyle(
+            BaseVideoRenderer.STYLE_VIDEO_SCALE,
+            value.toVideoScaleType()
+        )
+    }
+
+    private fun publishStream() {
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         if (this.props?.get("videoSource") == "screen") {
@@ -182,6 +219,7 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
                 .videoTrack(this.props?.get("videoTrack") as Boolean)
                 .enableOpusDtx(this.props?.get("enableDtx") as Boolean)
                 .scalableScreenshare(this.props?.get("scalableScreenshare") as Boolean)
+                .allowAudioCaptureWhileMuted(this.props?.get("allowAudioCaptureWhileMuted") as Boolean)
                 .capturer(OTScreenCapturer(this))
                 .build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen)
@@ -217,7 +255,7 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
         publisher?.setPublishCaptions(this.props?.get("publishCaptions") as Boolean)
         publisher?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            BaseVideoRenderer.STYLE_VIDEO_FILL
+            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -249,7 +287,7 @@ class OTPublisherViewNative : FrameLayout, PublisherListener,
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String ?: return, publisher ?: return);
+            .put(this.props?.get("publisherId") as String, publisher ?: return);
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()

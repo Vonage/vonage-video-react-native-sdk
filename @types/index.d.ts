@@ -8,6 +8,8 @@ declare module "@vonage/client-sdk-video-react-native" {
 
   type VideoSource = 'screen' | 'camera';
 
+  type VideoScaleType = 'fill' | 'fit';
+
   interface SessionConnectEvent {
     sessionId: string;
     connection: Connection;
@@ -333,6 +335,7 @@ declare module "@vonage/client-sdk-video-react-native" {
       canForceMute: boolean;
       canPublish: boolean;
       canSubscribe: boolean;
+      canForceDisconnect: boolean;
     }>;
 
     /**
@@ -344,6 +347,11 @@ declare module "@vonage/client-sdk-video-react-native" {
      * Mutes a stream in the session.
      */
     forceMuteStream: (streamId: string) => Promise<void>;
+
+    /**
+     * Forces a client to disconnect from the session.
+     */
+    forceDisconnect: (connectionId: string) => Promise<void>;
 
     /**
      * Disables the force mute state for the session.
@@ -462,6 +470,36 @@ declare module "@vonage/client-sdk-video-react-native" {
      * To publish a screen-sharing stream, set this property to "screen". If you do not specify a value, this will default to "camera".
      */
     videoSource?: VideoSource;
+
+    /**
+     * The video content hint fpr the publisher (either "none", "motion", "detail", or "text").
+     */
+    videoContentHint?: string;
+
+    /**
+     * Whether to allow use of scalable video for a publisher that has the videoSource set "screen".
+     */
+    scalableScreenshare?: boolean;
+
+    /**
+     * If set to false, the microphone will be automatically switched off when the publish has muted.
+     */
+    allowAudioCaptureWhileMuted?: boolean;
+
+    /**
+     * The maximum video bitrate for the published stream (between 5,000 and 10,000,000).
+     */
+    maxVideoBitrate?: number;
+
+    /**
+     * The video bitrate preset to use for the published stream. Ignored if maxVideoBitrate is set.
+     */
+    videoBitratePreset?: 'default' | 'bw_saver' | 'extra_bw_saver';
+
+    /**
+     * Publisher view scale behavior. Defaults to "fill".
+     */
+    scaleBehavior?: VideoScaleType;
   }
 
   interface OTPublisherEventHandlers {
@@ -631,6 +669,11 @@ declare module "@vonage/client-sdk-video-react-native" {
      * Whether to subscribe video.
      */
     subscribeToVideo?: boolean;
+
+    /**
+     * Subscriber view scale behavior. Defaults to "fill".
+     */
+    scaleBehavior?: VideoScaleType;
   }
 
   interface OTSubscriberEventHandlers {

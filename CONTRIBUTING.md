@@ -37,9 +37,11 @@ If the contribution doesn't meet these criteria, a maintainer will discuss it wi
 6. Push your new branch to your fork. (e.g. `git push myname issue-12`)
 7. Open a Pull Request from your new branch to the original fork's `master` branch.
 
+Note that this version of the library is built with the React Native [new architecture. For technical details, see the [iOS readme file](ios/README.md).
+
 ## Development Guidelines
 
 1. Follow [installation guidelines](README.md).
-2. Modify JS components in `src/js/`.
+2. Modify JS components in `src/`.
 3. Modify iOS components in `ios/`.
 4. Modify Android components in `android/`.

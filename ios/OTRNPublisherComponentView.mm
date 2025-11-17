@@ -11,21 +11,21 @@
 
 using namespace facebook::react;
 
-@interface OTPublisherViewNativeComponentView
-    : RCTViewComponentView <RCTOTPublisherViewNativeViewProtocol>
+@interface OTRNPublisherComponentView
+    : RCTViewComponentView <RCTOTRNPublisherViewProtocol>
 @end
 
-@implementation OTPublisherViewNativeComponentView {
-    OTPublisherViewNativeImpl *_impl;
+@implementation OTRNPublisherComponentView {
+    OTRNPublisherImpl *_impl;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
     return concreteComponentDescriptorProvider<
-        OTPublisherViewNativeComponentDescriptor>();
+        OTRNPublisherComponentDescriptor>();
 }
 
 - (NSDictionary *)createPublisherPropsFromViewProps:
-    (const OTPublisherViewNativeProps &)viewProps {
+    (const OTRNPublisherProps &)viewProps {
     return @{
         @"sessionId" : RCTNSStringFromString(viewProps.sessionId),
         @"publisherId" : RCTNSStringFromString(viewProps.publisherId),
@@ -47,13 +47,17 @@ using namespace facebook::react;
         @"audioFallbackEnabled" : @(viewProps.audioFallbackEnabled),
         @"publishAudio" : @(viewProps.publishAudio),
         @"publishVideo" : @(viewProps.publishVideo),
-        @"publishCaptions" : @(viewProps.publishCaptions)
+        @"publishCaptions" : @(viewProps.publishCaptions),
+        @"allowAudioCaptureWhileMuted" : @(viewProps.allowAudioCaptureWhileMuted),
+        @"maxVideoBitrate" : @(viewProps.maxVideoBitrate),
+        @"videoBitratePreset" : RCTNSStringFromString(viewProps.videoBitratePreset),
+        @"scaleBehavior": RCTNSStringFromString(viewProps.scaleBehavior),
     };
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
-        _impl = [[OTPublisherViewNativeImpl alloc] initWithView:self];
+        _impl = [[OTRNPublisherImpl alloc] initWithView:self];
         self.contentView = nil;
     }
     return self;
@@ -63,9 +67,9 @@ using namespace facebook::react;
            oldProps:(const Props::Shared &)oldProps {
 
     const auto &oldViewProps =
-        *std::static_pointer_cast<const OTPublisherViewNativeProps>(_props);
+        *std::static_pointer_cast<const OTRNPublisherProps>(_props);
     const auto &newViewProps =
-        *std::static_pointer_cast<const OTPublisherViewNativeProps>(props);
+        *std::static_pointer_cast<const OTRNPublisherProps>(props);
 
     // Check if this is the first update (oldProps will be null/empty)
     if (!oldProps) {
@@ -97,12 +101,25 @@ using namespace facebook::react;
         [_impl setVideoContentHint:RCTNSStringFromString(newViewProps.videoContentHint)];
     }
 
+    if (oldViewProps.maxVideoBitrate != newViewProps.maxVideoBitrate) {
+        [_impl setMaxVideoBitrate:(newViewProps.maxVideoBitrate)];
+    }
+
+    if (oldViewProps.videoBitratePreset != newViewProps.videoBitratePreset) {
+        [_impl setVideoBitratePreset:RCTNSStringFromString(newViewProps.videoBitratePreset)];
+    }
+
     if (oldViewProps.cameraTorch != newViewProps.cameraTorch) {
         [_impl setCameraTorch:newViewProps.cameraTorch];
     }
 
     if (oldViewProps.cameraZoomFactor != newViewProps.cameraZoomFactor) {
         [_impl setCameraZoomFactor:newViewProps.cameraZoomFactor];
+    }
+
+    if (oldViewProps.scaleBehavior != newViewProps.scaleBehavior) {
+        NSLog(@"Setting scale behavior to %@", RCTNSStringFromString(newViewProps.scaleBehavior));
+        [_impl setScaleBehavior:RCTNSStringFromString(newViewProps.scaleBehavior)];
     }
 
     [super updateProps:props oldProps:oldProps];
@@ -117,17 +134,17 @@ using namespace facebook::react;
     [super prepareForRecycle];
 }
 
-- (std::shared_ptr<const OTPublisherViewNativeEventEmitter>)getEventEmitter {
+- (std::shared_ptr<const OTRNPublisherEventEmitter>)getEventEmitter {
     if (!_eventEmitter) {
         return nullptr;
     }
-    return std::static_pointer_cast<const OTPublisherViewNativeEventEmitter>(_eventEmitter);
+    return std::static_pointer_cast<const OTRNPublisherEventEmitter>(_eventEmitter);
 }
 
 - (void)handleStreamCreated:(NSDictionary *)eventData {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnStreamCreated payload{
+        OTRNPublisherEventEmitter::OnStreamCreated payload{
             .streamId = std::string([eventData[@"streamId"] UTF8String])};
         eventEmitter->onStreamCreated(std::move(payload));
     }
@@ -136,7 +153,7 @@ using namespace facebook::react;
 - (void)handleError:(NSDictionary *)eventData {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnError payload{
+        OTRNPublisherEventEmitter::OnError payload{
             .code = std::string([eventData[@"code"] UTF8String]),
             .message = std::string([eventData[@"message"] UTF8String])};
         eventEmitter->onError(std::move(payload));
@@ -146,7 +163,7 @@ using namespace facebook::react;
 - (void)handleStreamDestroyed:(NSDictionary *)eventData {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnStreamDestroyed payload{
+        OTRNPublisherEventEmitter::OnStreamDestroyed payload{
             .streamId = std::string([eventData[@"streamId"] UTF8String])};
         eventEmitter->onStreamDestroyed(std::move(payload));
     }
@@ -155,7 +172,7 @@ using namespace facebook::react;
 - (void)handleAudioLevel:(float)audioLevel {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnAudioLevel payload{
+        OTRNPublisherEventEmitter::OnAudioLevel payload{
             .audioLevel = audioLevel};
         eventEmitter->onAudioLevel(std::move(payload));
     }
@@ -164,7 +181,7 @@ using namespace facebook::react;
 - (void)handleAudioNetworkStats:(NSString *)jsonString {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnAudioNetworkStats payload{
+        OTRNPublisherEventEmitter::OnAudioNetworkStats payload{
             .jsonStats = std::string([jsonString UTF8String])};
         eventEmitter->onAudioNetworkStats(std::move(payload));
     }
@@ -173,7 +190,7 @@ using namespace facebook::react;
 - (void)handleVideoNetworkStats:(NSString *)jsonString {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnVideoNetworkStats payload{
+        OTRNPublisherEventEmitter::OnVideoNetworkStats payload{
             .jsonStats = std::string([jsonString UTF8String])};
         eventEmitter->onVideoNetworkStats(std::move(payload));
     }
@@ -182,7 +199,7 @@ using namespace facebook::react;
 - (void)handleMuteForced {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnMuteForced payload{};
+        OTRNPublisherEventEmitter::OnMuteForced payload{};
         eventEmitter->onMuteForced(std::move(payload));
     }
 }
@@ -190,7 +207,7 @@ using namespace facebook::react;
 - (void)handleRtcStatsReport:(NSString *)jsonString {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnRtcStatsReport payload{
+        OTRNPublisherEventEmitter::OnRtcStatsReport payload{
             .jsonStats = std::string([jsonString UTF8String])
         };
         eventEmitter->onRtcStatsReport(std::move(payload));
@@ -200,7 +217,7 @@ using namespace facebook::react;
 - (void)handleVideoDisableWarning {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnVideoDisableWarning payload{};
+        OTRNPublisherEventEmitter::OnVideoDisableWarning payload{};
         eventEmitter->onVideoDisableWarning(std::move(payload));
     }
 }
@@ -208,7 +225,7 @@ using namespace facebook::react;
 - (void)handleVideoDisableWarningLifted {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnVideoDisableWarningLifted payload{};
+        OTRNPublisherEventEmitter::OnVideoDisableWarningLifted payload{};
         eventEmitter->onVideoDisableWarningLifted(std::move(payload));
     }
 }
@@ -216,7 +233,7 @@ using namespace facebook::react;
 - (void)handleVideoEnabled {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTPublisherViewNativeEventEmitter::OnVideoEnabled payload{};
+        OTRNPublisherEventEmitter::OnVideoEnabled payload{};
         eventEmitter->onVideoEnabled(std::move(payload));
     }
 }
@@ -224,12 +241,12 @@ using namespace facebook::react;
     //TODO not there in ts
 //    auto eventEmitter = [self getEventEmitter];
 //    if (eventEmitter) {
-//        OTPublisherViewNativeEventEmitter::OnVideoDisabled payload{};
+//        OTRNPublisherEventEmitter::OnVideoDisabled payload{};
 //        eventEmitter->onVideoDisabled(std::move(payload));
 //    }
 }
 @end
 
-Class<RCTComponentViewProtocol> OTPublisherViewNativeCls(void) {
-    return OTPublisherViewNativeComponentView.class;
+Class<RCTComponentViewProtocol> OTRNPublisherCls(void) {
+    return OTRNPublisherComponentView.class;
 }

@@ -1,13 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { OT } from './OT';
-import OTSubscriberViewNative from './OTSubscriberViewNativeComponent';
+import OTRNSubscriber from './OTSubscriberNativeComponent';
 import OTContext from './contexts/OTContext';
 
 export default class OTSubscriberView extends React.Component {
   static defaultProps = {
     subscribeToAudio: true,
     subscribeToVideo: true,
+    scaleBehavior: 'fill',
     style: {
       flex: 1,
     },
@@ -25,11 +26,11 @@ export default class OTSubscriberView extends React.Component {
 
   getRtcStatsReport() {
     //NOSONAR - this method is exposed externally
-    OT.getSubscriberRtcStatsReport();
+    OT.getSubscriberRtcStatsReport(this.sessionId);
   }
 
   componentWillUnmount() {
-    OT.removeSubscriber(this.props.streamId);
+    OT.removeSubscriber(this.sessionId, this.props.streamId);
   }
 
   render() {
@@ -61,13 +62,18 @@ export default class OTSubscriberView extends React.Component {
       streamProperties?.subscribeToAudio ??
       subscriberProperties?.subscribeToAudio ??
       true;
+    const scaleBehavior =
+      streamProperties?.scaleBehavior ??
+      subscriberProperties?.scaleBehavior ??
+      'fill';
     const style = streamProperties?.style || this.context.style;
     return (
-      <OTSubscriberViewNative
+      <OTRNSubscriber
         sessionId={this.sessionId}
         streamId={streamId}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
+        scaleBehavior={scaleBehavior}
         subscribeToCaptions={subscribeToCaptions}
         preferredFrameRate={preferredFrameRate}
         preferredResolution={preferredResolution}

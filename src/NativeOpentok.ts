@@ -15,8 +15,10 @@ export type Connection = {
 };
 
 export type ConnectionEvent = {
+  creationTime: string;
+  data: string;
+  connectionId: string;
   sessionId: string;
-  connection: Connection;
 };
 
 export type EmptyEvent = {};
@@ -42,7 +44,7 @@ export type SessionOptions = {
   enableStereoOutput?: boolean;
   enableSinglePeerConnection?: boolean;
   sessionMigration?: boolean;
-  iceConfig: IceConfig;
+  iceConfig?: IceConfig;
   ipWhitelist?: boolean;
   isCamera2Capable?: boolean;
   proxyUrl?: string;
@@ -58,7 +60,9 @@ export type SessionConnectEvent = {
   };
 };
 
-export type SessionDisconnectEvent = Stream;
+export type SessionDisconnectEvent = {
+  sessionId: string;
+};
 
 export type Stream = {
   name: string;
@@ -111,8 +115,8 @@ export interface Spec extends TurboModule {
   readonly onConnectionCreated: EventEmitter<ConnectionEvent>;
   readonly onConnectionDestroyed: EventEmitter<ConnectionEvent>;
   readonly onMuteForced: EventEmitter<MuteForcedEvent>;
-  readonly onSessionConnected: EventEmitter<ConnectionEvent>;
-  readonly onSessionDisconnected: EventEmitter<ConnectionEvent>;
+  readonly onSessionConnected: EventEmitter<SessionConnectEvent>;
+  readonly onSessionDisconnected: EventEmitter<SessionDisconnectEvent>;
   readonly onSessionReconnecting: EventEmitter<EmptyEvent>;
   readonly onSessionReconnected: EventEmitter<EmptyEvent>;
   readonly onStreamCreated: EventEmitter<StreamEvent>;
@@ -127,9 +131,10 @@ export interface Spec extends TurboModule {
   ): void;
   connect(sessionId: string, token: string): Promise<void>;
   disconnect(sessionId: string): Promise<void>;
-  getSubscriberRtcStatsReport(): void;
-  getPublisherRtcStatsReport(publisherId: string): void;
+  getSubscriberRtcStatsReport(sessionId: string): void;
+  getPublisherRtcStatsReport(sessionId: string, publisherId: string): void;
   setAudioTransformers(
+    sessionId: string,
     publisherId: string,
     transformers: Array<{
       name: string;
@@ -137,23 +142,33 @@ export interface Spec extends TurboModule {
     }>
   ): void;
   setVideoTransformers(
+    sessionId: string,
     publisherId: string,
     transformers: Array<{
       name: string;
       properties?: string;
     }>
   ): void;
-  publish(publisherId: string): void;
-  unpublish(publisherId: string): void;
-  removeSubscriber(streamId: string): void;
-  sendSignal(sessionId: string, type: string, data: string): void;
+  publish(sessionId: string, publisherId: string): void;
+  unpublish(sessionId: string, publisherId: string): void;
+  removeSubscriber(sessionId: string, streamId: string): void;
+  sendSignal(sessionId: string, type: string, data: string, to: string): void;
   setEncryptionSecret(sessionId: string, secret: string): Promise<void>;
+  getCapabilities(sessionId: string): Promise<
+    Array<{
+      canPublish: boolean;
+      canSubscribe: boolean;
+      canForceMute: boolean;
+      canForceDisconnect: boolean;
+    }>
+  >;
   reportIssue(sessionId: string): Promise<string>;
   forceMuteAll(
     sessionId: string,
     excludedStreamIds: string[]
   ): Promise<boolean>;
   forceMuteStream(sessionId: string, streamId: string): Promise<boolean>;
+  forceDisconnect(sessionId: string, connectionId: string): Promise<boolean>;
   disableForceMute(sessionId: string): Promise<boolean>;
 }
 

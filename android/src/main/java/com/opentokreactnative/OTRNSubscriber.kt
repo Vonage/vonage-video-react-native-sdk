@@ -19,12 +19,14 @@ import com.opentok.android.SubscriberKit
 import com.opentok.android.SubscriberKit.SubscriberListener
 import com.opentok.android.SubscriberKit.SubscriberRtcStatsReportListener
 import com.opentok.android.VideoUtils
+import com.opentokreactnative.utils.Utils;
 import com.opentokreactnative.utils.EventUtils;
+import com.opentokreactnative.utils.toVideoScaleType;
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
 
-class OTSubscriberViewNative : FrameLayout, SubscriberListener,
+class OTRNSubscriber : FrameLayout, SubscriberListener,
     SubscriberRtcStatsReportListener, SubscriberKit.AudioLevelListener,
     SubscriberKit.CaptionsListener,
     SubscriberKit.AudioStatsListener,
@@ -43,11 +45,11 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
     private var props: MutableMap<String, Any>? = null
 
     constructor(context: Context) : super(context) {
-        configureComponent(context)
+        configureComponent()
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        configureComponent(context)
+        configureComponent()
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
@@ -55,7 +57,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
         attrs,
         defStyleAttr
     ) {
-        configureComponent(context)
+        configureComponent()
     }
 
     fun updateProperties(props: ReactStylesDiffMap?) {
@@ -71,7 +73,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
         subscribeToStream(session ?: return, stream ?: return)
     }
 
-    private fun configureComponent(context: Context) {
+    private fun configureComponent() {
         var params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         this.setLayoutParams(params)
     }
@@ -128,7 +130,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
         sharedState.getSubscribers().put(stream.getStreamId(), subscriber ?: return);
         subscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            BaseVideoRenderer.STYLE_VIDEO_FILL
+            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -187,8 +189,15 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
         }
     }
 
+    public fun setScaleBehavior(value: String?) {
+        subscriber?.setStyle(
+            BaseVideoRenderer.STYLE_VIDEO_SCALE,
+            value.toVideoScaleType()
+        )
+    }
+
     override fun onConnected(subscriber: SubscriberKit) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", stream)
@@ -197,7 +206,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
     }
 
     override fun onDisconnected(subscriber: SubscriberKit) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", stream)
@@ -206,7 +215,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
     }
 
     override fun onError(subscriber: SubscriberKit, opentokError: OpentokError) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val error = EventUtils.prepareJSErrorMap(opentokError)
         val payload =
             Arguments.createMap().apply {
@@ -217,7 +226,7 @@ class OTSubscriberViewNative : FrameLayout, SubscriberListener,
     }
 
     override fun onRtcStatsReport(subscriber: SubscriberKit, jsonArrayOfReports: String) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
                 putString("jsonArrayOfReports", jsonArrayOfReports)

@@ -186,6 +186,21 @@ class Utils {
         }
     }
 
+    static func convertVideoBitratePreset(_ videoBitratePreset: Any)
+        -> OTVideoBitratePreset
+    {
+        guard let contentHint = videoBitratePreset as? String else {
+            return OTVideoBitratePreset.default
+        }
+        switch contentHint {
+        case "bw_saver":
+            return OTVideoBitratePreset.bwSaver
+        case "extra_bw_saver":
+            return OTVideoBitratePreset.extraBwSaver
+        default:
+            return OTVideoBitratePreset.default
+        }
+    }
     static func setStreamObservers(stream: OTStream, isPublisherStream: Bool) {
         let streamId = stream.streamId
 
@@ -301,5 +316,16 @@ class Utils {
                 stream: streamInfo
             )
         OTRN.sharedState.opentokModule?.emit(onStreamPropertyChanged: eventData)
+    }
+}
+
+extension String {
+    var toViewScaleBehavior: OTVideoViewScaleBehavior {
+        switch self {
+        case "fit":
+            return .fit
+        default:
+            return .fill
+        }
     }
 }

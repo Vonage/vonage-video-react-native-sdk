@@ -2,12 +2,13 @@ import Foundation
 import OpenTok
 import React
 
-@objc public class OTPublisherViewNativeImpl: NSObject {
+@objc public class OTRNPublisherImpl: NSObject {
     private var currentSession: OTSession?
     private var sessionId: String?
+    private let OTPublisherError = "OTPublisherError"
     fileprivate var publisherId: String?
     fileprivate weak var strictUIViewContainer:
-        OTPublisherViewNativeComponentView?
+        OTRNPublisherComponentView?
     fileprivate var publisherDelegateHandler: PublisherDelegateHandler?
     fileprivate var publisherAudioLevelDelegateHandler:
         PublisherAudioLevelDelegateHandler?
@@ -26,7 +27,7 @@ import React
     }
 
     @objc public init(
-        view: OTPublisherViewNativeComponentView
+        view: OTRNPublisherComponentView
     ) {
         super.init()
         self.strictUIViewContainer = view
@@ -77,6 +78,9 @@ import React
         settings.scalableScreenshare = Utils.sanitizeBooleanProperty(
             properties["scalableScreenshare"] as Any
         )
+        settings.allowAudioCaptureWhileMuted = Utils.sanitizeBooleanProperty(
+            properties["allowAudioCaptureWhileMuted"] as Any
+        )
 
         self.publisherId = Utils.sanitizeStringProperty(
             properties["publisherId"] as Any
@@ -84,7 +88,7 @@ import React
 
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -97,7 +101,7 @@ import React
             )
         else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message":
                     "There was an error creating the native publisher instance",
             ])
@@ -115,7 +119,7 @@ import React
         {
             guard let screenView = RCTPresentedViewController()?.view else {
                 strictUIViewContainer?.handleError([
-                    "code": "OTPublisherError",
+                    "code": OTPublisherError,
                     "message":
                         "There was an error setting the videoSource as screen",
                 ])
@@ -147,6 +151,20 @@ import React
             properties["publishCaptions"] as Any
         )
 
+        if let maxVideoBitrate = properties["maxVideoBitrate"] as? Int32 {
+            publisher.maxVideoBitrate = maxVideoBitrate
+        }
+
+ 	    if let videoBitratePreset = properties["videoBitratePreset"] as? String {
+            if (videoBitratePreset != "") {
+                publisher.videoBitratePreset = Utils.convertVideoBitratePreset(videoBitratePreset)
+            }
+        }
+
+        if let scaleBehavior = properties["scaleBehavior"] as? String, !scaleBehavior.isEmpty {
+            publisher.viewScaleBehavior = scaleBehavior.toViewScaleBehavior
+        }
+
         if let pubView = publisher.view {
             pubView.frame = strictUIViewContainer?.bounds ?? .zero
             publisherUIView = pubView
@@ -164,7 +182,7 @@ import React
     @objc public func setPublishAudio(_ publishAudio: Bool) {
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -172,7 +190,7 @@ import React
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Could not find publisher instance",
             ])
             return
@@ -184,7 +202,7 @@ import React
     @objc public func setPublishVideo(_ publishVideo: Bool) {
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -192,7 +210,7 @@ import React
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Could not find publisher instance",
             ])
             return
@@ -204,7 +222,7 @@ import React
     @objc public func setCameraTorch(_ cameraTorch: Bool) {
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -212,7 +230,7 @@ import React
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Could not find publisher instance",
             ])
             return
@@ -224,7 +242,7 @@ import React
     @objc public func setCameraZoomFactor(_ cameraZoomFactor: Float) {
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -232,7 +250,7 @@ import React
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Could not find publisher instance",
             ])
             return
@@ -244,7 +262,7 @@ import React
     @objc public func setVideoContentHint(_ videoContentHint: String) {
         guard let publisherId = self.publisherId else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Publisher ID is not set",
             ])
             return
@@ -252,7 +270,7 @@ import React
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             strictUIViewContainer?.handleError([
-                "code": "OTPublisherError",
+                "code": OTPublisherError,
                 "message": "Could not find publisher instance",
             ])
             return
@@ -260,6 +278,68 @@ import React
 
         publisher.videoCapture?.videoContentHint =
             Utils.convertVideoContentHint(videoContentHint)
+    }
+
+    @objc public func setMaxVideoBitrate(_ maxVideoBitrate: Int32) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+
+        publisher.maxVideoBitrate = maxVideoBitrate
+    }
+
+    @objc public func setVideoBitratePreset(_ videoBitratePreset: String) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+
+        if (videoBitratePreset != "") {
+            publisher.videoBitratePreset = 
+                Utils.convertVideoBitratePreset(videoBitratePreset)
+        }
+    }
+
+    @objc public func setScaleBehavior(_ scaleBehavior: String) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+        publisher.viewScaleBehavior = scaleBehavior.toViewScaleBehavior
     }
 
     @objc public func cleanup() {
@@ -286,7 +366,7 @@ import React
                     guard let session = OTRN.sharedState.sessions[sessionId]
                     else {
                         self.strictUIViewContainer?.handleError([
-                            "code": "OTPublisherError",
+                            "code": OTPublisherError,
                             "message":
                                 "Error destroying publisher. Could not find native session instance",
                         ])
@@ -325,9 +405,9 @@ import React
 
 private class PublisherDelegateHandler: NSObject, OTPublisherKitDelegate {
 
-    weak var impl: OTPublisherViewNativeImpl?
+    weak var impl: OTRNPublisherImpl?
 
-    init(impl: OTPublisherViewNativeImpl) {
+    init(impl: OTRNPublisherImpl) {
         super.init()
         self.impl = impl
     }
@@ -438,9 +518,9 @@ private class PublisherDelegateHandler: NSObject, OTPublisherKitDelegate {
 private class PublisherAudioLevelDelegateHandler: NSObject,
     OTPublisherKitAudioLevelDelegate
 {
-    weak var impl: OTPublisherViewNativeImpl?
+    weak var impl: OTRNPublisherImpl?
 
-    init(impl: OTPublisherViewNativeImpl) {
+    init(impl: OTRNPublisherImpl) {
         super.init()
         self.impl = impl
     }
@@ -461,9 +541,9 @@ private class PublisherAudioLevelDelegateHandler: NSObject,
 private class PublisherNetworkStatsDelegateHandler: NSObject,
     OTPublisherKitNetworkStatsDelegate
 {
-    weak var impl: OTPublisherViewNativeImpl?
+    weak var impl: OTRNPublisherImpl?
 
-    init(impl: OTPublisherViewNativeImpl) {
+    init(impl: OTRNPublisherImpl) {
         super.init()
         self.impl = impl
     }
@@ -522,9 +602,9 @@ private class PublisherNetworkStatsDelegateHandler: NSObject,
 private class PublisherRtcStatsDelegateHandler: NSObject,
     OTPublisherKitRtcStatsReportDelegate
 {
-    weak var impl: OTPublisherViewNativeImpl?
+    weak var impl: OTRNPublisherImpl?
 
-    init(impl: OTPublisherViewNativeImpl) {
+    init(impl: OTRNPublisherImpl) {
         super.init()
         self.impl = impl
     }

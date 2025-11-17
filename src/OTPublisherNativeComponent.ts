@@ -51,10 +51,14 @@ export interface NativeProps extends ViewProps {
   name?: string;
   resolution?: string;
   scalableScreenshare?: boolean;
+  allowAudioCaptureWhileMuted?: boolean;
   audioFallbackEnabled?: boolean;
   videoTrack?: boolean;
   videoSource?: string;
   videoContentHint?: string;
+  maxVideoBitrate?: Int32;
+  videoBitratePreset?: string;
+  scaleBehavior?: string;
 
   onError?: BubblingEventHandler<ErrorEvent> | null;
   onStreamCreated?: BubblingEventHandler<StreamEvent> | null;
@@ -71,5 +75,5 @@ export interface NativeProps extends ViewProps {
 }
 
 export default codegenNativeComponent<NativeProps>(
-  'OTPublisherViewNative'
+  'OTRNPublisher'
 ) as HostComponent<NativeProps>;
