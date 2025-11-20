@@ -60,7 +60,7 @@ See the system requirements for the [Vonage Video Android SDK](https://developer
      ```
      target '<YourProjectName>' do
          # Pods for <YourProject>
-         pod 'VonageClientSDKVideo', '2.30.1'
+         pod 'VonageClientSDKVideo', '2.31'
      end
      ```
    
