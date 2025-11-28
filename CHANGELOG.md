@@ -1,6 +1,7 @@
 # 2.30.3 (November 2025)
 
 - [Fix]: React Native Multi-Party Video Missing Participant Streams.
+- [Fix]: Failed screen sharing on Android
 
 # 2.30.2 (May 2025)
 
