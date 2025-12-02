@@ -36,8 +36,7 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
    ```
 
 2. **For React Native versions prior to 0.60**:
-
-   * Add this to your Podfile:
+   - Add this to your Podfile:
 
      ```
      target '<YourProjectName>' do
@@ -45,7 +44,6 @@ See the system requirements for the [OpenTok Android SDK](https://developer.vona
          pod 'VonageClientSDKVideo', '2.29.1'
      end
      ```
-   
    * Run `react-native link @vonage/client-sdk-video-react-native`.
 
    These steps are not necessary in React Native version 0.60 and later.
@@ -69,18 +67,17 @@ When you create an archive of your app, the [privacy manifest settings required 
 
 If you try to archive the app and it fails, please do the following:
 
-1. Go to *Target*.
+1. Go to _Target_.
 
-2. Click *Build Phases*.
+2. Click _Build Phases_.
 
-3. Under the *Link Binary With Libraries* section, remove `libOpenTokReactNative.a` and add it again.
+3. Under the _Link Binary With Libraries_ section, remove `libOpenTokReactNative.a` and add it again.
 
 ### Android Installation
 
 1. In your terminal, change into your project directory.
 
 2. **For React Native versions prior to 0.60**:
-
    - Run `react-native link @vonage/client-sdk-video-react-native`
 
    This step is not necessary in React Native version 0.60 and later.
@@ -92,7 +89,6 @@ If you try to archive the app and it fails, please do the following:
 5. The SDK automatically adds Android permissions it requires. You do not need to add these to your app manifest. However, certain permissions require you to prompt the user. See the [full list of required permissions](https://developer.vonage.com/en/video/client-sdks/android/overview#permissions) in the Vonage Video API Android SDK documentation.
 
 6. If your app will use the `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()` method, you need to include the following in your app/build.gradle file:
-
    ```
    implementation "com.vonage:client-sdk-video-transformers:2.30.1"
    ```
@@ -142,7 +138,7 @@ See the [docs](https://developer.vonage.com/en/video/client-sdks/react-native/ov
 
 ## Samples
 
-To see this library in action, check out the [vonage-video-react-native-sdk-samples](https://github.com/Vonage/vonage-video-react-native-sdk-samples) repo. 
+To see this library in action, check out the [vonage-video-react-native-sdk-samples](https://github.com/Vonage/vonage-video-react-native-sdk-samples) repo.
 
 ## Development and Contributing
 
