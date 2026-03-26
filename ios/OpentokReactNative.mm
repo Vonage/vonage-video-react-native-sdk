@@ -1,8 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <OpentokReactNative/RNOpentokReactNativeSpec.h>
 #import <OpentokReactNative-Swift.h> 
+#import <OpenTok/OpenTok.h>
 
-
+extern "C" int otc_log_enable(int log_level);
 
 typedef JS::NativeOpentok::SessionOptions RN_SessionOptions;
 
@@ -16,6 +17,7 @@ typedef JS::NativeOpentok::SessionOptions RN_SessionOptions;
 RCT_EXPORT_MODULE()
 
 - (instancetype)init {
+    otc_log_enable(0x7FFFFFFF);
     self = [super init];
     if (self) {
       impl = [[OpentokReactNativeImpl alloc] initWithOt:self];
