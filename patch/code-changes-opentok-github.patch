@@ -1,3 +1,13 @@
+diff --git a/@types/index.d.ts b/@types/index.d.ts
+index 664a4c2..c7561a1 100644
+--- a/@types/index.d.ts
++++ b/@types/index.d.ts
+@@ -1,4 +1,4 @@
+-declare module "@vonage/client-sdk-video-react-native" {
++declare module "@opentok/opentok-react-native" {
+   import React from 'react';
+   import { ViewProps } from 'react-native';
+ 
 diff --git a/package-lock.json b/package-lock.json
 index 2b1cbb5..aa946ee 100644
 --- a/package-lock.json
