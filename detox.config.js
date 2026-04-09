@@ -1,9 +1,12 @@
+const path = require('path');
+const appRoot = path.join(__dirname, 'e2e/E2ETestingApp/ios');
+
 module.exports = {
   apps: {
     'ios.debug': {
       type: 'ios.app',
-      binaryPath: '/Users/iperunovic/Code/vonage-video-react-native-sdk/e2e/E2ETestingApp/ios/build/Build/Products/Debug-iphonesimulator/E2ETestingApp.app',
-      build: "xcodebuild -workspace /Users/iperunovic/Code/vonage-video-react-native-sdk/e2e/E2ETestingApp/ios/E2ETestingApp.xcworkspace -scheme E2ETestingApp -configuration Debug -derivedDataPath /Users/iperunovic/Code/vonage-video-react-native-sdk/e2e/E2ETestingApp/ios/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO",
+      binaryPath: `${appRoot}/build/Build/Products/Debug-iphonesimulator/E2ETestingApp.app`,
+      build: `xcodebuild -workspace ${appRoot}/E2ETestingApp.xcworkspace -scheme E2ETestingApp -configuration Debug -derivedDataPath ${appRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
     },
   },
   devices: {
