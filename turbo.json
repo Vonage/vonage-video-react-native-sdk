@@ -9,11 +9,11 @@
         "!android/build",
         "src/*.ts",
         "src/*.tsx",
-        "example/package.json",
-        "example/android",
-        "!example/android/.gradle",
-        "!example/android/build",
-        "!example/android/app/build"
+        "e2e/E2ETestingApp/package.json",
+        "e2e/E2ETestingApp/android",
+        "!e2e/E2ETestingApp/android/.gradle",
+        "!e2e/E2ETestingApp/android/build",
+        "!e2e/E2ETestingApp/android/app/build"
       ],
       "outputs": []
     },
@@ -25,10 +25,10 @@
         "ios",
         "src/*.ts",
         "src/*.tsx",
-        "example/package.json",
-        "example/ios",
-        "!example/ios/build",
-        "!example/ios/Pods"
+        "e2e/E2ETestingApp/package.json",
+        "e2e/E2ETestingApp/ios",
+        "!e2e/E2ETestingApp/ios/build",
+        "!e2e/E2ETestingApp/ios/Pods"
       ],
       "outputs": []
     }

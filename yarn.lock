@@ -3236,7 +3236,7 @@
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.0.tgz"
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
 
-"@vonage/client-sdk-video-react-native@file:..":
+"@vonage/client-sdk-video-react-native@file:../..":
   version "2.32.1"
   resolved "file:"
   dependencies:
@@ -4801,12 +4801,12 @@ duplexer2@^0.1.2:
   dependencies:
     readable-stream "^2.0.2"
 
-"E2ETestApp@file:/Users/iperunovic/Code/vonage-video-react-native-sdk/example":
+"E2ETestingApp@file:/Users/iperunovic/Code/vonage-video-react-native-sdk/e2e/E2ETestingApp":
   version "0.0.1"
-  resolved "file:example"
+  resolved "file:e2e/E2ETestingApp"
   dependencies:
     "@react-native/new-app-screen" "0.81.1"
-    "@vonage/client-sdk-video-react-native" "file:.."
+    "@vonage/client-sdk-video-react-native" "file:../.."
     react "19.1.0"
     react-native "0.81.1"
     react-native-safe-area-context "^5.5.2"
@@ -5490,13 +5490,13 @@ fast-xml-parser@^4.4.1:
     strnum "^1.1.1"
 
 fast-xml-parser@^5.3.6:
-  version "5.5.9"
-  resolved "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.5.9.tgz"
-  integrity sha512-jldvxr1MC6rtiZKgrFnDSvT8xuH+eJqxqOBThUVjYrxssYTo1avZLGql5l0a0BAERR01CadYzZ83kVEkbyDg+g==
+  version "5.5.11"
+  resolved "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.5.11.tgz"
+  integrity sha512-QL0eb0YbSTVWF6tTf1+LEMSgtCEjBYPpnAjoLC8SscESlAjXEIRJ7cHtLG0pLeDFaZLa4VKZLArtA/60ZS7vyA==
   dependencies:
     fast-xml-builder "^1.1.4"
-    path-expression-matcher "^1.2.0"
-    strnum "^2.2.2"
+    path-expression-matcher "^1.4.0"
+    strnum "^2.2.3"
 
 fastq@^1.6.0:
   version "1.20.1"
@@ -8458,10 +8458,10 @@ path-exists@^5.0.0:
   resolved "https://registry.npmjs.org/path-exists/-/path-exists-5.0.0.tgz"
   integrity sha512-RjhtfwJOxzcFmNOi6ltcbcu4Iu+FL3zEj83dk4kAS+fVpTxXLO1b38RvJgT/0QwvV/L3aY9TAnyv0EOqW4GoMQ==
 
-path-expression-matcher@^1.1.3, path-expression-matcher@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.npmjs.org/path-expression-matcher/-/path-expression-matcher-1.2.0.tgz"
-  integrity sha512-DwmPWeFn+tq7TiyJ2CxezCAirXjFxvaiD03npak3cRjlP9+OjTmSy1EpIrEbh+l6JgUundniloMLDQ/6VTdhLQ==
+path-expression-matcher@^1.1.3, path-expression-matcher@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/path-expression-matcher/-/path-expression-matcher-1.4.0.tgz"
+  integrity sha512-s4DQMxIdhj3jLFWd9LxHOplj4p9yQ4ffMGowFf3cpEgrrJjEhN0V5nxw4Ye1EViAGDoL4/1AeO6qHpqYPOzE4Q==
 
 path-is-absolute@^1.0.0:
   version "1.0.1"
@@ -9771,10 +9771,10 @@ strnum@^1.1.1:
   resolved "https://registry.npmjs.org/strnum/-/strnum-1.1.2.tgz"
   integrity sha512-vrN+B7DBIoTTZjnPNewwhx6cBA/H+IS7rfW68n7XxC1y7uoiGQBxaKzqucGUgavX15dJgiGztLJ8vxuEzwqBdA==
 
-strnum@^2.2.2:
-  version "2.2.2"
-  resolved "https://registry.npmjs.org/strnum/-/strnum-2.2.2.tgz"
-  integrity sha512-DnR90I+jtXNSTXWdwrEy9FakW7UX+qUZg28gj5fk2vxxl7uS/3bpI4fjFYVmdK9etptYBPNkpahuQnEwhwECqA==
+strnum@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.npmjs.org/strnum/-/strnum-2.2.3.tgz"
+  integrity sha512-oKx6RUCuHfT3oyVjtnrmn19H1SiCqgJSg+54XqURKp5aCMbrXrhLjRN9TjuwMjiYstZ0MzDrHqkGZ5dFTKd+zg==
 
 supports-color@^5.3.0:
   version "5.5.0"

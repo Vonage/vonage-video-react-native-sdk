@@ -8,7 +8,7 @@ describe('App Launch Test', () => {
   });
 
   it('should launch the app successfully', async () => {
-    await expect(element(by.text('Vonage E2E Test App'))).toBeVisible();
+    await expect(element(by.text('Vonage E2E Testing App'))).toBeVisible();
   });
 
   it('should connect and disconnect a session', async () => {

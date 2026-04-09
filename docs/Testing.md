@@ -11,11 +11,11 @@ We use Detox with Jest for end-to-end (E2E) testing on iOS simulators. E2E tests
 - **[e2e/app.e2e.js](../e2e/app.e2e.js)** — Main E2E test file containing test suites
 - **[e2e/jest.config.json](../e2e/jest.config.json)** — Jest configuration for E2E tests (120s timeout, Detox runner)
 - **[detox.config.js](../detox.config.js)** — Detox configuration (app build path, device/simulator setup)
-- **[example/](../example/)** — Test application where tests run against
+- **[e2e/E2ETestingApp/](../e2e/E2ETestingApp/)** — Test application where tests run against
 
 ### Test Application
 
-The example app ([example/App.tsx](../example/App.tsx)) provides a minimal test environment with:
+The test app ([e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx)) provides a minimal test environment with:
 
 - `OTSession`, `OTPublisher`, and `OTSubscriber` components
 - Test IDs (`testID`) for element queries
@@ -25,7 +25,7 @@ The example app ([example/App.tsx](../example/App.tsx)) provides a minimal test 
 
 ### Step 1: Add Credentials
 
-Add applicable credentials to [example/App.tsx](../example/App.tsx). In the future, this will be automated; for now, credentials must be added manually. You can generate credentials at the [Vonage Video API Playground](https://tools.vonage.com/video/playground).
+Add applicable credentials to [e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx). In the future, this will be automated; for now, credentials must be added manually. You can generate credentials at the [Vonage Video API Playground](https://tools.vonage.com/video/playground).
 
 ### Step 2: Prepare the SDK
 
@@ -34,10 +34,10 @@ In the SDK root:
 npm run prepare
 ```
 
-In the example app:
+In the test app:
 ```bash
 npm install  # Install JS dependencies
-cd example/ios && pod install  # Install iOS CocoaPods
+cd e2e/E2ETestingApp/ios && pod install  # Install iOS CocoaPods
 ```
 
 ### Step 3: Build the App
