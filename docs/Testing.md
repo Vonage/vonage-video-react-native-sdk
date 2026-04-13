@@ -65,6 +65,11 @@ This builds the iOS app and Detox framework cache (one-time setup).
 
 ### Step 4: Run E2E Tests
 
+Make sure metro is running before launching the test run. In the test app foder (`e2e/E2ETestingApp` folder) run:
+
+npm start
+
+
 ```bash
 npm run test:e2e:ios
 ```
