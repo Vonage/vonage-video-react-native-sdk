@@ -27,7 +27,7 @@ The test app ([e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx)) provide
 
 Before running E2E tests, make sure your machine is ready for iOS simulator testing:
 
-- Xcode is installed and opened at least once
+- Xcode is installed and opened the testing app at least once
 - iOS Simulator is installed and available
 - The simulator type used in [detox.config.js](../detox.config.js) (currently `iPhone 17`) exists on your machine (or edit the config file to use another simulator you want to use)
 
@@ -58,7 +58,7 @@ cd ios && pod install  # Install iOS CocoaPods
 ### Step 3: Build the App
 
 ```bash
-npm run test:e2e:build:ios
+npm run test:e2e:ios:build
 ```
 
 This builds the iOS app and Detox framework cache (one-time setup).
@@ -69,6 +69,7 @@ Make sure metro is running before launching the test run. In the test app foder 
 
 npm start
 
+Then in a separate terminal, from the root run:
 
 ```bash
 npm run test:e2e:ios
