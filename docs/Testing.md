@@ -23,6 +23,21 @@ The test app ([e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx)) provide
 
 ## Getting Started with Testing
 
+### Step 0: Prepare your iOS testing environment
+
+Before running E2E tests, make sure your machine is ready for iOS simulator testing:
+
+- Xcode is installed and opened at least once
+- iOS Simulator is installed and available
+- The simulator type used in [detox.config.js](../detox.config.js) (currently `iPhone 17`) exists on your machine (or edit the config file to use another simulator you want to use)
+
+Detox relies on `applesimutils` to control iOS simulators. Install it once on macOS before running E2E tests:
+
+```bash
+brew tap wix/brew
+brew install applesimutils
+```
+
 ### Step 1: Add Credentials
 
 Add applicable credentials to [e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx). In the future, this will be automated; for now, credentials must be added manually. You can generate credentials at the [Vonage Video API Playground](https://tools.vonage.com/video/playground).
@@ -34,10 +49,10 @@ In the SDK root:
 npm run prepare
 ```
 
-In the test app:
+In the test app (`e2e/E2ETestingApp` folder):
 ```bash
 npm install  # Install JS dependencies
-cd e2e/E2ETestingApp/ios && pod install  # Install iOS CocoaPods
+cd ios && pod install  # Install iOS CocoaPods
 ```
 
 ### Step 3: Build the App
