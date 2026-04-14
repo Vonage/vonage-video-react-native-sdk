@@ -426,11 +426,6 @@ declare module "@vonage/client-sdk-video-react-native" {
     };
 
     /**
-     * Deprecated. See the `audioFallback` property.
-     */
-    audioFallbackEnabled?: boolean;
-
-    /**
      * If this property is set to false, the audio subsystem will not be initialized for the publisher, and setting the publishAudio property will have no effect. If your application does not require the use of audio, it is recommended to set this property rather than use the publishAudio property, which only temporarily disables the audio track.
      */
     audioTrack?: boolean;

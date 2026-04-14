@@ -109,11 +109,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     @Suppress("UNUSED_PARAMETER")
-    public fun setAudioFallbackEnabled(value: Boolean) {
-        // Deprecated. Use publisherAudioFallback and subscriberAudioFallback
-    }
-
-    @Suppress("UNUSED_PARAMETER")
     public fun setPublisherAudioFallback(value: Boolean) {
         // Ignore -- set as initialization option only
     }
