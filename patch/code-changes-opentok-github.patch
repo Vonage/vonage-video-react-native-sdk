@@ -6,14 +6,14 @@ index 2b1cbb5..aa946ee 100644
  {
 -  "name": "opentok-react-native",
 +  "name": "@opentok/opentok-react-native",
-   "version": "2.32.1",
+   "version": "2.33.0",
    "lockfileVersion": 3,
    "requires": true,
    "packages": {
      "": {
 -      "name": "opentok-react-native",
 +      "name": "@opentok/opentok-react-native",
-       "version": "2.32.1",
+       "version": "2.33.0",
        "license": "Adobe-2",
        "workspaces": [
 diff --git a/package.json b/package.json
@@ -24,7 +24,7 @@ index a2a12d2..8c7ed59 100644
  {
 -  "name": "opentok-react-native",
 +  "name": "@opentok/opentok-react-native",
-   "version": "2.32.1",
+   "version": "2.33.0",
    "description": "Vonage Video client SDK for React Native",
    "source": "./src/index.tsx",
 @@ -56,7 +56,7 @@

@@ -76,11 +76,6 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         view.setPublishCaptions(value)
     }
 
-    @ReactProp(name = "audioFallbackEnabled")
-    override public fun setAudioFallbackEnabled(view: OTRNPublisher, value: Boolean) {
-        view.setAudioFallbackEnabled(value)
-    }
-
     @ReactProp(name = "audioBitrate")
     override public fun setAudioBitrate(view: OTRNPublisher, value: Int) {
         view.setAudioBitrate(value)
