@@ -101,6 +101,7 @@ jobs:
           if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
             echo "❌ Error: Version mismatch!"
             echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
           fi
 
       - name: Build .npmrc file
