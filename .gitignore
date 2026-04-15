@@ -42,11 +42,11 @@ android.iml
 
 # Cocoapods
 #
-example/ios/Pods
-example/ios/.xcode.env.local
+e2e/E2ETestingApp/ios/Pods
+e2e/E2ETestingApp/ios/.xcode.env.local
 
 # Ruby
-example/vendor/
+e2e/E2ETestingApp/vendor/
 
 # node.js
 #
