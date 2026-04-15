@@ -158,4 +158,19 @@ public final class Utils {
                 return VideoBitratePreset.VideoBitratePresetDefault;
         }
     }
+
+    public static PublisherKit.DegradationPreference convertDegradationPreference(int degradationPreference) {
+        switch (degradationPreference) {
+            case 0:
+                return PublisherKit.DegradationPreference.DegradationPreferenceMaintainFrameRateAndResolution;
+            case 1:
+                return PublisherKit.DegradationPreference.DegradationPreferenceMaintainFrameRate;
+            case 2:
+                return PublisherKit.DegradationPreference.DegradationPreferenceMaintainResolution;
+            case 3:
+                return PublisherKit.DegradationPreference.DegradationPreferenceBalanced;
+            default:
+                return PublisherKit.DegradationPreference.DegradationPreferenceNotSet;
+        }
+    }
 }

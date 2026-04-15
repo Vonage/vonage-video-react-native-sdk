@@ -95,6 +95,12 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setPublishAudio(value)
     }
 
+    public fun setDegradationPreference(value: Int) {
+        publisher?.setDegradationPreference(
+            Utils.convertDegradationPreference(value)
+        )
+    }
+
     public fun setPublishVideo(value: Boolean) {
         publisher?.setPublishVideo(value)
     }
@@ -281,6 +287,11 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         publisher?.setPublishAudio(this.props?.get("publishAudio") as Boolean)
         publisher?.setPublishCaptions(this.props?.get("publishCaptions") as Boolean)
+        val degradationPreferenceInt =
+            (this.props?.get("degradationPreference") as? Double)?.toInt() ?: -1
+        publisher?.setDegradationPreference(
+            Utils.convertDegradationPreference(degradationPreferenceInt)
+        )
         publisher?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
             (this.props?.get("scaleBehavior") as String).toVideoScaleType()

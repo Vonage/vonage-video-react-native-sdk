@@ -46,6 +46,7 @@ using namespace facebook::react;
         @"scalableScreenshare" : @(viewProps.scalableScreenshare),
         @"audioFallbackEnabled" : @(viewProps.audioFallbackEnabled),
         @"publishAudio" : @(viewProps.publishAudio),
+        @"degradationPreference" : @(viewProps.degradationPreference),
         @"publishVideo" : @(viewProps.publishVideo),
         @"publishCaptions" : @(viewProps.publishCaptions),
         @"allowAudioCaptureWhileMuted" : @(viewProps.allowAudioCaptureWhileMuted),
@@ -93,6 +94,10 @@ using namespace facebook::react;
 
     if (oldViewProps.publishAudio != newViewProps.publishAudio) {
         [_impl setPublishAudio:newViewProps.publishAudio];
+    }
+
+    if (oldViewProps.degradationPreference != newViewProps.degradationPreference) {
+        [_impl setDegradationPreference:newViewProps.degradationPreference];
     }
 
     if (oldViewProps.publishVideo != newViewProps.publishVideo) {

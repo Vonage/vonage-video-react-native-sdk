@@ -105,6 +105,21 @@ const sanitizeVideoBitratePreset = (videoBitratePreset, maxVideoBitrate) => {
   }
 };
 
+const sanitizeDegradationPreference = (degradationPreference = -1) => {
+  switch (Number(degradationPreference)) {
+    case 0:
+      return 0;
+    case 1:
+      return 1;
+    case 2:
+      return 2;
+    case 3:
+      return 3;
+    default:
+      return -1;
+  }
+};
+
 /**
  * sanitizePreferredVideoCodecs
  *
@@ -128,6 +143,7 @@ const sanitizePreferredVideoCodecs = (preferredVideoCodecs = '') => {
 const sanitizeProperties = (properties) => {
   if (typeof properties !== 'object') {
     return {
+      degradationPreference: -1,
       videoTrack: true,
       audioTrack: true,
       publishAudio: true,
@@ -160,6 +176,9 @@ const sanitizeProperties = (properties) => {
   }
 
   return {
+    degradationPreference: sanitizeDegradationPreference(
+      properties.degradationPreference
+    ),
     videoTrack: sanitizeBooleanProperty(properties.videoTrack),
     audioTrack: sanitizeBooleanProperty(properties.audioTrack),
     publishAudio: sanitizeBooleanProperty(properties.publishAudio),

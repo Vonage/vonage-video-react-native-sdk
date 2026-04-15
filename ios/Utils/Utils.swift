@@ -202,6 +202,14 @@ class Utils {
         }
     }
 
+    static func convertVideoDegradationPreference(_ degradationPreference: Any)
+        -> OTDegradationPreference
+    {
+        let rawValue = (degradationPreference as? Int32).map(Int.init) ?? -1
+        return OTDegradationPreference(rawValue: rawValue)
+            ?? OTDegradationPreference(rawValue: -1)!
+    }
+
     static func convertPreferredVideoCodecs(_ preferredVideoCodecs: Any)
         -> OTVideoCodecPreference?
     {

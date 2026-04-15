@@ -65,6 +65,11 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         view.setPublishAudio(value)
     }
 
+    @ReactProp(name = "degradationPreference")
+    public fun setDegradationPreference(view: OTRNPublisher, value: Int) {
+        view.setDegradationPreference(value)
+    }
+
     @ReactProp(name = "publishVideo")
     override public fun setPublishVideo(view: OTRNPublisher, value: Boolean) {
         Log.d("OTRNPublisherManager", "setPublishVideo: $value")

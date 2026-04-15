@@ -161,6 +161,9 @@ import React
         publisher.publishCaptions = Utils.sanitizeBooleanProperty(
             properties["publishCaptions"] as Any
         )
+        publisher.degradationPreference = Utils.convertVideoDegradationPreference(
+            properties["degradationPreference"] as Any
+        )
 
         if let maxVideoBitrate = properties["maxVideoBitrate"] as? Int32 {
             publisher.maxVideoBitrate = maxVideoBitrate
@@ -208,6 +211,30 @@ import React
         }
 
         publisher.publishAudio = publishAudio
+    }
+
+    @objc public func setDegradationPreference(
+        _ degradationPreference: Int32
+    ) {
+        guard let publisherId = self.publisherId else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Publisher ID is not set",
+            ])
+            return
+        }
+
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            strictUIViewContainer?.handleError([
+                "code": OTPublisherError,
+                "message": "Could not find publisher instance",
+            ])
+            return
+        }
+
+        publisher.degradationPreference = Utils.convertVideoDegradationPreference(
+            degradationPreference
+        )
     }
 
     @objc public func setPublishVideo(_ publishVideo: Bool) {
