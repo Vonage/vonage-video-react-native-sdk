@@ -66,7 +66,7 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
     }
 
     @ReactProp(name = "degradationPreference")
-    public fun setDegradationPreference(view: OTRNPublisher, value: Int) {
+    override public fun setDegradationPreference(view: OTRNPublisher, value: Int) {
         view.setDegradationPreference(value)
     }
 
