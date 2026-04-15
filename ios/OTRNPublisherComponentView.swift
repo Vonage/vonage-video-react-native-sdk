@@ -149,9 +149,6 @@ import React
         publisher.cameraZoomFactor = Utils.sanitizeCameraZoomFactor(
             properties["cameraZoomFactor"] as Any
         )
-        publisher.audioFallbackEnabled = Utils.sanitizeBooleanProperty(
-            properties["audioFallbackEnabled"] as Any
-        )
         publisher.publishAudio = Utils.sanitizeBooleanProperty(
             properties["publishAudio"] as Any
         )

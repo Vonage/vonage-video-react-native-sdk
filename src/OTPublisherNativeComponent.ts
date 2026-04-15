@@ -53,7 +53,6 @@ export interface NativeProps extends ViewProps {
   resolution?: string;
   scalableScreenshare?: boolean;
   allowAudioCaptureWhileMuted?: boolean;
-  audioFallbackEnabled?: boolean;
   videoTrack?: boolean;
   videoSource?: string;
   videoContentHint?: string;

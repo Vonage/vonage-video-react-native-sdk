@@ -44,7 +44,6 @@ using namespace facebook::react;
         @"videoSource" : RCTNSStringFromString(viewProps.videoSource),
         @"cameraPosition" : RCTNSStringFromString(viewProps.cameraPosition),
         @"scalableScreenshare" : @(viewProps.scalableScreenshare),
-        @"audioFallbackEnabled" : @(viewProps.audioFallbackEnabled),
         @"publishAudio" : @(viewProps.publishAudio),
         @"degradationPreference" : @(viewProps.degradationPreference),
         @"publishVideo" : @(viewProps.publishVideo),

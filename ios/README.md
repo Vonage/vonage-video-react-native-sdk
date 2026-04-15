@@ -114,7 +114,6 @@ class OTRNPublisherProps final : public ViewProps {
   std::optional<std::string> audioTrack{};
   std::optional<std::string> videoTrack{};
   std::optional<std::string> cameraPosition{};
-  std::optional<bool> audioFallbackEnabled{};
   std::optional<double> audioVolumeLevel{};
   std::optional<bool> videoCapture{};
   std::optional<std::string> publisherId{};
@@ -333,7 +332,6 @@ interface NativeProps extends ViewProps {
   name?: string;
   resolution?: string;
   scalableScreenshare?: boolean;
-  audioFallbackEnabled?: boolean;
   videoTrack?: boolean;
   videoSource?: string;
   videoContentHint?: string;

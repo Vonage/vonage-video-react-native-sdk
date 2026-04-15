@@ -44,14 +44,8 @@ const sanitizeAudioBitrate = (audioBitrate = 40000) =>
 
 const sanitizeSubscriberAudioFallback = (
   audioFallback,
-  audioFallbackEnabled,
   videoSource
 ) => {
-  if (typeof audioFallback === 'undefined') {
-    if (typeof audioFallbackEnabled !== 'undefined') {
-      return !!audioFallbackEnabled;
-    }
-  }
   if (typeof audioFallback !== 'object') {
     return !(videoSource === 'screen');
   }
@@ -168,13 +162,6 @@ const sanitizeProperties = (properties) => {
     };
   }
 
-  if (typeof properties.audioFallbackEnabled !== 'undefined') {
-    console.log('audioFallbackEnabled is deprecated -- use audioFallback.');
-    if (properties.audioFallback) {
-      delete properties.audioFallbackEnabled;
-    }
-  }
-
   return {
     degradationPreference: sanitizeDegradationPreference(
       properties.degradationPreference
@@ -196,7 +183,6 @@ const sanitizeProperties = (properties) => {
     ),
     subscriberAudioFallback: sanitizeSubscriberAudioFallback(
       properties.audioFallback,
-      properties.audioFallbackEnabled,
       properties.videoSource
     ),
     audioBitrate: sanitizeAudioBitrate(properties.audioBitrate),
