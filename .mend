@@ -1,0 +1,6 @@
+{
+  "scanSettings": {
+    "configMode": "AUTO",
+    "exclusions": ["/e2e/**"]
+  }
+}
