@@ -15,10 +15,32 @@ declare module "@vonage/client-sdk-video-react-native" {
   type PreferredVideoCodecs = 'automatic' | [VideoCodec, ...VideoCodec[]];
 
   export enum DegradationPreference {
+    
+     /**
+     * Default value. The video engine will decide the optimal degradation preference.
+     */
     NotSet = -1,
+
+     /**
+     * The video engine will not reduce the resolution and will try to keep the frame rate steady.
+     * In some versions of the standard this option is referred to as "DISABLED", meaning that no degradation will be
+     * applied at all when under limited resources.
+     */
     MaintainFrameRateAndResolution = 0,
-    MaintainFrameRate = 1,
+
+    /**
+     * The video engine will try to keep the frame rate steady but might reduce resolution if necessary.
+     */
+    MaintainFrameRate = 1,    
+
+    /**
+     * The video engine will not reduce the resolution but might reduce the frame rate if necessary.
+     */
     MaintainResolution = 2,
+    
+    /**
+     * The video engine will try to reach a balance between reducing resolution and frame rate when necessary.
+     */
     Balanced = 3,
   }
 
