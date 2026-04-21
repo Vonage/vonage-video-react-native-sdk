@@ -14,6 +14,36 @@ declare module "@vonage/client-sdk-video-react-native" {
 
   type PreferredVideoCodecs = 'automatic' | [VideoCodec, ...VideoCodec[]];
 
+  export enum DegradationPreference {
+    
+     /**
+     * Default value. The video engine will decide the optimal degradation preference.
+     */
+    NotSet = -1,
+
+     /**
+     * The video engine will not reduce the resolution and will try to keep the frame rate steady.
+     * In some versions of the standard this option is referred to as "DISABLED", meaning that no degradation will be
+     * applied at all when under limited resources.
+     */
+    MaintainFrameRateAndResolution = 0,
+
+    /**
+     * The video engine will try to keep the frame rate steady but might reduce resolution if necessary.
+     */
+    MaintainFrameRate = 1,    
+
+    /**
+     * The video engine will not reduce the resolution but might reduce the frame rate if necessary.
+     */
+    MaintainResolution = 2,
+    
+    /**
+     * The video engine will try to reach a balance between reducing resolution and frame rate when necessary.
+     */
+    Balanced = 3,
+  }
+
   interface SessionConnectEvent {
     sessionId: string;
     connection: Connection;
@@ -449,6 +479,11 @@ declare module "@vonage/client-sdk-video-react-native" {
      * Whether to enable Opus DTX. The default value is false. Setting this to true can reduce bandwidth usage in streams that have long periods of silence.
      */
     enableDtx?: boolean;
+
+    /**
+     * The preferred video degradation policy under limited bandwidth/CPU conditions.
+     */
+    degradationPreference?: DegradationPreference;
 
     /**
      * The desired frame rate, in frames per second, of the video. Valid values are 30, 15, 7, and 1. The published stream will use the closest value supported on the publishing client. The frame rate can differ slightly from the value you set, depending on the device of the client. And the video will only use the desired frame rate if the client configuration supports it.

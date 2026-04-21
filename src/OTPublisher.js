@@ -235,6 +235,7 @@ OTPublisher.propTypes = {
 OTPublisher.defaultProps = {
   eventHandlers: {},
   properties: {
+    degradationPreference: -1,
     publishAudio: true,
     publishVideo: true,
     audioBitrate: 40000,
