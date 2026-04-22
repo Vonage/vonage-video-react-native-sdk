@@ -1,3 +1,18 @@
+/**
+ * @deprecated This file is a legacy, repo-local compatibility artifact and is
+ * not the canonical source of truth for published package typings.
+ *
+ * Consumers of the published package resolve types through the `exports` field
+ * in `package.json`, which points to the generated declaration files under
+ * `lib/typescript/**`.
+ *
+ * Canonical type sources for maintainers:
+ * - `src/types.ts`
+ * - generated declarations emitted from `src/index.tsx`
+ *
+ * Do not add new type surface here unless required for short-term backward
+ * compatibility. This file is planned for removal in a future release.
+ */
 declare module "@vonage/client-sdk-video-react-native" {
   import React from 'react';
   import { ViewProps } from 'react-native';
