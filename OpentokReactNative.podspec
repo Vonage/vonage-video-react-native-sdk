@@ -49,12 +49,12 @@ cd "${PODS_ROOT}/../.."
 node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
   -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
   -t ios \\
-  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated" \\
+  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
   -s library
           ',
           :execution_position => :before_compile,
           :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
-          :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
+          :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
         }
       ]
     end
