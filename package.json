@@ -230,6 +230,10 @@
     "name": "RNOpentokReactNativeSpec",
     "type": "all",
     "jsSrcsDir": "src",
+    "outputDir": {
+      "android": "android/build/generated/source/codegen",
+      "ios": "ios/build/generated/ios"
+    },
     "android": {
       "javaPackageName": "com.opentokreactnative"
     }
