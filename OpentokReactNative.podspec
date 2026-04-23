@@ -20,6 +20,39 @@ Pod::Spec.new do |s|
   
   # Add VonageClientSDKVideo dependency
   s.dependency 'VonageClientSDKVideo', '2.33.0'
+  
+  # Configure New Architecture settings
+  if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
+    s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
+    s.pod_target_xcconfig = {
+      "HEADER_SEARCH_PATHS" => [
+        "\"$(PODS_ROOT)/boost\"",
+        "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios\"",
+        "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/RNOpentokReactNativeSpec\"",
+        "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/react/renderer/components/RNOpentokReactNativeSpec\""
+      ].join(" "),
+      "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
+      "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
+    }
+    
+    s.script_phases = [
+      {
+        :name => 'Generate Specs',
+        :script => '
+cd "${PODS_ROOT}/../.."
+node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
+  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
+  -t ios \\
+  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
+  -s library
+        ',
+        :execution_position => :before_compile,
+        :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
+        :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
+      }
+    ]
+  end
+  
   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.
   # See https://github.com/facebook/react-native/blob/febf6b7f33fdb4904669f99d795eba4c0f95d7bf/scripts/cocoapods/new_architecture.rb#L79.
   if respond_to?(:install_modules_dependencies, true)
@@ -29,39 +62,11 @@ Pod::Spec.new do |s|
 
     # Don't install the dependencies when we run `pod install` in the old architecture.
     if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
-      s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
-      s.pod_target_xcconfig    = {
-          "HEADER_SEARCH_PATHS" => [
-            "\"$(PODS_ROOT)/boost\"",
-            "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios\"",
-            "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/RNOpentokReactNativeSpec\"",
-            "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/react/renderer/components/RNOpentokReactNativeSpec\""
-          ].join(" "),
-          "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
-          "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
-      }
       s.dependency "React-Codegen"
       s.dependency "RCT-Folly"
       s.dependency "RCTRequired"
       s.dependency "RCTTypeSafety"
       s.dependency "ReactCommon/turbomodule/core"
-
-      s.script_phases = [
-        {
-          :name => 'Generate Specs',
-          :script => '
-cd "${PODS_ROOT}/../.."
-node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
-  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
-  -t ios \\
-  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
-  -s library
-          ',
-          :execution_position => :before_compile,
-          :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
-          :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
-        }
-      ]
     end
   end
 end
