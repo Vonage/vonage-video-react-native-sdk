@@ -40,6 +40,23 @@ Pod::Spec.new do |s|
       s.dependency "RCTRequired"
       s.dependency "RCTTypeSafety"
       s.dependency "ReactCommon/turbomodule/core"
+
+      s.script_phases = [
+        {
+          :name => 'Generate Specs',
+          :script => '
+cd "${PODS_ROOT}/../.."
+"${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.sh" \\
+  --targetPlatform ios \\
+  --libraryName RNOpentokReactNativeSpec \\
+  --libraryPath "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
+  --outputDir "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated"
+          ',
+          :execution_position => :before_compile,
+          :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
+          :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec.h"]
+        }
+      ]
     end
   end
 end
