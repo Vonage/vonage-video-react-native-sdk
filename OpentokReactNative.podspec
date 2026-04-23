@@ -14,6 +14,21 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/opentok/opentok-react-native.git", :tag => "#{s.version}" }
 
+  # Generate codegen files during pod install for New Architecture
+  if ENV['RCT_NEW_ARCH_ENABLED'] == '1'
+    s.prepare_command = <<-CMD
+      cd ../../..
+      if [ -f "node_modules/react-native/scripts/generate-codegen-artifacts.js" ]; then
+        echo "[Codegen] Generating specs for OpentokReactNative..."
+        node node_modules/react-native/scripts/generate-codegen-artifacts.js \
+          -p node_modules/@vonage/client-sdk-video-react-native \
+          -t ios \
+          -o node_modules/@vonage/client-sdk-video-react-native/ios \
+          -s library
+      fi
+    CMD
+  end
+
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}", "ios/build/generated/ios/**/*.{h,mm,cpp}"
   s.private_header_files = "ios/build/generated/ios/**/*.h"
   s.public_header_files = "ios/**/*.h" 
