@@ -230,15 +230,9 @@
     "name": "RNOpentokReactNativeSpec",
     "type": "all",
     "jsSrcsDir": "src",
-    "outputDir": {
-      "ios": "ios/generated",
-      "android": "android/generated"
-    },
     "android": {
       "javaPackageName": "com.opentokreactnative"
-    },
-    "includesGeneratedCode": true,
-    "fabricEnabled": true
+    }
   },
   "create-react-native-library": {
     "type": "turbo-module",

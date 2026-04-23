@@ -83,8 +83,7 @@ android {
     main {
       if (isNewArchitectureEnabled()) {
         java.srcDirs += [
-          "generated/java",
-          "generated/jni"
+          "build/generated/source/codegen/java"
         ]
       }
     }
