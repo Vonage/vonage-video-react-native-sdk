@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/opentok/opentok-react-native.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.private_header_files = "ios/generated/**/*.h"
+  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}", "ios/build/generated/ios/**/*.{h,mm,cpp}"
+  s.private_header_files = "ios/build/generated/ios/**/*.h"
   s.public_header_files = "ios/**/*.h" 
   
   # Add VonageClientSDKVideo dependency
