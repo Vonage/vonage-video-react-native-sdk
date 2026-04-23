@@ -314,3 +314,22 @@ export type OTSubscriberComponent = React.ComponentClass<OTSubscriberProps> & {
 export type OTSubscriberViewComponent = React.ComponentClass<OTSubscriberViewProps> & {
   prototype: OTSubscriberViewInstance;
 };
+/**
+ * @deprecated Use OTSessionInstance for ref types
+ */
+export type OTSession = OTSessionInstance;
+
+/**
+ * @deprecated Use OTPublisherInstance for ref types
+ */
+export type OTPublisher = OTPublisherInstance;
+
+/**
+ * @deprecated Use OTSubscriberInstance for ref types
+ */
+export type OTSubscriber = OTSubscriberInstance;
+
+/**
+ * @deprecated Use OTSubscriberViewInstance for ref types
+ */
+export type OTSubscriberView = OTSubscriberViewInstance;
