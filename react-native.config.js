@@ -5,6 +5,9 @@ module.exports = {
   dependency: {
     platforms: {
       android: {},
+      ios: {
+        podspecPath: 'OpentokReactNative.podspec',
+      },
     },
   },
 };
