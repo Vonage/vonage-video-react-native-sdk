@@ -34,23 +34,6 @@ Pod::Spec.new do |s|
       "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
       "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
     }
-    
-    s.script_phases = [
-      {
-        :name => 'Generate Specs',
-        :script => '
-cd "${PODS_ROOT}/../.."
-node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
-  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
-  -t ios \\
-  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
-  -s library
-        ',
-        :execution_position => :before_compile,
-        :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
-        :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
-      }
-    ]
   end
   
   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.
@@ -67,6 +50,23 @@ node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifac
       s.dependency "RCTRequired"
       s.dependency "RCTTypeSafety"
       s.dependency "ReactCommon/turbomodule/core"
+      
+      s.script_phases = [
+        {
+          :name => 'Generate Specs',
+          :script => '
+cd "${PODS_ROOT}/../.."
+node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
+  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
+  -t ios \\
+  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
+  -s library
+          ',
+          :execution_position => :before_compile,
+          :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
+          :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
+        }
+      ]
     end
   end
 end
