@@ -312,6 +312,21 @@ using namespace facebook::react;
     }
 }
 
+- (void)handleReconnected:(NSDictionary *)eventData {
+    NSDictionary *streamDict = eventData[@"stream"];
+
+    auto eventEmitter = [self getEventEmitter];
+    if (eventEmitter) {
+        OTRNSubscriberEventEmitter::OnReconnected payload{
+            .stream = makeStreamStruct<
+                OTRNSubscriberEventEmitter::OnReconnectedStream,
+                OTRNSubscriberEventEmitter::OnReconnectedStreamConnection
+            >(streamDict)
+        };
+        eventEmitter->onReconnected(std::move(payload));
+    }
+}
+
 - (void)handleCaptionReceived:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
     NSString *text = eventData[@"text"] ? [eventData[@"text"] description] : @"";

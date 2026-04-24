@@ -90,6 +90,7 @@ export interface NativeProps extends ViewProps {
   onVideoDisableWarningLifted?: BubblingEventHandler<StreamEvent> | null;
   onVideoEnabled?: BubblingEventHandler<VideoEnabledEvent> | null;
   onVideoNetworkStats?: BubblingEventHandler<SubscriberVideoNetworkStatsEvent> | null;
+  onReconnected?: BubblingEventHandler<StreamEvent> | null;
 }
 
 export default codegenNativeComponent<NativeProps>(

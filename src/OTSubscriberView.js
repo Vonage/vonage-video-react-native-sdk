@@ -114,6 +114,9 @@ export default class OTSubscriberView extends React.Component {
         onVideoDisableWarningLifted={(event) => {
           eventHandlers.videoDisableWarningLifted?.(event.nativeEvent);
         }}
+        onReconnected={(event) => {
+          eventHandlers.reconnected?.(event.nativeEvent);
+        }}
         style={style}
       />
     );
