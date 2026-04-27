@@ -159,7 +159,7 @@ export type OTPublisherProperties = {
   cameraPosition?: 'front' | 'back';
   cameraTorch?: boolean;
   cameraZoomFactor?: number;
-  degradationPreference?: DegradationPreference | -1 | 0 | 1 | 2 | 3;
+  degradationPreference?: DegradationPreference;
   enableDtx?: boolean;
   frameRate?: 30 | 15 | 7 | 1;
   maxVideoBitrate?: number;
