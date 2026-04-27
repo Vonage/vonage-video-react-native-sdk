@@ -1,4 +1,6 @@
 node_modules/
 *.DS_Store
 android/generated
+android/build
 ios/generated
+ios/build
