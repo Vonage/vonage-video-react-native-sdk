@@ -88,7 +88,7 @@ export type PublisherAudioNetworkStats = {
   audioPacketsLost: number;
   audioBytesSent: number;
   audioPacketsSent: number;
-  timeStamp: number;
+  timestamp: number;
 };
 
 export type PublisherVideoNetworkStats = {
@@ -111,6 +111,13 @@ export type VideoNetworkStatsEvent = {
   videoPacketsLost: number;
   videoPacketsReceived: number;
   timestamp: number;
+};
+
+export type SubscriberAudioNetworkStatsEvent = {
+  audioPacketsLost: number;
+  audioPacketsReceived: number;
+  audioBytesReceived: number;
+  startTime: number;
 };
 
 export type SubscriberCaptionReceivedEvent = {
@@ -179,7 +186,7 @@ export type OTPublisherProperties = {
 };
 
 export type OTPublisherEventHandlers = {
-  audioLevel?: CallbackWithParam<number>;
+  audioLevel?: CallbackWithParam<{ audioLevel: number }>;
   audioNetworkStats?: CallbackWithParam<PublisherAudioNetworkStats[] | unknown>;
   error?: CallbackWithParam<ErrorEvent | unknown>;
   muteForced?: Callback;
@@ -212,8 +219,12 @@ export type OTSubscriberProperties = {
 
 export type OTSubscriberEventHandlers = {
   audioLevel?: CallbackWithParam<SubscriberAudioLevelEvent>;
-  audioNetworkStats?: CallbackWithParam<SubscriberAudioStatsEvent>;
+  audioNetworkStats?: CallbackWithParam<SubscriberAudioStatsEvent | SubscriberAudioNetworkStatsEvent>;
   captionReceived?: CallbackWithParam<SubscriberCaptionEvent | SubscriberCaptionReceivedEvent>;
+  /**
+    * @deprecated Legacy alias for subscriber connection events.
+    * Use `OTSubscriberEventHandlers.subscriberConnected` instead.
+   */
   connected?: Callback;
   disconnected?: Callback;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
@@ -243,7 +254,6 @@ export type OTSessionProps = ViewProps & {
     data?: string;
     to?: string;
   };
-  getSessionInfo?: unknown;
   eventHandlers?: OTSessionEventHandlers;
   encryptionSecret?: string;
 };
@@ -261,9 +271,7 @@ export type OTSubscriberProps = ViewProps & {
   eventHandlers?: OTSubscriberEventHandlers;
   subscribeToSelf?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
-  children?:
-    | ((streamIds: string[]) => React.ReactElement[] | null)
-    | React.ReactNode;
+  children?: (streamIds: string[]) => React.ReactElement[] | null;
 };
 
 export type OTSubscriberViewProps = ViewProps & {

@@ -29,6 +29,10 @@ export type AudioNetworkStatsEvent = {
   jsonStats: string; // JSON string containing all audio stats
 };
 
+export type PublisherVideoStateEvent = {
+  reason: string;
+};
+
 export type PublisherRTCStatsReportEvent = {
   jsonStats: string; // JSON string containing all event data
 };
@@ -69,10 +73,10 @@ export interface NativeProps extends ViewProps {
   onAudioNetworkStats?: BubblingEventHandler<AudioNetworkStatsEvent> | null;
   onMuteForced?: BubblingEventHandler<EmptyEvent> | null;
   onRtcStatsReport?: BubblingEventHandler<PublisherRTCStatsReportEvent> | null;
-  onVideoDisabled?: BubblingEventHandler<EmptyEvent> | null;
+  onVideoDisabled?: BubblingEventHandler<PublisherVideoStateEvent> | null;
   onVideoDisableWarning?: BubblingEventHandler<EmptyEvent> | null;
   onVideoDisableWarningLifted?: BubblingEventHandler<EmptyEvent> | null;
-  onVideoEnabled?: BubblingEventHandler<EmptyEvent> | null;
+  onVideoEnabled?: BubblingEventHandler<PublisherVideoStateEvent> | null;
   onVideoNetworkStats?: BubblingEventHandler<PublisherVideoNetworkStatsEvent> | null;
 }
 

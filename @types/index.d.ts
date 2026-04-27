@@ -222,11 +222,6 @@ declare module "@vonage/client-sdk-video-react-native" {
     signal?: any;
 
     /**
-     * Used to get details about the session
-     */
-    getSessionInfo?: any;
-
-    /**
      * Event handlers passed into the native session instance.
      */
     eventHandlers?: OTSessionEventHandlers;
@@ -774,6 +769,8 @@ declare module "@vonage/client-sdk-video-react-native" {
 
     /**
      * Sent when the subscriber successfully connects to the stream.
+      * @deprecated Legacy alias for subscriber connection events.
+      * Use `OTSubscriberEventHandlers.subscriberConnected` in the current type surface.
      */
     connected?: Callback<any>;
 
@@ -848,6 +845,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     OTSubscriberViewProps,
     unknown
   > {}
+  
   /**
    * Represents the subscribers to the session.
    */

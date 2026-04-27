@@ -184,6 +184,9 @@ export default class OTPublisher extends React.Component {
         onAudioLevel={(event) => {
           this.props.eventHandlers?.audioLevel?.(event.nativeEvent);
         }}
+        onMuteForced={(event) => {
+          this.props.eventHandlers?.muteForced?.();
+        }}
         onAudioNetworkStats={(event) => {
           // TODO - remove workaround for Android stats prop
           const eventData = event.nativeEvent.jsonStats
