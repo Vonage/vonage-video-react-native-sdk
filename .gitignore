@@ -80,5 +80,8 @@ lib/
 
 # React Native Codegen
 ios/generated
+ios/build
 android/generated
+android/build
+android/src/main/java/com/facebook
 android/.gradle

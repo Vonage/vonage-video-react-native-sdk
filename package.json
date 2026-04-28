@@ -37,7 +37,10 @@
     "!expo/node_modules",
     "!expo/tsconfig.json",
     "!ios/build",
+    "!ios/generated",
     "!android/build",
+    "!android/generated",
+    "!android/src/main/java/com/facebook",
     "!android/gradle",
     "!android/gradlew",
     "!android/gradlew.bat",
@@ -57,7 +60,7 @@
     "lint-fix": "eslint \"**/*.{js,ts,tsx}\" --fix",
     "generate:package-info": "node scripts/generate-package-info.js",
     "clean": "del-cli android/build e2e/E2ETestingApp/android/build e2e/E2ETestingApp/android/app/build e2e/E2ETestingApp/ios/build lib",
-    "prepare": "node scripts/generate-package-info.js && bob build && node build-expo.js && mkdir -p android/src/main/java/com/facebook/react/viewmanagers && cp -R android/generated/java/com/facebook/react/viewmanagers/* android/src/main/java/com/facebook/react/viewmanagers/ || true",
+    "prepare": "node scripts/generate-package-info.js && bob build && node build-expo.js",
     "release": "release-it",
     "version:local": "node -pe 'require(\"./package.json\").version'",
     "version:published": "npm show @vonage/client-sdk-video-react-native version"
@@ -228,14 +231,12 @@
     "type": "all",
     "jsSrcsDir": "src",
     "outputDir": {
-      "ios": "ios/generated",
-      "android": "android/generated"
+      "android": "android/build/generated/source/codegen",
+      "ios": "ios/build/generated/ios"
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
-    },
-    "includesGeneratedCode": true,
-    "fabricEnabled": true
+    }
   },
   "create-react-native-library": {
     "type": "turbo-module",
