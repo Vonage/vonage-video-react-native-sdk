@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 #import <OpentokReactNative/RNOpentokReactNativeSpec.h>
 #if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
+#import <OpentokReactNative/OpentokReactNative-Swift.h>
+#else
 #import <OpentokReactNative-Swift.h>
-// #import <OpentokReactNative/OpentokReactNative-Swift.h>
-// #else
-// #endif
+#endif
 
 typedef JS::NativeOpentok::SessionOptions RN_SessionOptions;
 
