@@ -1,0 +1,96 @@
+name: PR CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-ios-tests:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew install applesimutils
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: e2e/E2ETestingApp/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('e2e/E2ETestingApp/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install Ruby gems
+        working-directory: e2e/E2ETestingApp
+        run: bundle install
+
+      - name: Install CocoaPods dependencies
+        working-directory: e2e/E2ETestingApp
+        run: bundle exec pod install --project-directory=ios
+
+      - name: Inject E2E credentials
+        env:
+          TESTING_APPLICATION_ID: ${{ secrets.TESTING_APPLICATION_ID }}
+          TESTING_SESSION_ID: ${{ secrets.TESTING_SESSION_ID }}
+          TESTING_TOKEN: ${{ secrets.TESTING_TOKEN }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          const filePath = 'e2e/E2ETestingApp/App.tsx';
+          const applicationId = process.env.TESTING_APPLICATION_ID;
+          const sessionId = process.env.TESTING_SESSION_ID;
+          const token = process.env.TESTING_TOKEN;
+
+          if (!applicationId || !sessionId || !token) {
+            throw new Error('Missing one or more required GitHub secrets: TESTING_APPLICATION_ID, TESTING_SESSION_ID, TESTING_TOKEN.');
+          }
+
+          let source = fs.readFileSync(filePath, 'utf8');
+          source = source.replace(/applicationId:\s*'[^']*'/, `applicationId: ${JSON.stringify(applicationId)}`);
+          source = source.replace(/sessionId:\s*'[^']*'/, `sessionId: ${JSON.stringify(sessionId)}`);
+          source = source.replace(/token:\s*'[^']*'/, `token: ${JSON.stringify(token)}`);
+          fs.writeFileSync(filePath, source);
+          EOF
+
+      - name: Build iOS Detox app
+        run: yarn test:e2e:ios:build
+
+      - name: Run iOS Detox tests
+        run: yarn test:e2e:ios
