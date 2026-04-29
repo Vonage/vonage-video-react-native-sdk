@@ -286,7 +286,7 @@ export type OTSessionSignal = {
 
 export type OTSessionInstance = React.Component<OTSessionProps> & {
   reportIssue: () => Promise<string>;
-  getCapabilities: () => Promise<SessionCapabilities | SessionCapabilities[]>;
+  getCapabilities: () => Promise<SessionCapabilities>;
   forceMuteAll: (excludedStreamIds?: string[]) => Promise<boolean>;
   forceMuteStream: (streamId: string) => Promise<boolean>;
   disableForceMute: () => Promise<boolean>;

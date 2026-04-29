@@ -3,7 +3,7 @@ import type { OTSessionProps, SessionCapabilities } from './types';
 
 declare class OTSession extends React.Component<OTSessionProps, unknown> {
   reportIssue(): Promise<string>;
-  getCapabilities(): Promise<SessionCapabilities | SessionCapabilities[]>;
+  getCapabilities(): Promise<SessionCapabilities>;
   forceMuteAll(excludedStreamIds?: string[]): Promise<boolean>;
   forceMuteStream(streamId: string): Promise<boolean>;
   disableForceMute(): Promise<boolean>;
