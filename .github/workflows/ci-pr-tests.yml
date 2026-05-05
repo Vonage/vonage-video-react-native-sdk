@@ -30,18 +30,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: yarn
+          cache: npm
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
+        run: npm install
 
       - name: Install applesimutils
         run: |
@@ -56,13 +51,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Install Ruby gems
+      - name: Install E2E app dependencies
         working-directory: e2e/E2ETestingApp
-        run: bundle install
+        run: npm install
 
       - name: Install CocoaPods dependencies
-        working-directory: e2e/E2ETestingApp
-        run: bundle exec pod install --project-directory=ios
+        working-directory: e2e/E2ETestingApp/ios
+        run: pod install
 
       - name: Install OpenTok SDK for credential generation
         run: npm install --no-save opentok
@@ -155,7 +150,7 @@ jobs:
           EOF
 
       - name: Build iOS Detox app
-        run: yarn test:e2e:ios:build
+        run: npm run test:e2e:ios:build
 
       - name: Run iOS Detox tests
-        run: yarn test:e2e:ios
+        run: npm run test:e2e:ios

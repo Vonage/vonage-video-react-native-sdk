@@ -231,12 +231,14 @@
     "type": "all",
     "jsSrcsDir": "src",
     "outputDir": {
-      "android": "android/build/generated/source/codegen",
-      "ios": "ios/build/generated/ios"
+      "ios": "ios/generated",
+      "android": "android/generated"
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
-    }
+    },
+    "includesGeneratedCode": true,
+    "fabricEnabled": true
   },
   "create-react-native-library": {
     "type": "turbo-module",
