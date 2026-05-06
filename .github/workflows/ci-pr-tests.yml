@@ -79,5 +79,19 @@ jobs:
       - name: Build iOS Detox app
         run: npm run test:e2e:ios:build
 
+      - name: Start Metro bundler
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS "http://127.0.0.1:8081/status" | grep -q "packager-status:running"; then
+              echo "Metro is running"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Metro failed to start"
+          tail -n 200 metro.log || true
+          exit 1
+
       - name: Run iOS Detox tests
         run: npm run test:e2e:ios
