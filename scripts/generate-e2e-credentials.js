@@ -8,9 +8,17 @@ const apiKey = process.env.VONAGE_API_KEY;
 const apiSecret = process.env.VONAGE_API_SECRET;
 const githubEnvFile = process.env.GITHUB_ENV;
 
-if (!apiKey || !apiSecret || !apiUrl) {
+const missingParams = [
+  ['VONAGE_API_KEY', apiKey],
+  ['VONAGE_API_SECRET', apiSecret],
+  ['API_URL', apiUrl],
+].filter(([, value]) => !value);
+
+if (missingParams.length > 0) {
   throw new Error(
-    'Missing one or more required GitHub secrets: VONAGE_API_KEY, VONAGE_API_SECRET, API_URL.'
+    `Missing required GitHub secrets: ${missingParams
+      .map(([name]) => name)
+      .join(', ')}.`
   );
 }
 
