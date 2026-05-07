@@ -2,13 +2,16 @@ diff --git a/@types/index.d.ts b/@types/index.d.ts
 index 664a4c2..c7561a1 100644
 --- a/@types/index.d.ts
 +++ b/@types/index.d.ts
-@@ -1,4 +1,4 @@
+@@ -14,7 +14,7 @@
+  * Do not add new type surface here unless required for short-term backward
+  * compatibility. This file is planned for removal in a future release.
+  */
 -declare module "@vonage/client-sdk-video-react-native" {
 +declare module "opentok-react-native" {
    import React from 'react';
    import { ViewProps } from 'react-native';
  
-@@ -146,23 +146,17 @@ declare module "@vonage/client-sdk-video-react-native" {
+@@ -192,23 +192,17 @@ declare module "@vonage/client-sdk-video-react-native" {
  
    interface OTSessionProps extends ViewProps {
      /**
