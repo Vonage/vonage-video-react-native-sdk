@@ -1,5 +1,5 @@
 > :warning: This file is deprecated and is no longer maintained.
-> All release notes have been migrated to the Vonage Developer Center. Please refer to the Developer Center for the latest and historical release notes.
+> All release notes have been migrated to the Developer Center. Please refer to the Developer Center for the latest and historical release notes.
 
 # 2.33.0 (May 2026)
 
