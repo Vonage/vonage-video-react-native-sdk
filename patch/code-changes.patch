@@ -100,15 +100,6 @@ diff --git a/OpentokReactNative.podspec b/OpentokReactNative.podspec
          -s library
      fi
    CMD
-@@ -32,7 +32,7 @@ Pod::Spec.new do |s|
-   s.public_header_files = "ios/**/*.h" 
-   
-   # Add VonageClientSDKVideo dependency
--  s.dependency 'VonageClientSDKVideo', '2.33.0'
-+  s.dependency 'OpenTok', '2.33.0'
-   
-   # Configure compiler flags and settings
-   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
 @@ -66,14 +66,14 @@ Pod::Spec.new do |s|
          :script => '
  cd "${PODS_ROOT}/../.."
