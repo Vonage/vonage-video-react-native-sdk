@@ -29,9 +29,22 @@ Pod::Spec.new do |s|
     fi
   CMD
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}", "ios/build/generated/ios/**/*.{h,mm,cpp}"
-  s.private_header_files = "ios/build/generated/ios/**/*.h"
-  s.public_header_files = "ios/**/*.h"
+  s.source_files = [
+    "ios/*.{h,m,mm,swift}",
+    "ios/Utils/**/*.{h,m,mm,swift}",
+    "ios/generated/**/*.{h,mm,cpp,swift}"
+  ]
+  s.private_header_files = [
+    "ios/build/generated/ios/**/*.h"
+    "ios/generated/**/*.h",
+    "ios/OpentokReactNative-Bridging-Header.h"
+  ]
+  s.public_header_files = [
+    "ios/OpentokReactNative.h",
+    "ios/OTRNPublisherComponentView.h",
+    "ios/OTRNSubscriberComponentView.h",
+    "ios/OTScreenCapture.h"
+  ]
   
   # Add VonageClientSDKVideo dependency
   s.dependency 'VonageClientSDKVideo', '2.33.0'
