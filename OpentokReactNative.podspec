@@ -32,6 +32,7 @@ Pod::Spec.new do |s|
   s.source_files = [
     "ios/*.{h,m,mm,swift}",
     "ios/Utils/**/*.{h,m,mm,swift}",
+    "ios/build/generated/ios/**/*.{h,mm,cpp,swift}",
     "ios/generated/**/*.{h,mm,cpp,swift}"
   ]
   s.private_header_files = [
