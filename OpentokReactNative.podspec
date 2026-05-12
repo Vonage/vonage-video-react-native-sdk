@@ -55,8 +55,8 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     "HEADER_SEARCH_PATHS" => [
       "\"$(PODS_ROOT)/boost\"",
-      "\"$(PODS_TARGET_SRCROOT)/ios/generated\"",
-      "\"$(PODS_TARGET_SRCROOT)/ios/generated/RNOpentokReactNativeSpec\""
+      "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/RNOpentokReactNativeSpec\"",
+      "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/react/renderer/components/RNOpentokReactNativeSpec\""
     ].join(" "),
     "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
