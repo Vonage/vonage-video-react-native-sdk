@@ -229,6 +229,7 @@ export type OTSubscriberEventHandlers = {
   disconnected?: Callback;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
   otrnError?: CallbackWithParam<unknown>;
+  reconnected?: CallbackWithParam<SubscriberStreamEvent>;
   rtcStatsReport?: CallbackWithParam<SubscriberRTCStatsReportEvent>;
   subscriberConnected?: CallbackWithParam<SubscriberStreamEvent>;
   videoDataReceived?: CallbackWithParam<SubscriberStreamEvent>;

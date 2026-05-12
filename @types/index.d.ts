@@ -785,6 +785,11 @@ declare module "@vonage/client-sdk-video-react-native" {
     disconnected?: Callback<any>;
 
     /**
+     * Sent when the subscriber reconnects to the stream after a temporary interruption.
+     */
+    reconnected?: CallbackWithParam<{ stream: Stream }, any>;
+
+    /**
      * Sent if the subscriber fails to connect to its stream.
      */
     error?: CallbackWithParam<any, any>;
@@ -799,6 +804,11 @@ declare module "@vonage/client-sdk-video-react-native" {
      * in response to calling the OTSubscriber.getRtcStatsReport() method.
      */
     rtcStatsReport?: CallbackWithParam<RtcStatsReport, any>;
+
+    /**
+     * Sent when the subscriber successfully connects to the stream.
+     */
+    subscriberConnected?: CallbackWithParam<{ stream: Stream }, any>;
 
     /**
      * Sent when a frame of video has been decoded. Although the subscriber will connect in a relatively short time, video can take more time to synchronize. This message is sent after the connected message is sent.
