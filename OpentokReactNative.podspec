@@ -17,6 +17,7 @@ Pod::Spec.new do |s|
   # Generate codegen files during pod install if not already generated
   s.prepare_command = <<-CMD
     cd ../../..
+    if [ ! -d "node_modules/@vonage/client-sdk-video-react-native/ios/generated/RNOpentokReactNativeSpec" ]; then
       if [ -f "node_modules/react-native/scripts/generate-codegen-artifacts.js" ]; then
         echo "[Codegen] Generating specs for OpentokReactNative..."
         node node_modules/react-native/scripts/generate-codegen-artifacts.js \
@@ -25,6 +26,7 @@ Pod::Spec.new do |s|
           -o node_modules/@vonage/client-sdk-video-react-native/ios \
           -s library
       fi
+    fi
   CMD
 
   s.source_files = [
