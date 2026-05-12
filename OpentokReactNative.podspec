@@ -35,6 +35,7 @@ Pod::Spec.new do |s|
     "ios/generated/**/*.{h,mm,cpp,swift}"
   ]
   s.private_header_files = [
+    "ios/RNOpentokReactNativeSpec/*.h",
     "ios/generated/**/*.h",
     "ios/OpentokReactNative-Bridging-Header.h"
   ]
