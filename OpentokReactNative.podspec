@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/opentok/opentok-react-native.git", :tag => "#{s.version}" }
 
-  # Generated codegen files are owned by ReactCodegen pod (via "Generate Specs" Xcode build phase).
-  # Exclude ios/build/** to avoid duplicate symbol conflicts with ReactCodegen.
+  # Exclude the build directory -- generated codegen files are compiled by the ReactCodegen pod,
+  # not by this pod. Headers are resolved at build time via HEADER_SEARCH_PATHS.
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.exclude_files = "ios/build/**/*"
   s.public_header_files = "ios/**/*.h"
@@ -29,9 +29,9 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
     "HEADER_SEARCH_PATHS" => [
       "\"$(PODS_ROOT)/boost\"",
-      # Points to the app's RN codegen output dir, populated by ReactCodegen's "Generate Specs"
-      # build phase (before_compile). Using the real directory (not Pods/Headers/Public symlinks)
-      # ensures #pragma once correctly deduplicates headers across both search paths.
+      # Points to the app's codegen output dir (populated by ReactCodegen's "Generate Specs"
+      # build phase, which runs before_compile). Resolves <RNOpentokReactNativeSpec/...> and
+      # <react/renderer/components/RNOpentokReactNativeSpec/...> imports at compile time.
       "\"${PODS_ROOT}/../build/generated/ios\""
     ].join(" "),
     "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
@@ -49,22 +49,5 @@ Pod::Spec.new do |s|
     s.dependency "RCTRequired"
     s.dependency "RCTTypeSafety"
     s.dependency "ReactCommon/turbomodule/core"
-    
-    s.script_phases = [
-      {
-        :name => 'Generate Specs',
-        :script => '
-cd "${PODS_ROOT}/../.."
-node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
-  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
-  -t ios \\
-  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
-  -s library
-        ',
-        :execution_position => :before_compile,
-        :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
-        :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
-      }
-    ]
   end
 end
