@@ -14,38 +14,22 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/opentok/opentok-react-native.git", :tag => "#{s.version}" }
 
-  # Generate codegen files during pod install if not already generated
+  # Generate codegen files during pod install
   s.prepare_command = <<-CMD
     cd ../../..
-    if [ ! -d "node_modules/@vonage/client-sdk-video-react-native/ios/generated/RNOpentokReactNativeSpec" ]; then
-      if [ -f "node_modules/react-native/scripts/generate-codegen-artifacts.js" ]; then
-        echo "[Codegen] Generating specs for OpentokReactNative..."
-        node node_modules/react-native/scripts/generate-codegen-artifacts.js \
-          -p node_modules/@vonage/client-sdk-video-react-native \
-          -t ios \
-          -o node_modules/@vonage/client-sdk-video-react-native/ios \
-          -s library
-      fi
+    if [ -f "node_modules/react-native/scripts/generate-codegen-artifacts.js" ]; then
+      echo "[Codegen] Generating specs for OpentokReactNative..."
+      node node_modules/react-native/scripts/generate-codegen-artifacts.js \
+        -p node_modules/@vonage/client-sdk-video-react-native \
+        -t ios \
+        -o node_modules/@vonage/client-sdk-video-react-native/ios \
+        -s library
     fi
   CMD
 
-  s.source_files = [
-    "ios/*.{h,m,mm,swift}",
-    "ios/Utils/**/*.{h,m,mm,swift}",
-    "ios/build/generated/ios/**/*.{h,mm,cpp,swift}",
-    "ios/generated/**/*.{h,mm,cpp,swift}"
-  ]
-  s.private_header_files = [
-    "ios/build/generated/ios/**/*.h",
-    "ios/generated/**/*.h",
-    "ios/OpentokReactNative-Bridging-Header.h"
-  ]
-  s.public_header_files = [
-    "ios/OpentokReactNative.h",
-    "ios/OTRNPublisherComponentView.h",
-    "ios/OTRNSubscriberComponentView.h",
-    "ios/OTScreenCapture.h"
-  ]
+  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}", "ios/build/generated/ios/**/*.{h,mm,cpp}"
+  s.private_header_files = "ios/build/generated/ios/**/*.h"
+  s.public_header_files = "ios/**/*.h" 
   
   # Add VonageClientSDKVideo dependency
   s.dependency 'VonageClientSDKVideo', '2.33.0'
@@ -53,8 +37,10 @@ Pod::Spec.new do |s|
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
   s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
     "HEADER_SEARCH_PATHS" => [
       "\"$(PODS_ROOT)/boost\"",
+      "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios\"",
       "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/RNOpentokReactNativeSpec\"",
       "\"$(PODS_TARGET_SRCROOT)/ios/build/generated/ios/react/renderer/components/RNOpentokReactNativeSpec\""
     ].join(" "),
@@ -73,5 +59,22 @@ Pod::Spec.new do |s|
     s.dependency "RCTRequired"
     s.dependency "RCTTypeSafety"
     s.dependency "ReactCommon/turbomodule/core"
+    
+    s.script_phases = [
+      {
+        :name => 'Generate Specs',
+        :script => '
+cd "${PODS_ROOT}/../.."
+node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
+  -p "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native" \\
+  -t ios \\
+  -o "${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios" \\
+  -s library
+        ',
+        :execution_position => :before_compile,
+        :input_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/package.json"],
+        :output_files => ["${PODS_ROOT}/../node_modules/@vonage/client-sdk-video-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
+      }
+    ]
   end
 end
