@@ -225,8 +225,8 @@ export type OTSubscriberEventHandlers = {
     * @deprecated Legacy alias for subscriber connection events.
     * Use `OTSubscriberEventHandlers.subscriberConnected` instead.
    */
-  connected?: Callback;
-  disconnected?: Callback;
+  connected?: CallbackWithParam<SubscriberStreamEvent>;
+  disconnected?: CallbackWithParam<SubscriberStreamEvent>;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
   otrnError?: CallbackWithParam<unknown>;
   reconnected?: CallbackWithParam<SubscriberStreamEvent>;
