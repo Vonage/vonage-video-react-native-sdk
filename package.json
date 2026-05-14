@@ -231,8 +231,8 @@
     "type": "all",
     "jsSrcsDir": "src",
     "outputDir": {
-      "ios": "ios/generated",
-      "android": "android/generated"
+      "android": "android/build/generated/source/codegen",
+      "ios": "ios/build/generated/ios"
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
