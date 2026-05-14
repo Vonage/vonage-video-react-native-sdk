@@ -7,7 +7,11 @@
 #import <RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h>
 #import <React/RCTConversions.h>
 #import <React/RCTViewComponentView.h>
+#if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
+#import <OpentokReactNative/OpentokReactNative-Swift.h>
+#else
 #import <OpentokReactNative-Swift.h>
+#endif
 
 using namespace facebook::react;
 
@@ -239,20 +243,25 @@ using namespace facebook::react;
     }
 }
 
-- (void)handleVideoEnabled {
+- (void)handleVideoEnabled:(NSDictionary *)eventData {
+    NSString *reason = eventData[@"reason"] ?: @"";
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTRNPublisherEventEmitter::OnVideoEnabled payload{};
+        OTRNPublisherEventEmitter::OnVideoEnabled payload{
+            .reason = std::string([reason UTF8String])
+        };
         eventEmitter->onVideoEnabled(std::move(payload));
     }
 }
-- (void)handleVideoDisabled {
-    //TODO not there in ts
-//    auto eventEmitter = [self getEventEmitter];
-//    if (eventEmitter) {
-//        OTRNPublisherEventEmitter::OnVideoDisabled payload{};
-//        eventEmitter->onVideoDisabled(std::move(payload));
-//    }
+- (void)handleVideoDisabled:(NSDictionary *)eventData {
+    NSString *reason = eventData[@"reason"] ?: @"";
+    auto eventEmitter = [self getEventEmitter];
+    if (eventEmitter) {
+        OTRNPublisherEventEmitter::OnVideoDisabled payload{
+            .reason = std::string([reason UTF8String])
+        };
+        eventEmitter->onVideoDisabled(std::move(payload));
+    }
 }
 @end
 

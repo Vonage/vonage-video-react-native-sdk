@@ -551,7 +551,7 @@ private class PublisherDelegateHandler: NSObject, OTPublisherKitDelegate {
             Utils.convertOTPublisherVideoEventReasonToString(reason)
         let publisherId = Utils.getPublisherId(publisher as! OTPublisher)
         if !publisherId.isEmpty, let impl = impl {
-            impl.strictUIViewContainer?.handleVideoEnabled()  //TODO send publisherInfo?
+            impl.strictUIViewContainer?.handleVideoEnabled(publisherInfo)
         }
     }
     func publisherVideoDisabled(
@@ -564,7 +564,7 @@ private class PublisherDelegateHandler: NSObject, OTPublisherKitDelegate {
         let publisherId = Utils.getPublisherId(publisher as! OTPublisher)
         if !publisherId.isEmpty, let impl = impl {
             impl.strictUIViewContainer?
-                .handleVideoDisabled()  //TODO send publisherInfo?
+                .handleVideoDisabled(publisherInfo)
         }
 
     }

@@ -10,6 +10,6 @@
 - (void)handleRtcStatsReport:(NSString *)jsonString;
 - (void)handleVideoDisableWarning;
 - (void)handleVideoDisableWarningLifted;
-- (void)handleVideoEnabled;
-- (void)handleVideoDisabled;
+- (void)handleVideoEnabled:(NSDictionary *)eventData;
+- (void)handleVideoDisabled:(NSDictionary *)eventData;
 @end
