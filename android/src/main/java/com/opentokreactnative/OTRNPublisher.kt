@@ -429,11 +429,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onVideoDisabled(publisher: PublisherKit?, reason: String?) {
-        emitOpenTokEvent("onVideoDisabled", Arguments.createMap())
+        val payload = Arguments.createMap().apply {
+            putString("reason", reason ?: "")
+        }
+        emitOpenTokEvent("onVideoDisabled", payload)
     }
 
     override fun onVideoEnabled(publisher: PublisherKit?, reason: String?) {
-        emitOpenTokEvent("onVideoEnabled", Arguments.createMap())
+        val payload = Arguments.createMap().apply {
+            putString("reason", reason ?: "")
+        }
+        emitOpenTokEvent("onVideoEnabled", payload)
     }
 
     override fun onVideoDisableWarning(publisher: PublisherKit?) {

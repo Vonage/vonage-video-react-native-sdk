@@ -7,7 +7,11 @@
 #import <OpentokReactNative/RNOpentokReactNativeSpec.h>
 #import <React/RCTConversions.h>
 #import <React/RCTViewComponentView.h>
+#if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
+#import <OpentokReactNative/OpentokReactNative-Swift.h>
+#else
 #import <OpentokReactNative-Swift.h>
+#endif
 
 template <typename T>
 T makeConnectionStruct(NSDictionary *connectionDict) {

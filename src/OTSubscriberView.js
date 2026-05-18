@@ -85,7 +85,29 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioNetworkStats?.(event.nativeEvent);
         }}
         onSubscriberConnected={(event) => {
+          eventHandlers.connected?.();
           eventHandlers.subscriberConnected?.(event.nativeEvent);
+        }}
+        onSubscriberDisconnected={() => {
+          eventHandlers.disconnected?.();
+        }}
+        onSubscriberError={(event) => {
+          eventHandlers.error?.(event.nativeEvent);
+        }}
+        onCaptionReceived={(event) => {
+          eventHandlers.captionReceived?.(event.nativeEvent);
+        }}
+        onVideoDataReceived={(event) => {
+          eventHandlers.videoDataReceived?.(event.nativeEvent);
+        }}
+        onVideoDisabled={(event) => {
+          eventHandlers.videoDisabled?.(event.nativeEvent);
+        }}
+        onVideoDisableWarning={(event) => {
+          eventHandlers.videoDisableWarning?.(event.nativeEvent);
+        }}
+        onVideoDisableWarningLifted={(event) => {
+          eventHandlers.videoDisableWarningLifted?.(event.nativeEvent);
         }}
         onRtcStatsReport={(event) => {
           eventHandlers.rtcStatsReport?.(event.nativeEvent);

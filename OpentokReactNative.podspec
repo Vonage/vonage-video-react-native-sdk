@@ -51,6 +51,7 @@ Pod::Spec.new do |s|
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
   s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
     "HEADER_SEARCH_PATHS" => [
       "\"$(PODS_ROOT)/boost\"",
       "\"$(PODS_TARGET_SRCROOT)/ios/generated\"",
