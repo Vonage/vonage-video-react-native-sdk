@@ -16,7 +16,8 @@
         "types": "./lib/typescript/commonjs/src/index.d.ts",
         "default": "./lib/commonjs/index.js"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "app.plugin": "./app.plugin.js",
   "expo": {
@@ -231,14 +232,12 @@
     "type": "all",
     "jsSrcsDir": "src",
     "outputDir": {
-      "ios": "ios/generated",
-      "android": "android/generated"
+      "android": "android/build/generated/source/codegen",
+      "ios": "ios/build/generated/ios"
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
-    },
-    "includesGeneratedCode": true,
-    "fabricEnabled": true
+    }
   },
   "create-react-native-library": {
     "type": "turbo-module",
