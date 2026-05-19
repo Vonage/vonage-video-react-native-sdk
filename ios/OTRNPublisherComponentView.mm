@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <OpentokReactNative/ComponentDescriptors.h>
-#import <OpentokReactNative/EventEmitters.h>
-#import <OpentokReactNative/Props.h>
-#import <OpentokReactNative/RCTComponentViewHelpers.h>
-#import <OpentokReactNative/RNOpentokReactNativeSpec.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/ComponentDescriptors.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/EventEmitters.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/Props.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/RCTComponentViewHelpers.h>
+#import <RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h>
 #import <React/RCTConversions.h>
 #import <React/RCTViewComponentView.h>
 #if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)

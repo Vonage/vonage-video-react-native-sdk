@@ -5,8 +5,16 @@ pre-commit:
       glob: "*.{js,ts,jsx,tsx}"
       run: npx eslint {staged_files}
     types:
-      glob: "*.{js,ts, jsx, tsx}"
-      run: npx tsc
+      glob: "*.{js,ts,jsx,tsx}"
+      run: npx tsc -p tsconfig.json
+    e2e-types:
+      glob: "e2e/E2ETestingApp/**/*.{js,jsx,ts,tsx}"
+      run: >-
+        if [ -d e2e/E2ETestingApp/node_modules ]; then
+          cd e2e/E2ETestingApp && npx tsc --noEmit;
+        else
+          echo "Skipping e2e typecheck (dependencies not installed in e2e/E2ETestingApp)";
+        fi
 commit-msg:
   parallel: true
   commands:
