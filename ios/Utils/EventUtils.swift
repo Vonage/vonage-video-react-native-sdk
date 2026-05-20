@@ -38,7 +38,7 @@ class EventUtils {
     
     static func prepareJSErrorEventData(_ error: OTError) -> Dictionary<String, Any> {
         var errorInfo: Dictionary<String, Any> = [:];
-        errorInfo["code"] = String(error.code.rawValue);
+        errorInfo["code"] = String(error.code);
         errorInfo["message"] = error.localizedDescription;
         return errorInfo;
     }
