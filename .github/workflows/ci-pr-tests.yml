@@ -1,0 +1,109 @@
+name: PR CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-ios-tests:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment: prod
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew install applesimutils
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: e2e/E2ETestingApp/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('e2e/E2ETestingApp/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install E2E app dependencies
+        working-directory: e2e/E2ETestingApp
+        run: npm install
+
+      - name: Install CocoaPods dependencies
+        working-directory: e2e/E2ETestingApp/ios
+        run: pod install
+
+      - name: Install OpenTok SDK for credential generation
+        run: npm install --no-save opentok
+
+      - name: Generate E2E session credentials
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+        run: node scripts/generate-e2e-credentials.js
+
+      - name: Inject E2E credentials
+        env:
+          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
+          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
+          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+        run: node scripts/inject-e2e-credentials.js
+
+      - name: Build iOS Detox app
+        run: npm run test:e2e:ios:build
+
+      - name: Start Metro bundler
+        working-directory: e2e/E2ETestingApp
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          METRO_PID=$!
+          echo "Metro PID: $METRO_PID"
+          
+          for i in {1..120}; do
+            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+              echo "Metro is running on attempt $i"
+              exit 0
+            fi
+            if ! ps -p $METRO_PID > /dev/null 2>&1; then
+              echo "Metro process died"
+              tail -n 100 metro.log || true
+              exit 1
+            fi
+            sleep 3
+          done
+          
+          echo "Metro failed to start after 120 retries"
+          echo "=== Metro log output ==="
+          tail -n 150 metro.log || true
+          kill $METRO_PID 2>/dev/null || true
+          exit 1
+
+      - name: Run iOS Detox tests
+        run: npm run test:e2e:ios
