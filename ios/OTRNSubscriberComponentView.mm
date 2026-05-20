@@ -13,30 +13,73 @@
 #import <OpentokReactNative-Swift.h>
 #endif
 
+static inline std::string SafeStdStringFromValue(id value) {
+    if ([value isKindOfClass:[NSString class]]) {
+        return std::string([(NSString *)value UTF8String]);
+    }
+    return std::string("");
+}
+
+static inline std::string SafeStdStringFromDescription(id value) {
+    if ([value isKindOfClass:[NSString class]]) {
+        return std::string([(NSString *)value UTF8String]);
+    }
+    if (value && [value respondsToSelector:@selector(description)]) {
+        NSString *description = [value description];
+        if ([description isKindOfClass:[NSString class]]) {
+            return std::string([description UTF8String]);
+        }
+    }
+    return std::string("");
+}
+
+static inline bool SafeBoolFromValue(id value) {
+    if ([value respondsToSelector:@selector(boolValue)]) {
+        return [value boolValue];
+    }
+    return false;
+}
+
+static inline double SafeDoubleFromValue(id value) {
+    if ([value respondsToSelector:@selector(doubleValue)]) {
+        return [value doubleValue];
+    }
+    return 0.0;
+}
+
 template <typename T>
 T makeConnectionStruct(NSDictionary *connectionDict) {
+    NSDictionary *safeConnectionDict = [connectionDict isKindOfClass:[NSDictionary class]]
+        ? connectionDict
+        : @{};
     return T{
-        .creationTime = std::string([connectionDict[@"creationTime"] ?: @"" UTF8String]),
-        .data = std::string([connectionDict[@"data"] ?: @"" UTF8String]),
-        .connectionId = std::string([connectionDict[@"connectionId"] ?: @"" UTF8String])
+        .creationTime = SafeStdStringFromValue(safeConnectionDict[@"creationTime"]),
+        .data = SafeStdStringFromValue(safeConnectionDict[@"data"]),
+        .connectionId = SafeStdStringFromValue(safeConnectionDict[@"connectionId"])
     };
 }
 
 template <typename StreamStruct, typename ConnectionStruct>
 StreamStruct makeStreamStruct(NSDictionary *streamDict) {
-    NSDictionary *connectionDict = streamDict[@"connection"] ?: @{};
+    NSDictionary *safeStreamDict = [streamDict isKindOfClass:[NSDictionary class]]
+        ? streamDict
+        : @{};
+    id connectionValue = safeStreamDict[@"connection"];
+    NSDictionary *connectionDict = [connectionValue isKindOfClass:[NSDictionary class]]
+        ? connectionValue
+        : @{};
     return StreamStruct{
-        .name = std::string([streamDict[@"name"] ?: @"" UTF8String]),
-        .streamId = std::string([streamDict[@"streamId"] ?: @"" UTF8String]),
-        .hasAudio = [streamDict[@"hasAudio"] boolValue],
-        .hasCaptions = [streamDict[@"hasCaptions"] boolValue],
-        .hasVideo = [streamDict[@"hasVideo"] boolValue],
-        .sessionId = std::string([streamDict[@"sessionId"] ?: @"" UTF8String]),
-        .width = [streamDict[@"width"] doubleValue],
-        .height = [streamDict[@"height"] doubleValue],
-        .videoType = std::string([streamDict[@"videoType"] ?: @"" UTF8String]),
+        .name = SafeStdStringFromValue(safeStreamDict[@"name"]),
+        .streamId = SafeStdStringFromValue(safeStreamDict[@"streamId"]),
+        .hasAudio = SafeBoolFromValue(safeStreamDict[@"hasAudio"]),
+        .hasCaptions = SafeBoolFromValue(safeStreamDict[@"hasCaptions"]),
+        .hasVideo = SafeBoolFromValue(safeStreamDict[@"hasVideo"]),
+        .sessionId = SafeStdStringFromValue(safeStreamDict[@"sessionId"]),
+        .width = SafeDoubleFromValue(safeStreamDict[@"width"]),
+        .height = SafeDoubleFromValue(safeStreamDict[@"height"]),
+        .videoType = SafeStdStringFromValue(safeStreamDict[@"videoType"]),
         .connection = makeConnectionStruct<ConnectionStruct>(connectionDict),
-        .creationTime = std::string([streamDict[@"creationTime"] ?: @"" UTF8String])
+        .creationTime = SafeStdStringFromValue(safeStreamDict[@"creationTime"])
     };
 }
 
@@ -150,13 +193,15 @@ using namespace facebook::react;
 
 - (void)handleError:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSDictionary *errorDict = eventData[@"error"];
+    NSDictionary *errorDict = [eventData[@"error"] isKindOfClass:[NSDictionary class]]
+        ? eventData[@"error"]
+        : @{};
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNSubscriberEventEmitter::OnSubscriberErrorError errorStruct{
-            .code = std::string([errorDict[@"code"] ?: @"" UTF8String]),
-            .message = std::string([errorDict[@"message"] ?: @"" UTF8String])
+            .code = SafeStdStringFromValue(errorDict[@"code"]),
+            .message = SafeStdStringFromValue(errorDict[@"message"])
         };
         OTRNSubscriberEventEmitter::OnSubscriberError payload{
             .stream = makeStreamStruct<
@@ -171,7 +216,7 @@ using namespace facebook::react;
 
 - (void)handleRtcStatsReport:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *jsonStats = eventData[@"jsonStats"] ?: @"";
+    id jsonStatsValue = eventData[@"jsonStats"];
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -180,14 +225,14 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnRtcStatsReportStream,
                 OTRNSubscriberEventEmitter::OnRtcStatsReportStreamConnection
             >(streamDict),
-            .jsonStats = std::string([jsonStats UTF8String])
+            .jsonStats = SafeStdStringFromValue(jsonStatsValue)
         };
         eventEmitter->onRtcStatsReport(std::move(payload));
     }
 }
 
 - (void)handleAudioLevel:(NSDictionary *)eventData {
-    float audioLevel = [eventData[@"audioLevel"] floatValue];
+    float audioLevel = static_cast<float>(SafeDoubleFromValue(eventData[@"audioLevel"]));
     NSDictionary *streamDict = eventData[@"stream"];
 
     auto eventEmitter = [self getEventEmitter];
@@ -205,7 +250,7 @@ using namespace facebook::react;
 
 - (void)handleVideoNetworkStats:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *jsonStats = eventData[@"jsonStats"] ?: @"";
+    id jsonStatsValue = eventData[@"jsonStats"];
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -214,7 +259,7 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnVideoNetworkStatsStream,
                 OTRNSubscriberEventEmitter::OnVideoNetworkStatsStreamConnection
             >(streamDict),
-            .jsonStats = std::string([jsonStats UTF8String])
+            .jsonStats = SafeStdStringFromValue(jsonStatsValue)
         };
         eventEmitter->onVideoNetworkStats(std::move(payload));
     }
@@ -222,7 +267,7 @@ using namespace facebook::react;
 
 - (void)handleAudioNetworkStats:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *jsonStats = eventData[@"jsonStats"] ?: @"";
+    id jsonStatsValue = eventData[@"jsonStats"];
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -231,7 +276,7 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnAudioNetworkStatsStream,
                 OTRNSubscriberEventEmitter::OnAudioNetworkStatsStreamConnection
             >(streamDict),
-            .jsonStats = std::string([jsonStats UTF8String])
+            .jsonStats = SafeStdStringFromValue(jsonStatsValue)
         };
         eventEmitter->onAudioNetworkStats(std::move(payload));
     }
@@ -239,7 +284,7 @@ using namespace facebook::react;
 
 - (void)handleVideoEnabled:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *reason = eventData[@"reason"] ?: @"";
+    id reasonValue = eventData[@"reason"];
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -248,7 +293,7 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnVideoEnabledStream,
                 OTRNSubscriberEventEmitter::OnVideoEnabledStreamConnection
             >(streamDict),
-            .reason = std::string([reason UTF8String])
+            .reason = SafeStdStringFromValue(reasonValue)
         };
         eventEmitter->onVideoEnabled(std::move(payload));
     }
@@ -256,7 +301,7 @@ using namespace facebook::react;
 
 - (void)handleVideoDisabled:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *reason = eventData[@"reason"] ?: @"";
+    id reasonValue = eventData[@"reason"];
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -265,7 +310,7 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnVideoDisabledStream,
                 OTRNSubscriberEventEmitter::OnVideoDisabledStreamConnection
             >(streamDict),
-            .reason = std::string([reason UTF8String])
+            .reason = SafeStdStringFromValue(reasonValue)
         };
         eventEmitter->onVideoDisabled(std::move(payload));
     }
@@ -316,10 +361,25 @@ using namespace facebook::react;
     }
 }
 
+- (void)handleReconnected:(NSDictionary *)eventData {
+    NSDictionary *streamDict = eventData[@"stream"];
+
+    auto eventEmitter = [self getEventEmitter];
+    if (eventEmitter) {
+        OTRNSubscriberEventEmitter::OnReconnected payload{
+            .stream = makeStreamStruct<
+                OTRNSubscriberEventEmitter::OnReconnectedStream,
+                OTRNSubscriberEventEmitter::OnReconnectedStreamConnection
+            >(streamDict)
+        };
+        eventEmitter->onReconnected(std::move(payload));
+    }
+}
+
 - (void)handleCaptionReceived:(NSDictionary *)eventData {
     NSDictionary *streamDict = eventData[@"stream"];
-    NSString *text = eventData[@"text"] ? [eventData[@"text"] description] : @"";
-    BOOL isFinal = [eventData[@"isFinal"] boolValue];
+    id textValue = eventData[@"text"];
+    BOOL isFinal = SafeBoolFromValue(eventData[@"isFinal"]);
 
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
@@ -328,7 +388,7 @@ using namespace facebook::react;
                 OTRNSubscriberEventEmitter::OnCaptionReceivedStream,
                 OTRNSubscriberEventEmitter::OnCaptionReceivedStreamConnection
             >(streamDict),
-            .text = std::string([text UTF8String]),
+            .text = SafeStdStringFromDescription(textValue),
             .isFinal = isFinal
         };
         eventEmitter->onCaptionReceived(std::move(payload));
