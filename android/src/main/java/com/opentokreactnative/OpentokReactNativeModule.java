@@ -146,6 +146,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void sendSignal(String sessionId, String type, String data, String to) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+        if (mSession == null) {
+            return;
+        }
         String connectionId = to;
         if (connectionId == null || connectionId.equals("")) {
             mSession.sendSignal(type, data);
