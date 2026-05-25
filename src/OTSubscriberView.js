@@ -14,28 +14,18 @@ export default class OTSubscriberView extends React.Component {
     },
   };
 
-  sessionId = this.context.sessionId;
-
-  eventHandlers = {};
-
-  constructor(props, context) {
-    super(props, context);
-    this.eventHandlers = props.eventHandlers;
-    this.style = props.style;
-  }
-
   getRtcStatsReport() {
     //NOSONAR - this method is exposed externally
-    OT.getSubscriberRtcStatsReport(this.sessionId);
+    OT.getSubscriberRtcStatsReport(this.context.sessionId);
   }
 
   componentWillUnmount() {
-    OT.removeSubscriber(this.sessionId, this.props.streamId);
+    OT.removeSubscriber(this.context.sessionId, this.props.streamId);
   }
 
   render() {
     const { streamId } = this.props;
-    const subscriberProperties = this.context.subscriberProperties;
+    const subscriberProperties = this.context.subscriberProperties || {};
     const eventHandlers = this.context.eventHandlers;
     const streamProperties = this.context.streamProperties
       ? this.context.streamProperties[streamId]
@@ -69,7 +59,7 @@ export default class OTSubscriberView extends React.Component {
     const style = streamProperties?.style || this.context.style;
     return (
       <OTRNSubscriber
-        sessionId={this.sessionId}
+        sessionId={this.context.sessionId}
         streamId={streamId}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}

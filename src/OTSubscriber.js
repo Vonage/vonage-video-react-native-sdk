@@ -19,7 +19,6 @@ import {
 import OTContext from './contexts/OTContext';
 
 export default class OTSubscriber extends Component {
-  sessionId = this.context.sessionId;
   // sessionInfo = this.context.sessionInfo;
 
   constructor(props, context) {
@@ -151,7 +150,7 @@ export default class OTSubscriber extends Component {
         return (
           <OTContext.Provider
             value={{
-              sessionId: this.sessionId,
+              sessionId: this.context.sessionId,
               subscriberProperties: this.state.properties,
               streamProperties: this.state.streamProperties,
               eventHandlers: this.props.eventHandlers,
@@ -162,7 +161,6 @@ export default class OTSubscriber extends Component {
             <OTSubscriberView
               streamId={streamId}
               style={style}
-              {...this.props.properties}
             />
           </OTContext.Provider>
         );
@@ -173,7 +171,7 @@ export default class OTSubscriber extends Component {
       return this.props.children(this.state.streams).map((elem) => (
         <OTContext.Provider
           value={{
-            sessionId: this.sessionId,
+            sessionId: this.context.sessionId,
             subscriberProperties: this.state.properties,
             streamProperties: this.state.streamProperties,
             style: this.props.style,
