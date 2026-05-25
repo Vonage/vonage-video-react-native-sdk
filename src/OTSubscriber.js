@@ -19,7 +19,6 @@ import {
 import OTContext from './contexts/OTContext';
 
 export default class OTSubscriber extends Component {
-  // sessionInfo = this.context.sessionInfo;
 
   constructor(props, context) {
     super(props, context);
@@ -35,7 +34,6 @@ export default class OTSubscriber extends Component {
       streamProperties: props.streamProperties,
       subscribeToSelf: props.subscribeToSelf || false,
     };
-    // this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers);
     this.initComponent();
   }
 
