@@ -1,6 +1,6 @@
 {
   "settingsInheritedFrom": "vonage/whitesource-config@main",
   "scanSettings": {
-    "exclusions": ["/e2e/**", "/docs/**", "/scripts/**", "/patch/**"]
+    "excludes": ["/e2e/**", "/docs/**", "/scripts/**", "/patch/**"]
   }
 }
