@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.81.1):
     - hermes-engine/Pre-built (= 0.81.1)
   - hermes-engine/Pre-built (0.81.1)
-  - OpentokReactNative (2.33.0):
+  - OpentokReactNative (2.33.1):
     - boost
     - DoubleConversion
     - fast_float

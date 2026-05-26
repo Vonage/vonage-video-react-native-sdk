@@ -3237,7 +3237,7 @@
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
 
 "@vonage/client-sdk-video-react-native@file:../..":
-  version "2.33.0"
+  version "2.33.1"
   resolved "file:"
   dependencies:
     axios "^1.13.2"

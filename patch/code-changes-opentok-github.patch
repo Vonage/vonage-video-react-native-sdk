@@ -1,43 +1,3 @@
-diff --git a/OpentokReactNative.podspec b/OpentokReactNative.podspec
-index 93a635d..5085cc4 100644
---- a/OpentokReactNative.podspec
-+++ b/OpentokReactNative.podspec
-@@ -16,13 +16,13 @@ Pod::Spec.new do |s|
- 
-   # Generate codegen files during pod install
-   s.prepare_command = <<-CMD
--    cd ../..
-+    cd ../../..
-     if [ -f "node_modules/react-native/scripts/generate-codegen-artifacts.js" ]; then
-       echo "[Codegen] Generating specs for OpentokReactNative..."
-       node node_modules/react-native/scripts/generate-codegen-artifacts.js \
--        -p node_modules/opentok-react-native \
-+        -p node_modules/@opentok/opentok-react-native \
-         -t ios \
--        -o node_modules/opentok-react-native/ios \
-+        -o node_modules/@opentok/opentok-react-native/ios \
-         -s library
-     fi
-   CMD
-@@ -66,14 +66,14 @@ Pod::Spec.new do |s|
-         :script => '
- cd "${PODS_ROOT}/../.."
- node "${PODS_ROOT}/../node_modules/react-native/scripts/generate-codegen-artifacts.js" \\
--  -p "${PODS_ROOT}/../node_modules/opentok-react-native" \\
-+  -p "${PODS_ROOT}/../node_modules/@opentok/opentok-react-native" \\
-   -t ios \\
--  -o "${PODS_ROOT}/../node_modules/opentok-react-native/ios" \\
-+  -o "${PODS_ROOT}/../node_modules/@opentok/opentok-react-native/ios" \\
-   -s library
-         ',
-         :execution_position => :before_compile,
--        :input_files => ["${PODS_ROOT}/../node_modules/opentok-react-native/package.json"],
--        :output_files => ["${PODS_ROOT}/../node_modules/opentok-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
-+        :input_files => ["${PODS_ROOT}/../node_modules/@opentok/opentok-react-native/package.json"],
-+        :output_files => ["${PODS_ROOT}/../node_modules/@opentok/opentok-react-native/ios/build/generated/ios/RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h"]
-       }
-     ]
-   end
 diff --git a/package-lock.json b/package-lock.json
 index 8629977..a0cfb06 100644
 --- a/package-lock.json
@@ -46,14 +6,14 @@ index 8629977..a0cfb06 100644
  {
 -  "name": "opentok-react-native",
 +  "name": "@opentok/opentok-react-native",
-   "version": "2.33.0",
+   "version": "2.33.1",
    "lockfileVersion": 3,
    "requires": true,
    "packages": {
      "": {
 -      "name": "opentok-react-native",
 +      "name": "@opentok/opentok-react-native",
-       "version": "2.33.0",
+       "version": "2.33.1",
        "license": "Adobe-2",
        "workspaces": [
 diff --git a/package.json b/package.json
@@ -64,7 +24,7 @@ index 9fbecd1..8db6c19 100644
  {
 -  "name": "opentok-react-native",
 +  "name": "@opentok/opentok-react-native",
-   "version": "2.33.0",
+   "version": "2.33.1",
    "description": "Vonage Video client SDK for React Native",
    "source": "./src/index.tsx",
 @@ -63,7 +63,7 @@
