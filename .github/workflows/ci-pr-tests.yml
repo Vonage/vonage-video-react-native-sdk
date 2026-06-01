@@ -107,3 +107,93 @@ jobs:
 
       - name: Run iOS Detox tests
         run: npm run test:e2e:ios
+
+  e2e-android-tests:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment: prod
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install E2E app dependencies
+        working-directory: e2e/E2ETestingApp
+        run: npm install
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install OpenTok SDK for credential generation
+        run: npm install --no-save opentok
+
+      - name: Generate E2E session credentials
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+        run: node scripts/generate-e2e-credentials.js
+
+      - name: Inject E2E credentials
+        env:
+          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
+          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
+          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+        run: node scripts/inject-e2e-credentials.js
+
+      - name: Build Android Detox app
+        run: npm run test:e2e:android:build
+
+      - name: Enable KVM for hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Start Android emulator and run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_8
+          avd-name: Pixel_8_API_35
+          emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            nohup npm --prefix e2e/E2ETestingApp start > metro.log 2>&1 &
+            METRO_PID=$!
+            echo "Metro PID: $METRO_PID"
+
+            for i in {1..120}; do
+              if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+                echo "Metro is running on attempt $i"
+                break
+              fi
+              if ! ps -p $METRO_PID > /dev/null 2>&1; then
+                echo "Metro process died"
+                tail -n 100 metro.log || true
+                exit 1
+              fi
+              sleep 3
+            done
+
+            npm run test:e2e:android
