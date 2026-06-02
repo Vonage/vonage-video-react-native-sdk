@@ -29,11 +29,11 @@ metadata:
   description: React Native module for the Vonage Video API
   annotations:
     github.com/project-slug: Vonage/vonage-video-react-native-sdk
+    business-criticality: Tier-1
 spec:
   type: library
   owner: group:orgdata/vcl
   system: video-react-native-sdks
   lifecycle: production
-  business-criticality: Tier-1
   dependsOn:
     - component:default/video-native-sdks
