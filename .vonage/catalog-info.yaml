@@ -34,6 +34,6 @@ spec:
   owner: group:orgdata/vcl
   system: video-react-native-sdks
   lifecycle: production
+  business-criticality: Tier-1
   dependsOn:
     - component:default/video-native-sdks
-
