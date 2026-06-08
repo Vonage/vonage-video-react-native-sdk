@@ -27,7 +27,7 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: process.env.DETOX_AVD_NAME || 'Pixel_10_API_36',
+        avdName: process.env.DETOX_AVD_NAME || 'Pixel_8_API_36',
       },
     },
   },

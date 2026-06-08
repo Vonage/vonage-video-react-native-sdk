@@ -45,7 +45,7 @@ brew install applesimutils
 - Android Studio is installed
 - Android SDK is installed and available in environment variables (`ANDROID_HOME` or `ANDROID_SDK_ROOT`)
 - At least one Android emulator (AVD) exists
-- Optional: set `DETOX_AVD_NAME` to the AVD name you want Detox to use (default is `Pixel_8_API_35`)
+- Optional: set `DETOX_AVD_NAME` to the AVD name you want Detox to use (default is `Pixel_8_API_36`)
 
 ### Step 1: Add Credentials
 
