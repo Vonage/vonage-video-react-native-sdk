@@ -19,8 +19,6 @@ import {
 import OTContext from './contexts/OTContext';
 
 export default class OTSubscriber extends Component {
-  sessionId = this.context.sessionId;
-  // sessionInfo = this.context.sessionInfo;
 
   constructor(props, context) {
     super(props, context);
@@ -36,7 +34,6 @@ export default class OTSubscriber extends Component {
       streamProperties: props.streamProperties,
       subscribeToSelf: props.subscribeToSelf || false,
     };
-    // this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers);
     this.initComponent();
   }
 
@@ -144,47 +141,39 @@ export default class OTSubscriber extends Component {
   }
 
   render() {
+    const contextValue = {
+      sessionId: this.context.sessionId,
+      subscriberProperties: this.state.properties,
+      streamProperties: this.state.streamProperties,
+      eventHandlers: this.props.eventHandlers,
+      style: this.props.style,
+    };
+
     if (!this.props.children) {
       const containerStyle = this.props.containerStyle;
-      const childrenWithStreams = this.state.streams.map((streamId) => {
-        const style = this.state.style;
-        return (
-          <OTContext.Provider
-            value={{
-              sessionId: this.sessionId,
-              subscriberProperties: this.state.properties,
-              streamProperties: this.state.streamProperties,
-              eventHandlers: this.props.eventHandlers,
-              style: this.props.style,
-            }}
-            key={streamId}
-          >
-            <OTSubscriberView
-              streamId={streamId}
-              style={style}
-              {...this.props.properties}
-            />
-          </OTContext.Provider>
-        );
-      });
-      return <View style={containerStyle}>{childrenWithStreams}</View>;
-    }
-    if (this.props.children(this.state.streams)) {
-      return this.props.children(this.state.streams).map((elem) => (
-        <OTContext.Provider
-          value={{
-            sessionId: this.sessionId,
-            subscriberProperties: this.state.properties,
-            streamProperties: this.state.streamProperties,
-            style: this.props.style,
-            eventHandlers: this.props.eventHandlers,
-          }}
-          key={elem.props.streamId}
-        >
-          {elem}
-        </OTContext.Provider>
+      const childrenWithStreams = this.state.streams.map((streamId) => (
+        <OTSubscriberView
+          key={streamId}
+          streamId={streamId}
+          style={this.props.style}
+        />
       ));
+      return (
+        <OTContext.Provider value={contextValue}>
+          <View style={containerStyle}>{childrenWithStreams}</View>
+        </OTContext.Provider>
+      );
     }
+
+    const renderedChildren = this.props.children(this.state.streams);
+    if (renderedChildren) {
+      return (
+        <OTContext.Provider value={contextValue}>
+          {renderedChildren}
+        </OTContext.Provider>
+      );
+    }
+
     return null;
   }
 }
