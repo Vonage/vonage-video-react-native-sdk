@@ -39,6 +39,21 @@ import React
             SubscriberCaptionsDelegateHandler(impl: self)
     }
 
+    // Copies the latest stream metadata snapshot from the main subscriber
+    // delegate into other delegate handlers that also emit stream payloads.
+    // This keeps all handlers aligned without each one reading OTKit stream
+    // properties independently.
+    private func distributeStreamDataCache() {
+        guard let handler = subscriberDelegateHandler,
+              let streamData = handler.getCachedStreamData() else {
+            return
+        }
+        subscriberRtcStatsDelegateHandler?.setCachedStreamData(streamData)
+        subscriberAudioLevelDelegateHandler?.setCachedStreamData(streamData)
+        subscriberNetworkStatsDelegateHandler?.setCachedStreamData(streamData)
+        subscriberCaptionsDelegateHandler?.setCachedStreamData(streamData)
+    }
+
     @objc public func createSubscriber(_ properties: NSDictionary) {
         self.sessionId = Utils.sanitizeStringProperty(
             properties["sessionId"] as Any)
@@ -181,21 +196,48 @@ import React
 
 private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
     weak var impl: OTRNSubscriberImpl?
+    // Cached stream metadata used by high-frequency callbacks.
+    // It is optional because callbacks can happen before first successful
+    // stream snapshot is captured.
+    private var cachedStreamData: [String: Any]?
+    // Concurrent queue for readers/writers access:
+    // - reads use sync and can run concurrently
+    // - writes use barrier for exclusive updates
+    private let cacheQueue = DispatchQueue(label: "subscriber.stream-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
         self.impl = impl
     }
 
+    // Refreshes snapshot from OTKit stream object.
+    // Barrier write avoids races with concurrent readers.
+    // Use sync here because callers immediately read/emit after refresh, so we avoid data staleness.
+    private func updateCachedStreamData(_ stream: OTStream) {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = EventUtils.prepareJSStreamEventData(stream)
+        }
+    }
+
+    // Returns the latest stream metadata snapshot.
+    // Read path is intentionally lightweight for frequent callers.
+    func getCachedStreamData() -> [String: Any]? {
+        return cacheQueue.sync {
+            return self.cachedStreamData
+        }
+    }
+
     func subscriberDidConnect(toStream subscriber: OTSubscriberKit) {
         if let stream = subscriber.stream,
             let impl = impl
         {
+            // Prime cache on connect, then propagate it to other handlers.
+            updateCachedStreamData(stream)
+            impl.distributeStreamDataCache()
             let streamInfo: [String: Any] = [
-                "stream": EventUtils.prepareJSStreamEventData(stream)
+                "stream": getCachedStreamData() ?? [:]
             ]
             impl.strictUIViewContainer?.handleSubscriberConnected(streamInfo)
-
         }
     }
 
@@ -238,8 +280,12 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
         ]
 
         if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+            // Video state change may affect stream metadata; refresh snapshot.
+            updateCachedStreamData(stream)
+            if let impl = impl {
+                impl.distributeStreamDataCache()
+            }
+            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -258,8 +304,12 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
 
         // Always include "stream" key, even if nil (to match TS definition)
         if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+            // Video state change may affect stream metadata; refresh snapshot.
+            updateCachedStreamData(stream)
+            if let impl = impl {
+                impl.distributeStreamDataCache()
+            }
+            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -299,10 +349,14 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
 
     func subscriberVideoDataReceived(_ subscriber: OTSubscriber) {
         var subscriberInfo: [String: Any] = [:]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        // High-frequency callback (per decoded frame).
+        // Use cached metadata to avoid per-frame OTKit stream lookups.
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
+            // Cache not yet populated — this is intentional and only expected under
+            // abnormal startup ordering (frame arrived before subscriberDidConnect).
+            // Consumers of this event should guard against a null stream value.
             subscriberInfo["stream"] = NSNull()
         }
         if let impl = impl {
@@ -313,8 +367,13 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
     func subscriberDidReconnect(toStream subscriber: OTSubscriberKit) {
         var subscriberInfo: [String: Any] = [:]
         if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+            // Refresh cache on reconnect: stream state may have changed while
+            // disconnected. Keep emitted payload aligned with current metadata.
+            updateCachedStreamData(stream)
+            if let impl = impl {
+                impl.distributeStreamDataCache()
+            }
+            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -328,6 +387,11 @@ private class SubscriberRtcStatsDelegateHandler: NSObject,
     OTSubscriberKitRtcStatsReportDelegate
 {
     weak var impl: OTRNSubscriberImpl?
+    // Snapshot copied from SubscriberDelegateHandler to avoid repeated
+    // stream object access in stats callbacks.
+    private var cachedStreamData: [String: Any]?
+    // Concurrent read / barrier write queue for cache synchronization.
+    private let cacheQueue = DispatchQueue(label: "subscriber.rtcstats-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -335,13 +399,25 @@ private class SubscriberRtcStatsDelegateHandler: NSObject,
 
     }
 
+    func setCachedStreamData(_ streamData: [String: Any]) {
+        // Exclusive write to prevent partial updates visible to readers.
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = streamData
+        }
+    }
+
+    private func getCachedStreamData() -> [String: Any]? {
+        return cacheQueue.sync {
+            return self.cachedStreamData
+        }
+    }
+
     func subscriber(_ subscriber: OTSubscriberKit, rtcStatsReport: String) {
         var subscriberInfo: [String: Any] = [
             "jsonStats": rtcStatsReport
         ]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -355,11 +431,28 @@ private class SubscriberAudioLevelDelegateHandler: NSObject,
     OTSubscriberKitAudioLevelDelegate
 {
     weak var impl: OTRNSubscriberImpl?
+    // Audio level can be frequent; reuse cached stream metadata.
+    private var cachedStreamData: [String: Any]?
+    // Concurrent read / barrier write queue for cache synchronization.
+    private let cacheQueue = DispatchQueue(label: "subscriber.audiolevel-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
         self.impl = impl
 
+    }
+
+    func setCachedStreamData(_ streamData: [String: Any]) {
+        // Exclusive write to prevent partial updates visible to readers.
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = streamData
+        }
+    }
+
+    private func getCachedStreamData() -> [String: Any]? {
+        return cacheQueue.sync {
+            return self.cachedStreamData
+        }
     }
 
     func subscriber(
@@ -368,9 +461,8 @@ private class SubscriberAudioLevelDelegateHandler: NSObject,
         var subscriberInfo: [String: Any] = [
             "audioLevel": audioLevel
         ]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -384,10 +476,27 @@ private class SubscriberNetworkStatsDelegateHandler: NSObject,
     OTSubscriberKitNetworkStatsDelegate
 {
     weak var impl: OTRNSubscriberImpl?
+    // Network stats callbacks reuse the same stream metadata snapshot.
+    private var cachedStreamData: [String: Any]?
+    // Concurrent read / barrier write queue for cache synchronization.
+    private let cacheQueue = DispatchQueue(label: "subscriber.networkstats-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
         self.impl = impl
+    }
+
+    func setCachedStreamData(_ streamData: [String: Any]) {
+        // Exclusive write to prevent partial updates visible to readers.
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = streamData
+        }
+    }
+
+    private func getCachedStreamData() -> [String: Any]? {
+        return cacheQueue.sync {
+            return self.cachedStreamData
+        }
     }
 
     func subscriber(
@@ -406,9 +515,8 @@ private class SubscriberNetworkStatsDelegateHandler: NSObject,
             subscriberInfo["jsonStats"] = ""
         }
 
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -439,9 +547,8 @@ private class SubscriberNetworkStatsDelegateHandler: NSObject,
             subscriberInfo["jsonStats"] = ""
         }
 
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
             subscriberInfo["stream"] = NSNull()
         }
@@ -456,10 +563,27 @@ private class SubscriberCaptionsDelegateHandler: NSObject,
     OTSubscriberKitCaptionsDelegate
 {
     weak var impl: OTRNSubscriberImpl?
+    // Captions events include stream payload; reuse cached metadata snapshot.
+    private var cachedStreamData: [String: Any]?
+    // Concurrent read / barrier write queue for cache synchronization.
+    private let cacheQueue = DispatchQueue(label: "subscriber.captions-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
         self.impl = impl
+    }
+
+    func setCachedStreamData(_ streamData: [String: Any]) {
+        // Exclusive write to prevent partial updates visible to readers.
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = streamData
+        }
+    }
+
+    private func getCachedStreamData() -> [String: Any]? {
+        return cacheQueue.sync {
+            return self.cachedStreamData
+        }
     }
 
     func subscriber(
@@ -469,9 +593,8 @@ private class SubscriberCaptionsDelegateHandler: NSObject,
             "text": text,
             "isFinal": isFinal,
         ]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
+        if let cachedStream = getCachedStreamData() {
+            subscriberInfo["stream"] = cachedStream
         } else {
             subscriberInfo["stream"] = NSNull()
         }

@@ -44,6 +44,75 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    // Cached stream metadata, refreshed only on state-changing events
+    // (connect, video enabled/disabled). @Volatile + immutable data class gives
+    // cross-thread visibility without lock overhead: any thread reading this field
+    // always sees the latest fully-constructed cache reference.
+    @Volatile private var streamCache: StreamCache? = null
+
+    // Reads current state from the OpenTok SDK and stores it as an immutable cache entry.
+    // Must only be called on events that actually change stream metadata, not per-frame.
+    private fun refreshStreamCache(subscriber: SubscriberKit) {
+        val stream = subscriber.stream ?: return
+        val session = subscriber.session ?: return
+        streamCache = StreamCache(
+            streamId = stream.streamId,
+            height = stream.videoHeight,
+            width = stream.videoWidth,
+            creationTime = stream.creationTime.toString(),
+            connectionId = stream.connection.connectionId,
+            sessionId = session.sessionId,
+            connectionCreationTime = stream.connection.creationTime.toString(),
+            connectionData = stream.connection.data ?: "",
+            name = stream.name ?: "",
+            hasAudio = stream.hasAudio(),
+            hasVideo = stream.hasVideo(),
+            videoType = if (stream.streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen) "screen" else "camera"
+        )
+    }
+
+    // Converts an immutable cache entry into the event stream map shape.
+    private fun buildStreamMapFromCacheEntry(cache: StreamCache): WritableMap {
+        val connection = Arguments.createMap().apply {
+            putString("connectionId", cache.connectionId)
+            putString("creationTime", cache.connectionCreationTime)
+            putString("data", cache.connectionData)
+        }
+        return Arguments.createMap().apply {
+            putString("streamId", cache.streamId)
+            putInt("height", cache.height)
+            putInt("width", cache.width)
+            putString("creationTime", cache.creationTime)
+            putString("connectionId", cache.connectionId)
+            putString("sessionId", cache.sessionId)
+            putMap("connection", connection)
+            putString("name", cache.name)
+            putBoolean("hasAudio", cache.hasAudio)
+            putBoolean("hasVideo", cache.hasVideo)
+            putString("videoType", cache.videoType)
+        }
+    }
+
+    // Fast path for frequent callbacks: serve from cache if available.
+    // Slow path (rare): if cache is missing, fallback to direct SDK read once,
+    // then seed cache to restore hot-path behavior.
+    //
+    // NOTE FOR DEBUGGING:
+    // If stream payloads are unexpectedly empty in onVideoDataReceived/onAudioLevel,
+    // verify whether this method is hitting the fallback path repeatedly.
+    private fun buildStreamMapForFrequentEvent(subscriber: SubscriberKit?): WritableMap {
+        val cache = streamCache
+        if (cache != null) {
+            return buildStreamMapFromCacheEntry(cache)
+        }
+
+        val fallback = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        if (subscriber != null) {
+            refreshStreamCache(subscriber)
+        }
+        return fallback
+    }
+
     constructor(context: Context) : super(context) {
         configureComponent()
     }
@@ -226,10 +295,11 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onConnected(subscriber: SubscriberKit) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
+        // Prime cache on connect so subsequent frequent callbacks stay on fast path.
+        refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
             }
         emitOpenTokEvent("onSubscriberConnected", payload)
     }
@@ -265,11 +335,11 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        // High-frequency callback. Use cache to avoid repeated SDK lookups.
         val payload =
             Arguments.createMap().apply {
                 putDouble("audioLevel", audioLevel.toDouble())
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
             }
         emitOpenTokEvent("onAudioLevel", payload)
     }
@@ -307,29 +377,34 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDataReceived(subscriber: SubscriberKit?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        // High-frequency callback (per decoded frame — up to 30x/sec).
+        // Use cache to avoid per-frame OpenTok SDK lookups.
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
             }
         emitOpenTokEvent("onVideoDataReceived", payload)
     }
 
     override fun onVideoDisabled(subscriber: SubscriberKit?, reason: String?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        // Staleness policy: refresh on callbacks where we observe state deltas.
+        // Keep this aligned with iOS behavior for easier cross-platform debugging.
+        if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
                 putString("reason", reason)
             }
         emitOpenTokEvent("onVideoDisabled", payload)
     }
 
     override fun onVideoEnabled(subscriber: SubscriberKit?, reason: String?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        // Staleness policy: refresh on callbacks where we observe state deltas.
+        // Keep this aligned with iOS behavior for easier cross-platform debugging.
+        if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
                 putString("reason", reason)
             }
         emitOpenTokEvent("onVideoEnabled", payload)
@@ -354,13 +429,32 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onReconnected(subscriber: SubscriberKit?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        // Refresh cache on reconnect: stream state (hasAudio/hasVideo) may have changed
+        // during the reconnect window. Aligns with onConnected staleness policy.
+        if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
             }
         emitOpenTokEvent("onReconnected", payload)
     }
+
+    // Immutable snapshot of stream metadata fields extracted from the OpenTok SDK.
+    // Replacing the whole reference atomically (via @Volatile) avoids the need for locks.
+    private data class StreamCache(
+        val streamId: String,
+        val height: Int,
+        val width: Int,
+        val creationTime: String,
+        val connectionId: String,
+        val sessionId: String,
+        val connectionCreationTime: String,
+        val connectionData: String,
+        val name: String,
+        val hasAudio: Boolean,
+        val hasVideo: Boolean,
+        val videoType: String
+    )
 
     inner class OpenTokEvent(
         surfaceId: Int,
