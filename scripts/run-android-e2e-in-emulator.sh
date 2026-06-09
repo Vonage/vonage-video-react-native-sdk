@@ -22,4 +22,4 @@ for i in $(seq 1 120); do
   sleep 3
 done
 
-npm run test:e2e:android
+npm run test:e2e:android -- --record-logs all --take-screenshots failing
