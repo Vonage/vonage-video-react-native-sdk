@@ -169,12 +169,20 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Debug Android device profiles
+        run: |
+          echo "=== avdmanager version ==="
+          avdmanager --version || true
+          echo "=== available pixel device profiles ==="
+          avdmanager list device | grep -i pixel || true
+          echo "=== first 120 device definitions ==="
+          avdmanager list device | head -n 120 || true
+
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
           arch: x86_64
-          profile: pixel_8
           avd-name: Pixel_8_API_36
           emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
