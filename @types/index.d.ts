@@ -736,7 +736,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     preferredResolution?: string;
 
     /**
-     * Whether to subscribe to audio.
+      * Whether to subscribe to audio. Defaults to true.
      */
     subscribeToAudio?: boolean;
 
@@ -746,7 +746,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     subscribeToCaptions?: boolean;
 
     /**
-     * Whether to subscribe video.
+      * Whether to subscribe video. Defaults to true.
      */
     subscribeToVideo?: boolean;
 
