@@ -143,6 +143,11 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Linux runtime deps for emulator tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0
+
       - name: Install OpenTok SDK for credential generation
         run: npm install --no-save opentok
 
@@ -212,4 +217,4 @@ jobs:
           avd-name: Pixel_8_API_36
           emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: npm run test:e2e:android
+          script: sh ./scripts/run-android-e2e-in-emulator.sh
