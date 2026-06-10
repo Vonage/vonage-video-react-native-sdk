@@ -2262,18 +2262,7 @@
     wcwidth "^1.0.1"
     yaml "^2.2.1"
 
-"@react-native-community/cli-platform-android@20.0.0":
-  version "20.0.0"
-  resolved "https://registry.npmjs.org/@react-native-community/cli-platform-android/-/cli-platform-android-20.0.0.tgz"
-  integrity sha512-th3ji1GRcV6ACelgC0wJtt9daDZ+63/52KTwL39xXGoqczFjml4qERK90/ppcXU0Ilgq55ANF8Pr+UotQ2AB/A==
-  dependencies:
-    "@react-native-community/cli-config-android" "20.0.0"
-    "@react-native-community/cli-tools" "20.0.0"
-    chalk "^4.1.2"
-    execa "^5.0.0"
-    logkitty "^0.7.1"
-
-"@react-native-community/cli-platform-android@20.0.1":
+"@react-native-community/cli-platform-android@20.0.0", "@react-native-community/cli-platform-android@20.0.1":
   version "20.0.1"
   resolved "https://registry.npmjs.org/@react-native-community/cli-platform-android/-/cli-platform-android-20.0.1.tgz"
   integrity sha512-Rfyi1J+TKTiDjiZ2JpodwQHp5ETv7MWoOcWLK4JeeBHQLCYlVII+7RSg44tFc0JC2/bCXscqfQOR1aYZr0sPTg==
@@ -2328,14 +2317,7 @@
     fast-xml-parser "^5.3.6"
     picocolors "^1.1.1"
 
-"@react-native-community/cli-platform-ios@20.0.0":
-  version "20.0.0"
-  resolved "https://registry.npmjs.org/@react-native-community/cli-platform-ios/-/cli-platform-ios-20.0.0.tgz"
-  integrity sha512-Z35M+4gUJgtS4WqgpKU9/XYur70nmj3Q65c9USyTq6v/7YJ4VmBkmhC9BticPs6wuQ9Jcv0NyVCY0Wmh6kMMYw==
-  dependencies:
-    "@react-native-community/cli-platform-apple" "20.0.0"
-
-"@react-native-community/cli-platform-ios@20.0.1":
+"@react-native-community/cli-platform-ios@20.0.0", "@react-native-community/cli-platform-ios@20.0.1":
   version "20.0.1"
   resolved "https://registry.npmjs.org/@react-native-community/cli-platform-ios/-/cli-platform-ios-20.0.1.tgz"
   integrity sha512-kvpUBcqOC5CE8xWCoimyP2M/gr3TVeoLRKhliixnpx7fc9cB6R6GWHgzrNDVf4z5SAQW64UFvswquPo3dk+YOg==
@@ -2444,7 +2426,7 @@
   dependencies:
     joi "^17.2.1"
 
-"@react-native-community/cli@*", "@react-native-community/cli@20.0.1":
+"@react-native-community/cli@*", "@react-native-community/cli@^20.1.3", "@react-native-community/cli@20.0.1":
   version "20.0.1"
   resolved "https://registry.npmjs.org/@react-native-community/cli/-/cli-20.0.1.tgz"
   integrity sha512-Q7UnBqOO/JsWfgmO9qZjrKgMi/0U9ih0FywXXheml8VH1hn/pBXKIeO/BvzA6g5gHIvBZ/6KyhdGoNok1R/ZJw==
@@ -2462,27 +2444,6 @@
     find-up "^5.0.0"
     fs-extra "^8.1.0"
     graceful-fs "^4.1.3"
-    prompts "^2.4.2"
-    semver "^7.5.2"
-
-"@react-native-community/cli@^20.1.3":
-  version "20.1.3"
-  resolved "https://registry.npmjs.org/@react-native-community/cli/-/cli-20.1.3.tgz"
-  integrity sha512-sLo8cu9JyFNfuuF1C+8NJ4DHE/PEFaXGd4enkcxi/OJjGG8+sOQrdjNQ4i+cVh/2c+ah1mEMwsYjc3z0+/MqSg==
-  dependencies:
-    "@react-native-community/cli-clean" "20.1.3"
-    "@react-native-community/cli-config" "20.1.3"
-    "@react-native-community/cli-doctor" "20.1.3"
-    "@react-native-community/cli-server-api" "20.1.3"
-    "@react-native-community/cli-tools" "20.1.3"
-    "@react-native-community/cli-types" "20.1.3"
-    commander "^9.4.1"
-    deepmerge "^4.3.0"
-    execa "^5.0.0"
-    find-up "^5.0.0"
-    fs-extra "^8.1.0"
-    graceful-fs "^4.1.3"
-    picocolors "^1.1.1"
     prompts "^2.4.2"
     semver "^7.5.2"
 
@@ -5056,7 +5017,7 @@ eslint-visitor-keys@^4.2.1:
   resolved "https://registry.npmjs.org/eslint-visitor-keys/-/eslint-visitor-keys-4.2.1.tgz"
   integrity sha512-Uhdk5sfqcee/9H/rCOJikYz67o0a2Tw2hGRPOG2Y1R2dg7brRe1uG0yaNQDHu+TO/uQPF/5eCapvYSmHUjt7JQ==
 
-"eslint@^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7", "eslint@^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0", "eslint@^3.17.0 || ^4 || ^5 || ^6 || ^7 || ^8", "eslint@^6.0.0 || ^7.0.0 || ^8.0.0", "eslint@^6.0.0 || ^7.0.0 || >=8.0.0", "eslint@^7.0.0 || ^8.0.0", "eslint@^7.5.0 || ^8.0.0 || ^9.0.0", eslint@^8.1.0, "eslint@^8.40 || 9", eslint@^8.56.0, "eslint@^8.57.0 || ^9.0.0", eslint@^9.35.0, eslint@>=4.19.1, eslint@>=7.0.0, eslint@>=8, eslint@>=8.0.0:
+"eslint@^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7", "eslint@^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0", "eslint@^3.17.0 || ^4 || ^5 || ^6 || ^7 || ^8", "eslint@^6.0.0 || ^7.0.0 || ^8.0.0", "eslint@^6.0.0 || ^7.0.0 || >=8.0.0", "eslint@^7.0.0 || ^8.0.0", "eslint@^7.5.0 || ^8.0.0 || ^9.0.0", eslint@^8.1.0, eslint@^8.19.0, "eslint@^8.40 || 9", eslint@^8.56.0, "eslint@^8.57.0 || ^9.0.0", eslint@^9.35.0, eslint@>=4.19.1, eslint@>=7.0.0, eslint@>=8, eslint@>=8.0.0:
   version "9.39.2"
   resolved "https://registry.npmjs.org/eslint/-/eslint-9.39.2.tgz"
   integrity sha512-LEyamqS7W5HB3ujJyvi0HQK/dtVINZvd5mAAp9eT5S/ujByGjiZLCzPcHVzuXbpJDJF/cxwHlfceVUDZ2lnSTw==
@@ -8449,15 +8410,10 @@ prettier-linter-helpers@^1.0.1:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@^3.6.2, prettier@>=2, prettier@>=3.0.0:
+prettier@^3.6.2, prettier@>=2, prettier@>=3.0.0, prettier@2.8.8:
   version "3.8.1"
   resolved "https://registry.npmjs.org/prettier/-/prettier-3.8.1.tgz"
   integrity sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==
-
-prettier@2.8.8:
-  version "2.8.8"
-  resolved "https://registry.npmjs.org/prettier/-/prettier-2.8.8.tgz"
-  integrity sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==
 
 pretty-format@^29.0.0, pretty-format@^29.7.0:
   version "29.7.0"
