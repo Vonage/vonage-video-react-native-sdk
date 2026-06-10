@@ -94,6 +94,9 @@ wait_for_boot_completed
 wait_for_package_manager
 unlock_emulator
 
+echo "Configuring adb reverse for Metro..."
+adb -s "$DEVICE_ID" reverse tcp:8081 tcp:8081
+
 adb -s "$DEVICE_ID" logcat -c || true
 adb -s "$DEVICE_ID" logcat -v time > android-logcat.txt 2>&1 &
 LOGCAT_PID=$!
