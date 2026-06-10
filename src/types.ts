@@ -210,8 +210,16 @@ export type OTSubscriberProperties = {
         width?: number;
         height?: number;
       };
+
+  /**
+   * Defaults to `true` when omitted.
+   */
   subscribeToAudio?: boolean;
   subscribeToCaptions?: boolean;
+  
+  /**
+   * Defaults to `true` when omitted.
+   */
   subscribeToVideo?: boolean;
   scaleBehavior?: VideoScaleType;
   style?: StyleProp<ViewStyle>;

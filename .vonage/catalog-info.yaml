@@ -16,6 +16,7 @@ metadata:
       icon: dashboard
   annotations:
     vonage.com/jira-id: VPF
+    business-criticality: Tier-1
 spec:
   type: library
   owner: group:orgdata/vcl
@@ -36,4 +37,3 @@ spec:
   lifecycle: production
   dependsOn:
     - component:default/video-native-sdks
-
