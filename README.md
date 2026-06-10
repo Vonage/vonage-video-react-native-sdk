@@ -40,7 +40,7 @@ yarn add opentok-react-native@<VERSION>
 
 ### Basic Usage
 
-The packages are functionally identical. The only difference is the session prop name:
+The packages are functionally identical. The only difference is their session prop names:
 
 **Vonage Package:**
 ```jsx
