@@ -4662,7 +4662,7 @@ duplexer2@^0.1.2:
   dependencies:
     readable-stream "^2.0.2"
 
-"E2ETestingApp@file:/tmp/workspace/Vonage/vonage-video-react-native-sdk/e2e/E2ETestingApp":
+"E2ETestingApp@file:e2e/E2ETestingApp":
   version "0.0.1"
   resolved "file:e2e/E2ETestingApp"
   dependencies:
