@@ -2,7 +2,7 @@
 
 <img src="https://assets.tokbox.com/img/vonage/Vonage_VideoAPI_black.svg" height="48px" alt="Tokbox is now known as Vonage" />
 
-React Native library for the [Vonage Video API](https://developer.vonage.com/en/video/overview) / [OpenTok](https://tokbox.com/developer/). This library is officially supported by Vonage.
+React Native library for [Vonage Video API](https://developer.vonage.com/en/video/overview) / [OpenTok](https://tokbox.com/developer/). This library is officially supported by Vonage.
 
 ---
 
