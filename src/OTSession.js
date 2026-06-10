@@ -23,7 +23,7 @@ export default class OTSession extends Component {
     super(props);
     this.validateProps();
     this.eventHandlers = props.eventHandlers;
-    this.initComponent(props.eventHandlers);
+    this.initComponent();
   }
 
   validateProps() {
@@ -44,13 +44,13 @@ export default class OTSession extends Component {
       );
     }
     
-    if (isOpentokPackage && !apiKey) {
+    if (isOpentokPackage && apiKey == null) {
       throw new Error(
         `apiKey is required for ${packageName}. Please provide the apiKey prop.`
       );
     }
     
-    if (!apiKey && !applicationId) {
+    if (apiKey == null && applicationId == null) {
       throw new Error(
         'Either apiKey or applicationId must be provided.'
       );
