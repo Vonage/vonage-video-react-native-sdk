@@ -6,7 +6,7 @@ import {
   withPlugins,
 } from '@expo/config-plugins';
 
-export interface VonagePluginiOSProps {
+export interface VideoPluginiOSProps {
   /**
    * iOS camera permission message
    * @default 'Allow $(PRODUCT_NAME) to access your camera for video calls'
@@ -22,7 +22,7 @@ export interface VonagePluginiOSProps {
 /**
  * Add iOS Info.plist entries for camera and microphone permissions
  */
-const withIosPermissions: ConfigPlugin<VonagePluginiOSProps> = (
+const withIosPermissions: ConfigPlugin<VideoPluginiOSProps> = (
   config,
   props
 ) => {
@@ -83,10 +83,10 @@ const withAndroidPermissions: ConfigPlugin = (config) => {
 };
 
 /**
- * Main Expo Config Plugin for @vonage/client-sdk-video-react-native
+ * Main Expo Config Plugin for video-react-native
  * Automatically configures native permissions and dependencies
  */
-const withVonage: ConfigPlugin<VonagePluginiOSProps> = (
+const withVideo: ConfigPlugin<VideoPluginiOSProps> = (
   config,
   props = {}
 ) => {
@@ -96,4 +96,4 @@ const withVonage: ConfigPlugin<VonagePluginiOSProps> = (
   ]);
 };
 
-export default withVonage;
+export default withVideo;

@@ -14,9 +14,48 @@ import { handleError } from './OTError';
 import { logOT } from './helpers/OTHelper';
 import OTContext from './contexts/OTContext';
 import { sanitizeSessionOptions } from './helpers/OTSessionHelper';
+import { OTRN_PACKAGE_INFO } from './generated/packageInfo';
 
 export default class OTSession extends Component {
   eventHandlers = {};
+
+  constructor(props) {
+    super(props);
+    this.validateProps();
+    this.eventHandlers = props.eventHandlers;
+    this.initComponent(props.eventHandlers);
+  }
+
+  validateProps() {
+    const { apiKey, applicationId } = this.props;
+    const packageName = OTRN_PACKAGE_INFO.name;
+    
+    // Check if using an OpenTok package
+    const isOpentokPackage = packageName.includes('opentok');
+    
+    if (isOpentokPackage && applicationId) {
+      console.error(
+        `[${packageName}] Error: The "applicationId" prop is not supported in OpenTok packages. ` +
+        'Please use "apiKey" instead. ' +
+        'If you need to use applicationId, install @vonage/client-sdk-video-react-native.'
+      );
+      throw new Error(
+        `applicationId is not supported in ${packageName}. Use apiKey instead.`
+      );
+    }
+    
+    if (isOpentokPackage && !apiKey) {
+      throw new Error(
+        `apiKey is required for ${packageName}. Please provide the apiKey prop.`
+      );
+    }
+    
+    if (!apiKey && !applicationId) {
+      throw new Error(
+        'Either apiKey or applicationId must be provided.'
+      );
+    }
+  }
 
   async initSession(apiKey, sessionId, token) {
     if (apiKey && sessionId && token) {
@@ -108,12 +147,6 @@ export default class OTSession extends Component {
     });
 
     OT.connect(sessionId, token);
-  }
-
-  constructor(props) {
-    super(props);
-    this.eventHandlers = props.eventHandlers;
-    this.initComponent(props.eventHandlers);
   }
 
   initComponent = () => {

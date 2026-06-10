@@ -60,18 +60,25 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Apply opentok-react-native package patch
+      - name: Apply opentok-react-native package configuration
         if: inputs.package == 'opentok-react-native'
         run: |
-          git apply patch/code-changes.patch
-          git apply patch/flavor-changes.patch
+          # Update package.json
+          jq '.name = "opentok-react-native" | .scripts["version:published"] = "npm show opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update package-lock.json
+          jq '.name = "opentok-react-native" | .packages[""].name = "opentok-react-native"' package-lock.json > package-lock.json.tmp
+          mv package-lock.json.tmp package-lock.json
 
-      - name: Apply @opentok/opentok-react-native package patch
+      - name: Apply @opentok/opentok-react-native package configuration
         if: inputs.package == '@opentok/opentok-react-native'
         run: |
-          git apply patch/code-changes.patch
-          git apply patch/code-changes-opentok-github.patch
-          git apply patch/flavor-changes.patch
+          # Update package.json
+          jq '.name = "@opentok/opentok-react-native" | .scripts["version:published"] = "npm show @opentok/opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update package-lock.json
+          jq '.name = "@opentok/opentok-react-native" | .packages[""].name = "@opentok/opentok-react-native"' package-lock.json > package-lock.json.tmp
+          mv package-lock.json.tmp package-lock.json
 
       - name: Install dependencies
         run: |
