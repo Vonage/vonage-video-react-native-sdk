@@ -22,4 +22,20 @@ for i in $(seq 1 120); do
   sleep 3
 done
 
-npm run test:e2e:android
+adb -s emulator-5554 logcat -c || true
+adb -s emulator-5554 logcat -v time > android-logcat.txt 2>&1 &
+LOGCAT_PID=$!
+
+if ! npm run test:e2e:android; then
+  echo "=== Detox failed: collecting Android diagnostics ==="
+  adb -s emulator-5554 devices || true
+  adb -s emulator-5554 shell getprop ro.build.version.release || true
+  adb -s emulator-5554 shell pidof com.e2etestingapp || true
+  adb -s emulator-5554 shell dumpsys activity activities > android-dumpsys-activities.txt 2>&1 || true
+  adb -s emulator-5554 shell dumpsys package com.e2etestingapp > android-dumpsys-package.txt 2>&1 || true
+  tail -n 400 android-logcat.txt || true
+  kill "$LOGCAT_PID" 2>/dev/null || true
+  exit 1
+fi
+
+kill "$LOGCAT_PID" 2>/dev/null || true

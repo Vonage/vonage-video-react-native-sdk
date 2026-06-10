@@ -218,3 +218,17 @@ jobs:
           emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: sh ./scripts/run-android-e2e-in-emulator.sh
+
+      - name: Upload Android E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-diagnostics
+          path: |
+            metro.log
+            metro-android.log
+            android-logcat.txt
+            android-dumpsys-activities.txt
+            android-dumpsys-package.txt
+            artifacts/
+          if-no-files-found: ignore
