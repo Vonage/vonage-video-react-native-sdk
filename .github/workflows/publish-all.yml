@@ -35,7 +35,7 @@ jobs:
           jq '.dependencies["opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
           mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
           # Rebuild lockfile to sync with package.json changes
-          npm install --package-lock-only
+          npm install --package-lock-only --ignore-scripts
 
       - name: Install dependencies
         run: |
@@ -139,7 +139,7 @@ jobs:
           jq '.dependencies["@opentok/opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
           mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
           # Rebuild lockfile to sync with package.json changes
-          npm install --package-lock-only
+          npm install --package-lock-only --ignore-scripts
 
       - name: Install dependencies
         run: |
