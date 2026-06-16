@@ -1,0 +1,44 @@
+{
+  "profiles": {
+    "vonage": {
+      "packageName": "@vonage/client-sdk-video-react-native",
+      "packageSource": "2.33.2-alpha",
+      "importPath": "@vonage/client-sdk-video-react-native"
+    },
+    "opentok": {
+      "packageName": "opentok-react-native",
+      "packageSource": "2.33.2-alpha",
+      "importPath": "opentok-react-native"
+    },
+    "vonage-github": {
+      "packageName": "@vonage/client-sdk-video-react-native",
+      "packageSource": "2.33.2-alpha",
+      "importPath": "@vonage/client-sdk-video-react-native"
+    },
+    "opentok-github": {
+      "packageName": "@opentok/opentok-react-native",
+      "packageSource": "2.33.2-alpha",
+      "importPath": "@opentok/opentok-react-native"
+    },
+    "local": {
+      "packageName": "@vonage/client-sdk-video-react-native",
+      "packageSource": "file:../",
+      "importPath": "@vonage/client-sdk-video-react-native"
+    }
+  },
+  "currentProfile": "vonage",
+  "credentials": {
+    "video": {
+      "apiKey": "YOUR_API_KEY",
+      "sessionId": "YOUR_SESSION_ID",
+      "token": "YOUR_TOKEN"
+    },
+    "meet": {
+      "authHeader": "YOUR_MEET_AUTH_HEADER",
+      "baseUrl": "YOUR_MEET_BASE_URL"
+    },
+    "github": {
+      "authToken": "YOUR_GITHUB_TOKEN"
+    }
+  }
+}

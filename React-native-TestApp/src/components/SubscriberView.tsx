@@ -1,0 +1,23 @@
+import React, { Component } from 'react';
+import { View, Text } from 'react-native';
+import { OTSubscriber } from '@opentok/opentok-react-native';
+import { styles } from '../styles/styles';
+
+interface Props {
+  subscriberProperties: any;
+  subscriberEventHandlers: any;
+}
+
+class SubscriberView extends Component<Props> {
+  render() {
+    return (
+      <OTSubscriber
+        properties={this.props.subscriberProperties}
+        style={styles.video}
+        eventHandlers={this.props.subscriberEventHandlers}
+      />
+    );
+  }
+}
+
+export default SubscriberView;
