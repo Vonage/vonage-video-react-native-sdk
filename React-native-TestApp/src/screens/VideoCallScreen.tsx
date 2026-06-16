@@ -44,8 +44,8 @@ class VideoCallScreen extends Component<{}, State> {
       sessionId: credentials.sessionId,
       token: credentials.token,
       encryptionSecret: '',
-      meetRoomName: '',
-      userInitials: '',
+      meetRoomName: 'test-room-name',
+      userInitials: 'AB',
       signal: { data: 'hi' },
     },
     sessionEvents: {
