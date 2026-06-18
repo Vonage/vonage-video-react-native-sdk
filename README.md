@@ -25,8 +25,6 @@ Choose the package that matches your preference:
 **Vonage Package:**
 ```bash
 npm install @vonage/client-sdk-video-react-native@<VERSION>
-# or
-yarn add @vonage/client-sdk-video-react-native@<VERSION>
 ```
 
 **OpenTok Package:**

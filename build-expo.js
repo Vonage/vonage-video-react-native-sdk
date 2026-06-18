@@ -9,5 +9,5 @@ function run(cmd, args) {
 }
 
 // Prefer the locally installed TypeScript compiler.
-// Using npx makes it work for both npm and yarn environments.
+// Using npx keeps it package-manager agnostic.
 run('npx', ['-y', 'tsc', '--project', 'expo/tsconfig.json']);
