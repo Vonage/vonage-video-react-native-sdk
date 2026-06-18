@@ -2,6 +2,10 @@
 > All release notes have been migrated to the Developer Center. Please refer to the Developer Center for the latest and historical release notes.
 
 
+# 2.33.2 (June 2026)
+
+- **Note**: All release notes were migrated to [Developer center](https://developer.vonage.com/en/video/client-sdks/react-native/release-notes?source=video)
+
 # 2.33.0 (May 2026)
 
 - **Note**: All release notes were migrated to [Developer center](https://developer.vonage.com/en/video/client-sdks/react-native/release-notes?source=video)
