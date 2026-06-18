@@ -23,9 +23,6 @@ index 1af8131..a32eafd 100644
  ```bash
 -npm install @vonage/client-sdk-video-react-native@<VERSION>
 +npm install opentok-react-native@<VERSION>
- # or
--yarn add @vonage/client-sdk-video-react-native@<VERSION>
-+yarn add opentok-react-native@<VERSION>
  ```
  
  **Note:** Replace `<VERSION>` with the target version to use.

@@ -21,8 +21,6 @@ This monorepo uses **brand-aware build configuration** to produce both OpenTok a
 
 ```bash
 npm install @vonage/client-sdk-video-react-native@<VERSION>
-# or
-yarn add @vonage/client-sdk-video-react-native@<VERSION>
 ```
 
 **Note:** Replace `<VERSION>` with the target version to use.
