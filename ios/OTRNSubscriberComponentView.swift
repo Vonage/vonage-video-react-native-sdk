@@ -54,7 +54,26 @@ import React
         subscriberCaptionsDelegateHandler?.setCachedStreamData(streamData)
     }
 
+    // Clears all cached stream metadata from all delegate handlers.
+    // Called on cleanup and before subscribing to a new stream to prevent
+    // stale data from previous subscribers (Fabric reuses _impl after recycle).
+    // Must be called even if subscriber lookup fails in cleanup().
+    private func clearAllStreamDataCaches() {
+        subscriberDelegateHandler?.clearCachedStreamData()
+        subscriberRtcStatsDelegateHandler?.clearCachedStreamData()
+        subscriberAudioLevelDelegateHandler?.clearCachedStreamData()
+        subscriberNetworkStatsDelegateHandler?.clearCachedStreamData()
+        subscriberCaptionsDelegateHandler?.clearCachedStreamData()
+    }
+
     @objc public func createSubscriber(_ properties: NSDictionary) {
+        // Clear any stale cached stream data from previous subscribers before
+        // subscribing to a new stream. This is critical on Fabric where _impl
+        // is reused after view recycle; without clearing, early stats/audio/captions
+        // callbacks could emit data from a previous stream until subscriberDidConnect
+        // repopulates the cache.
+        clearAllStreamDataCaches()
+
         self.sessionId = Utils.sanitizeStringProperty(
             properties["sessionId"] as Any)
         self.streamId = Utils.sanitizeStringProperty(
@@ -175,9 +194,17 @@ import React
     }
 
     private func _cleanupImpl() {
+        // Always clear cached stream data on cleanup, even if subscriber lookup fails.
+        // This ensures stale cache entries don't leak across recycles on Fabric.
+        clearAllStreamDataCaches()
+
         guard let streamId = self.streamId,
             let subscriber = OTRN.sharedState.subscribers[streamId]
         else {
+            // Reset state regardless of whether subscriber exists.
+            // Previous early return prevented this, creating state leaks.
+            self.streamId = ""
+            self.subscriberUIView = nil
             return
         }
 
@@ -224,6 +251,14 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
     func getCachedStreamData() -> [String: Any]? {
         return cacheQueue.sync {
             return self.cachedStreamData
+        }
+    }
+
+    // Clears the cached stream data by setting to nil using barrier write.
+    // This ensures readers don't see partial state during transition.
+    func clearCachedStreamData() {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = nil
         }
     }
 
@@ -410,6 +445,12 @@ private class SubscriberRtcStatsDelegateHandler: NSObject,
         }
     }
 
+    func clearCachedStreamData() {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = nil
+        }
+    }
+
     func subscriber(_ subscriber: OTSubscriberKit, rtcStatsReport: String) {
         var subscriberInfo: [String: Any] = [
             "jsonStats": rtcStatsReport
@@ -450,6 +491,12 @@ private class SubscriberAudioLevelDelegateHandler: NSObject,
     private func getCachedStreamData() -> [String: Any]? {
         return cacheQueue.sync {
             return self.cachedStreamData
+        }
+    }
+
+    func clearCachedStreamData() {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = nil
         }
     }
 
@@ -494,6 +541,12 @@ private class SubscriberNetworkStatsDelegateHandler: NSObject,
     private func getCachedStreamData() -> [String: Any]? {
         return cacheQueue.sync {
             return self.cachedStreamData
+        }
+    }
+
+    func clearCachedStreamData() {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = nil
         }
     }
 
@@ -581,6 +634,12 @@ private class SubscriberCaptionsDelegateHandler: NSObject,
     private func getCachedStreamData() -> [String: Any]? {
         return cacheQueue.sync {
             return self.cachedStreamData
+        }
+    }
+
+    func clearCachedStreamData() {
+        cacheQueue.sync(flags: .barrier) {
+            self.cachedStreamData = nil
         }
     }
 
