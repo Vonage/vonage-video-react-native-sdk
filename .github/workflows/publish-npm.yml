@@ -60,18 +60,29 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Apply opentok-react-native package patch
+      - name: Apply opentok-react-native package configuration
         if: inputs.package == 'opentok-react-native'
         run: |
-          git apply patch/code-changes.patch
-          git apply patch/flavor-changes.patch
+          # Update package.json
+          jq '.name = "opentok-react-native" | .scripts["version:published"] = "npm show opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update e2e workspace dependency name in package.json
+          jq '.dependencies["opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
+          mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
 
-      - name: Apply @opentok/opentok-react-native package patch
+      - name: Apply @opentok/opentok-react-native package configuration
         if: inputs.package == '@opentok/opentok-react-native'
         run: |
-          git apply patch/code-changes.patch
-          git apply patch/code-changes-opentok-github.patch
-          git apply patch/flavor-changes.patch
+          # Update package.json
+          jq '.name = "@opentok/opentok-react-native" | .scripts["version:published"] = "npm show @opentok/opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update e2e workspace dependency name in package.json
+          jq '.dependencies["@opentok/opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
+          mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
 
       - name: Install dependencies
         run: |

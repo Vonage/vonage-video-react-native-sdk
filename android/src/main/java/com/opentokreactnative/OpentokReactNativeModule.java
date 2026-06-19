@@ -18,6 +18,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.module.annotations.ReactModule;
 import com.opentok.android.Connection;
 import com.opentok.android.MuteForcedInfo;
 import com.opentok.android.OpentokError;
@@ -36,6 +37,7 @@ import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
 
+@ReactModule(name = OpentokReactNativeModule.NAME)
 public class OpentokReactNativeModule extends NativeOpentokSpec implements
         SessionListener,
         SignalListener,

@@ -10,6 +10,7 @@ const generatedFilePath = path.join(generatedDir, 'packageInfo.js');
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const packageInfo = {
+  name: packageJson.name,
   version: packageJson.version,
   repositoryUrl: packageJson.repository?.url || '',
 };
