@@ -377,11 +377,12 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDataReceived(subscriber: SubscriberKit?) {
-        // High-frequency callback (per decoded frame — up to 30x/sec).
-        // Use cache to avoid per-frame OpenTok SDK lookups.
+        // This callback fires when video data starts arriving, not continuously.
+        // Use direct SDK lookup here; cache fast-path is unnecessary.
+        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", stream)
             }
         emitOpenTokEvent("onVideoDataReceived", payload)
     }

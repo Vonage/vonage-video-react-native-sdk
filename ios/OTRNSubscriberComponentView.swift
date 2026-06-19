@@ -349,14 +349,12 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
 
     func subscriberVideoDataReceived(_ subscriber: OTSubscriber) {
         var subscriberInfo: [String: Any] = [:]
-        // High-frequency callback (per decoded frame).
-        // Use cached metadata to avoid per-frame OTKit stream lookups.
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
+        // This callback fires when video data starts arriving, not continuously.
+        // Use direct OTKit stream lookup here; cache fast-path is unnecessary.
+        if let stream = subscriber.stream {
+            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
+                stream)
         } else {
-            // Cache not yet populated — this is intentional and only expected under
-            // abnormal startup ordering (frame arrived before subscriberDidConnect).
-            // Consumers of this event should guard against a null stream value.
             subscriberInfo["stream"] = NSNull()
         }
         if let impl = impl {
