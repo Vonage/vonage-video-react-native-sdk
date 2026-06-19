@@ -43,7 +43,7 @@ import React
     // delegate into other delegate handlers that also emit stream payloads.
     // This keeps all handlers aligned without each one reading OTKit stream
     // properties independently.
-    private func distributeStreamDataCache() {
+    fileprivate func distributeStreamDataCache() {
         guard let handler = subscriberDelegateHandler,
               let streamData = handler.getCachedStreamData() else {
             return
@@ -58,7 +58,7 @@ import React
     // Called on cleanup and before subscribing to a new stream to prevent
     // stale data from previous subscribers (Fabric reuses _impl after recycle).
     // Must be called even if subscriber lookup fails in cleanup().
-    private func clearAllStreamDataCaches() {
+    fileprivate func clearAllStreamDataCaches() {
         subscriberDelegateHandler?.clearCachedStreamData()
         subscriberRtcStatsDelegateHandler?.clearCachedStreamData()
         subscriberAudioLevelDelegateHandler?.clearCachedStreamData()
