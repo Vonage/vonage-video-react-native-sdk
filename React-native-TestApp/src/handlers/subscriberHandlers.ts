@@ -15,7 +15,8 @@ export const createSubscriberHandlers = (
   },
   disconnected: (event: any) => {
     console.log('Subscriber disconnected event:', event);
-    updateEvent('subscriberEvents', 'disconneted', true);
+    updateEvent('subscriberEvents', 'disconnected', true);
+  }
   },
   reconnected: (event: any) => {
     console.log('Subscriber reconnected event:', event);
