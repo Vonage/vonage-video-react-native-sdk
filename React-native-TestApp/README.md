@@ -63,8 +63,8 @@ This will:
 - Switch SDK packages based on the selected profile
 - Remove and reinstall all dependencies (node_modules, iOS Pods, etc.)
 
-**Note:** The following files are auto-generated from `sdk-config.json`:
-- `.npmrc` - Only generated when using `*-github` profiles
+**Note:** The following files read values from `sdk-config.json`:
+- `.npmrc` - Generated only when using `*-github` profiles
 - `src/config/credentials.ts` - Reads video credentials from sdk-config.json
 - `src/services/meetService.ts` - Reads meet credentials from sdk-config.json
 
