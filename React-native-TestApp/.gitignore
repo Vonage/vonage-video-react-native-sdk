@@ -85,5 +85,3 @@ Podfile.lock
 !.yarn/sdks
 !.yarn/versions
 
-# Credentials
-src/config/credentials.ts
