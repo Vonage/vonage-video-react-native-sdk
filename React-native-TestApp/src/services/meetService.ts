@@ -1,4 +1,3 @@
-import { Alert } from 'react-native';
 import sdkConfig from '../../sdk-config.json';
 
 export interface MeetCredentials {
