@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { View, Text } from 'react-native';
 import { OTSubscriber } from '@opentok/opentok-react-native';
 import { styles } from '../styles/styles';
 
