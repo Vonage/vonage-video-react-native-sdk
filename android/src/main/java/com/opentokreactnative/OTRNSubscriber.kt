@@ -66,8 +66,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             connectionId = stream.connection.connectionId,
             sessionId = session.sessionId,
             connectionCreationTime = stream.connection.creationTime.toString(),
-            connectionData = stream.connection.data ?: "",
-            name = stream.name ?: "",
+            connectionData = stream.connection.data,
+            name = stream.name,
             hasAudio = stream.hasAudio(),
             hasVideo = stream.hasVideo(),
             videoType = if (stream.streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen) "screen" else "camera"
@@ -477,12 +477,11 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val connectionId: String,
         val sessionId: String,
         val connectionCreationTime: String,
-        val connectionData: String,
-        val name: String,
+        val connectionData: String?,
+        val name: String?,
         val hasAudio: Boolean,
         val hasVideo: Boolean,
         val videoType: String
-    )
 
     inner class OpenTokEvent(
         surfaceId: Int,
