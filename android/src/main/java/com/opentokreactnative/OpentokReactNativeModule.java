@@ -466,6 +466,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasCaptions", !hasCaptions, hasCaptions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -473,6 +474,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -480,6 +482,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -497,6 +500,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -506,6 +510,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override

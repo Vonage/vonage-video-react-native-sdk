@@ -22,6 +22,9 @@ import com.opentok.android.VideoUtils
 import com.opentokreactnative.utils.Utils;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.toVideoScaleType;
+import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
@@ -162,6 +165,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (safeSessionId == null || safeStreamId == null) {
             return
         }
+
+        // Re-register on attach in case this view was detached/recycled.
+        registerRefreshListener(safeStreamId, this)
         
         session = sharedState.getSessions().get(safeSessionId)
         stream = findStream(safeStreamId)
@@ -169,6 +175,12 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (session != null && stream != null) {
             subscribeToStream(session!!, stream!!)
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        // Remove registration to avoid stale references after detach/recycle.
+        streamId?.let { unregisterRefreshListener(it, this) }
+        super.onDetachedFromWindow()
     }
 
     private fun configureComponent() {
@@ -198,7 +210,22 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     public fun setStreamId(str: String?) {
+        val previousStreamId = streamId
+        if (previousStreamId != null && previousStreamId != str) {
+            unregisterRefreshListener(previousStreamId, this)
+        }
         streamId = str
+        if (str != null) {
+            registerRefreshListener(str, this)
+        }
+    }
+
+    // Triggered from session-level stream-property callbacks.
+    // Refreshes only when this view is bound to the changed stream.
+    private fun requestLocalCacheRefreshForStream(changedStreamId: String) {
+        if (streamId != changedStreamId) return
+        val activeSubscriber = subscriber ?: return
+        refreshStreamCache(activeSubscriber)
     }
 
     fun setSubscribeToCaptions(value: Boolean) {
@@ -465,5 +492,77 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     ) : Event<OpenTokEvent>(surfaceId, viewId) {
         override fun getEventName() = name
         override fun getEventData() = payload
+    }
+
+    companion object {
+        // streamId -> list of weak refs to subscriber views that should refresh cache
+        // when session-level stream-property changes are observed.
+        private val refreshListenersByStreamId = ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<OTRNSubscriber>>>()
+
+        private fun registerRefreshListener(streamId: String, view: OTRNSubscriber) {
+            val listeners = refreshListenersByStreamId.getOrPut(streamId) { CopyOnWriteArrayList() }
+            val staleRefs = ArrayList<WeakReference<OTRNSubscriber>>()
+            var alreadyRegistered = false
+            for (ref in listeners) {
+                val existing = ref.get()
+                if (existing == null) {
+                    staleRefs.add(ref)
+                } else if (existing === view) {
+                    alreadyRegistered = true
+                }
+            }
+            if (staleRefs.isNotEmpty()) {
+                listeners.removeAll(staleRefs.toSet())
+            }
+            if (!alreadyRegistered) {
+                listeners.add(WeakReference(view))
+            }
+        }
+
+        private fun unregisterRefreshListener(streamId: String, view: OTRNSubscriber) {
+            val listeners = refreshListenersByStreamId[streamId] ?: return
+            val toRemove = ArrayList<WeakReference<OTRNSubscriber>>()
+            for (ref in listeners) {
+                val existing = ref.get()
+                if (existing == null || existing === view) {
+                    toRemove.add(ref)
+                }
+            }
+            if (toRemove.isNotEmpty()) {
+                listeners.removeAll(toRemove.toSet())
+            }
+            if (listeners.isEmpty()) {
+                refreshListenersByStreamId.remove(streamId, listeners)
+            }
+        }
+
+        @JvmStatic
+        fun requestCacheRefreshForStream(streamId: String) {
+            val listeners = refreshListenersByStreamId[streamId] ?: return
+            val staleRefs = ArrayList<WeakReference<OTRNSubscriber>>()
+            val liveViews = ArrayList<OTRNSubscriber>()
+
+            for (ref in listeners) {
+                val view = ref.get()
+                if (view == null) {
+                    staleRefs.add(ref)
+                } else {
+                    liveViews.add(view)
+                }
+            }
+
+            if (staleRefs.isNotEmpty()) {
+                listeners.removeAll(staleRefs.toSet())
+            }
+            if (listeners.isEmpty()) {
+                refreshListenersByStreamId.remove(streamId, listeners)
+            }
+
+            // Refresh every currently live subscriber view bound to this stream.
+            // If multiple updates arrive in parallel, the latest refresh wins.
+            for (view in liveViews) {
+                view.requestLocalCacheRefreshForStream(streamId)
+            }
+        }
     }
 }
