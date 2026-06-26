@@ -482,6 +482,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val hasAudio: Boolean,
         val hasVideo: Boolean,
         val videoType: String
+    )
 
     inner class OpenTokEvent(
         surfaceId: Int,
