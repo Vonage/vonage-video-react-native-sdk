@@ -4,13 +4,13 @@ This document outlines the testing strategies and practices used in the Vonage V
 
 ## End-to-End Testing with Detox and Jest
 
-We use Detox with Jest for end-to-end (E2E) testing on iOS simulators. E2E tests verify that the SDK components work correctly within a sample React Native application. While we currently have a minimal setup with basic tests, the infrastructure is in place for comprehensive test coverage.
+We use Detox with Jest for end-to-end (E2E) testing on iOS simulators and Android emulators. E2E tests verify that the SDK components work correctly within a sample React Native application. While we currently have a minimal setup with basic tests, the infrastructure is in place for comprehensive test coverage.
 
 ### Key Files
 
 - **[e2e/app.e2e.js](../e2e/app.e2e.js)** — Main E2E test file containing test suites
 - **[e2e/jest.config.json](../e2e/jest.config.json)** — Jest configuration for E2E tests (120s timeout, Detox runner)
-- **[detox.config.js](../detox.config.js)** — Detox configuration (app build path, device/simulator setup)
+- **[detox.config.js](../detox.config.js)** — Detox configuration (app build path, iOS/Android device setup)
 - **[e2e/E2ETestingApp/](../e2e/E2ETestingApp/)** — Test application where tests run against
 
 ### Test Application
@@ -23,9 +23,11 @@ The test app ([e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx)) provide
 
 ## Getting Started with Testing
 
-### Step 0: Prepare your iOS testing environment
+### Step 0: Prepare your testing environment
 
-Before running E2E tests, make sure your machine is ready for iOS simulator testing:
+Before running E2E tests, make sure your machine is ready for your target platform:
+
+#### iOS
 
 - Xcode is installed and opened the testing app at least once
 - iOS Simulator is installed and available
@@ -37,6 +39,13 @@ Detox relies on `applesimutils` to control iOS simulators. Install it once on ma
 brew tap wix/brew
 brew install applesimutils
 ```
+
+#### Android
+
+- Android Studio is installed
+- Android SDK is installed and available in environment variables (`ANDROID_HOME` or `ANDROID_SDK_ROOT`)
+- At least one Android emulator (AVD) exists
+- Optional: set `DETOX_AVD_NAME` to the AVD name you want Detox to use (default is `Pixel_8_API_36`)
 
 ### Step 1: Add Credentials
 
@@ -57,11 +66,21 @@ cd ios && pod install  # Install iOS CocoaPods
 
 ### Step 3: Build the App
 
+#### iOS
+
 ```bash
 npm run test:e2e:ios:build
 ```
 
 This builds the iOS app and Detox framework cache (one-time setup).
+
+#### Android
+
+```bash
+npm run test:e2e:android:build
+```
+
+This builds both the Android debug APK and Android test APK for Detox.
 
 ### Step 4: Run E2E Tests
 
@@ -71,11 +90,19 @@ npm start
 
 Then in a separate terminal, from the root run:
 
+#### iOS
+
 ```bash
 npm run test:e2e:ios
 ```
 
-This launches the simulator, installs the app, and executes all tests in `e2e/**/*.e2e.js`.
+#### Android
+
+```bash
+npm run test:e2e:android
+```
+
+This launches the selected simulator/emulator, installs the app, and executes all tests in `e2e/**/*.e2e.js`.
 
 ## Writing Tests
 

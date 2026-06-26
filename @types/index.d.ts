@@ -13,6 +13,8 @@
  * Do not add new type surface here unless required for short-term backward
  * compatibility. This file is planned for removal in a future release.
  */
+
+// Module declarations for all package flavors
 declare module "@vonage/client-sdk-video-react-native" {
   import React from 'react';
   import { ViewProps } from 'react-native';
@@ -191,23 +193,22 @@ declare module "@vonage/client-sdk-video-react-native" {
 
   interface OTSessionProps extends ViewProps {
     /**
-     * Deprecated. Replaced by the applicationId prop.
+     * TokBox API Key (OpenTok package) - optional if applicationId is provided
      */
     apiKey?: string;
 
     /**
-     * The Vonage application ID. This is a beta feature, replacing the
-     * apiKey prop.
+     * Vonage Application ID (Vonage package) - only available on Vonage package
      */
     applicationId?: string;
 
     /**
-     * Vonage Video API session ID.
+     * Session ID for the Video API session
      */
     sessionId: string;
 
     /**
-     * A connection token for the Video API session.
+     * Connection token for the Video API session
      */
     token: string;
 
@@ -736,7 +737,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     preferredResolution?: string;
 
     /**
-     * Whether to subscribe to audio.
+      * Whether to subscribe to audio. Defaults to true.
      */
     subscribeToAudio?: boolean;
 
@@ -746,7 +747,7 @@ declare module "@vonage/client-sdk-video-react-native" {
     subscribeToCaptions?: boolean;
 
     /**
-     * Whether to subscribe video.
+      * Whether to subscribe video. Defaults to true.
      */
     subscribeToVideo?: boolean;
 
@@ -870,4 +871,14 @@ declare module "@vonage/client-sdk-video-react-native" {
      */
     getRtcStatsReport: () => void;
   }
+}
+
+// Re-export for opentok-react-native package
+declare module "opentok-react-native" {
+  export * from "@vonage/client-sdk-video-react-native";
+}
+
+// Re-export for @opentok/opentok-react-native package
+declare module "@opentok/opentok-react-native" {
+  export * from "@vonage/client-sdk-video-react-native";
 }

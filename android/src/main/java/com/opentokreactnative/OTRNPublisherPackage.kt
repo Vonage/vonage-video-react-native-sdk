@@ -9,26 +9,27 @@ import com.facebook.react.uimanager.ViewManager
 
 class OTRNPublisherPackage : BaseReactPackage() {
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-        return listOf(OTRNPublisherManager(reactContext))
+        return listOf(
+            OTRNPublisherManager(reactContext),
+            OTRNSubscriberManager(reactContext)
+        )
     }
 
     override fun getModule(
-        s: String,
+        name: String,
         reactApplicationContext: ReactApplicationContext
     ): NativeModule? {
-        when (s) {
-            OTRNPublisherManager.REACT_CLASS -> OTRNPublisherManager(
-                reactApplicationContext
-            )
+        return when (name) {
+            OpentokReactNativeModule.NAME -> OpentokReactNativeModule(reactApplicationContext)
+            else -> null
         }
-        return null
     }
 
     override fun getReactModuleInfoProvider(): ReactModuleInfoProvider = ReactModuleInfoProvider {
         mapOf(
-            OTRNPublisherManager.REACT_CLASS to ReactModuleInfo(
-                OTRNPublisherManager.REACT_CLASS, // name
-                OTRNPublisherManager.REACT_CLASS, // className
+            OpentokReactNativeModule.NAME to ReactModuleInfo(
+                OpentokReactNativeModule.NAME, // name
+                OpentokReactNativeModule::class.java.name, // className
                 false, // canOverrideExistingModule
                 false, // needsEagerInit
                 false, // isCxxModule

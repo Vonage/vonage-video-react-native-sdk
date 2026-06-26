@@ -1,0 +1,431 @@
+name: Publish All
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (test without publishing)'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  publish-opentok-npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Apply opentok-react-native package configuration
+        run: |
+          # Update package.json
+          jq '.name = "opentok-react-native" | .scripts["version:published"] = "npm show opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update e2e workspace dependency name in package.json
+          jq '.dependencies["opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
+          mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK }}"
+          export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
+          printf "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        run: |
+          VERSION="${{ github.ref_name }}"
+          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+            echo "⚠️  Warning: Version $VERSION is already published on NPM!"
+            echo "Skipping opentok-react-native @ npmjs.com"
+            exit 0
+          fi
+
+      - name: Dry run - Verify package
+        if: inputs.dry_run == true
+        run: |
+          echo "🔍 DRY RUN MODE - opentok-react-native @ npmjs.com"
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            echo "📦 Tag: $TAG"
+            npm publish --dry-run --tag "$TAG"
+          else
+            echo "📦 No explicit tag (using npm default)"
+            npm publish --dry-run
+          fi
+
+      - name: Publish to NPM
+        if: inputs.dry_run == false
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Verify publication
+        if: inputs.dry_run == false
+        run: |
+          sleep 10
+          npm view opentok-react-native@${{ github.ref_name }} version
+
+  publish-opentok-github:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Apply @opentok/opentok-react-native package configuration
+        run: |
+          # Update package.json
+          jq '.name = "@opentok/opentok-react-native" | .scripts["version:published"] = "npm show @opentok/opentok-react-native version"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Update e2e workspace dependency name in package.json
+          jq '.dependencies["@opentok/opentok-react-native"] = .dependencies["@vonage/client-sdk-video-react-native"] | del(.dependencies["@vonage/client-sdk-video-react-native"])' e2e/E2ETestingApp/package.json > e2e/E2ETestingApp/package.json.tmp
+          mv e2e/E2ETestingApp/package.json.tmp e2e/E2ETestingApp/package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK_GITHUB }}"
+          export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
+          printf "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        run: |
+          VERSION="${{ github.ref_name }}"
+          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+            echo "⚠️  Warning: Version $VERSION is already published!"
+            echo "Skipping @opentok/opentok-react-native @ github.com"
+            exit 0
+          fi
+
+      - name: Dry run - Verify package
+        if: inputs.dry_run == true
+        run: |
+          echo "🔍 DRY RUN MODE - @opentok/opentok-react-native @ github.com"
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            echo "📦 Tag: $TAG"
+            npm publish --dry-run --tag "$TAG"
+          else
+            echo "📦 No explicit tag (using npm default)"
+            npm publish --dry-run
+          fi
+
+      - name: Publish to GitHub Package Registry
+        if: inputs.dry_run == false
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Verify publication
+        if: inputs.dry_run == false
+        run: |
+          sleep 10
+          npm view @opentok/opentok-react-native@${{ github.ref_name }} version
+
+  publish-vonage-npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE }}"
+          export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
+          printf "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        run: |
+          VERSION="${{ github.ref_name }}"
+          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+            echo "⚠️  Warning: Version $VERSION is already published on NPM!"
+            echo "Skipping @vonage/client-sdk-video-react-native @ npmjs.com"
+            exit 0
+          fi
+
+      - name: Dry run - Verify package
+        if: inputs.dry_run == true
+        run: |
+          echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ npmjs.com"
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            echo "📦 Tag: $TAG"
+            npm publish --dry-run --tag "$TAG"
+          else
+            echo "📦 No explicit tag (using npm default)"
+            npm publish --dry-run
+          fi
+
+      - name: Publish to NPM
+        if: inputs.dry_run == false
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Create tag
+        if: inputs.dry_run == false
+        uses: negz/create-tag@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v${{github.ref_name }}
+          message: New v${{github.ref_name}} tag created!
+
+      - name: Verify publication
+        if: inputs.dry_run == false
+        run: |
+          sleep 10
+          npm view @vonage/client-sdk-video-react-native@${{ github.ref_name }} version
+
+  publish-vonage-github:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> $GITHUB_OUTPUT
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE_GITHUB }}"
+          export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
+          printf "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        run: |
+          VERSION="${{ github.ref_name }}"
+          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+            echo "⚠️  Warning: Version $VERSION is already published!"
+            echo "Skipping @vonage/client-sdk-video-react-native @ github.com"
+            exit 0
+          fi
+
+      - name: Dry run - Verify package
+        if: inputs.dry_run == true
+        run: |
+          echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ github.com"
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            echo "📦 Tag: $TAG"
+            npm publish --dry-run --tag "$TAG"
+          else
+            echo "📦 No explicit tag (using npm default)"
+            npm publish --dry-run
+          fi
+
+      - name: Publish to GitHub Package Registry
+        if: inputs.dry_run == false
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Verify publication
+        if: inputs.dry_run == false
+        run: |
+          sleep 10
+          npm view @vonage/client-sdk-video-react-native@${{ github.ref_name }} version
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [publish-opentok-npm, publish-opentok-github, publish-vonage-npm, publish-vonage-github]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## Publish All Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Publication Targets" >> $GITHUB_STEP_SUMMARY
+          echo "1. opentok-react-native @ npmjs.com" >> $GITHUB_STEP_SUMMARY
+          echo "2. @opentok/opentok-react-native @ github.com" >> $GITHUB_STEP_SUMMARY
+          echo "3. @vonage/client-sdk-video-react-native @ npmjs.com" >> $GITHUB_STEP_SUMMARY
+          echo "4. @vonage/client-sdk-video-react-native @ github.com" >> $GITHUB_STEP_SUMMARY
