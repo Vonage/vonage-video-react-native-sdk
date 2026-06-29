@@ -17,14 +17,25 @@ Pod::Spec.new do |s|
   # Exclude the build directory -- generated codegen files are compiled by the ReactCodegen pod,
   # not by this pod. Headers are resolved at build time via HEADER_SEARCH_PATHS.
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.exclude_files = "ios/build/**/*"
-  s.public_header_files = "ios/**/*.h"
+  s.exclude_files = [
+    "ios/build/**/*",
+    "ios/generated/**/*"
+  ]
+  # Exclude generated C++ headers from public headers - they should only be used internally
+  s.public_header_files = [
+    "ios/OpentokReactNative.h",
+    "ios/OpentokReactNative-Bridging-Header.h",
+    "ios/OTRNPublisherComponentView.h",
+    "ios/OTRNSubscriberComponentView.h",
+    "ios/OTScreenCapture.h"
+  ]
 
   # Add VonageClientSDKVideo dependency
   s.dependency 'VonageClientSDKVideo', '2.33.0'
   
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
+  s.swift_version = "5.0"
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     "HEADER_SEARCH_PATHS" => [
