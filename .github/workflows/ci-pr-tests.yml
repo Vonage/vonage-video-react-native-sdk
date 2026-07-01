@@ -77,16 +77,16 @@ jobs:
       - name: Detect available iOS simulator
         id: detect-simulator
         run: |
-          # List available simulators and extract first available iPhone
-          AVAILABLE_SIMULATORS=$(applesimutils --list | grep -o "iPhone [^,]*" | head -1)
           echo "Available simulators:"
           applesimutils --list
           
-          if [ -z "$AVAILABLE_SIMULATORS" ]; then
+          # Extract first available iPhone device name, clean up format
+          # applesimutils output format: "iPhone X", <uuid>, <os version>, <status>, <simdevicetype>
+          DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
+          
+          if [ -z "$DEVICE_NAME" ]; then
             echo "No iPhone simulators found, using default"
             DEVICE_NAME="iPhone 15"
-          else
-            DEVICE_NAME="$AVAILABLE_SIMULATORS"
           fi
           
           echo "Selected simulator: $DEVICE_NAME"
