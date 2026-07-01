@@ -83,11 +83,14 @@ export type StreamEvent = Stream;
 
 // NOTE: `oldValue`/`newValue` are polymorphic at runtime — a `{ width, height }`
 // object for `videoDimensions` changes, a boolean for `hasAudio`/`hasVideo`/
-// `hasCaptions`, or a string for `videoType`. React Native's New-Architecture
-// codegen (>= 0.82) rejects a non-homogenous union (object | boolean | string),
-// so the codegen type declares the structured `videoDimensions` shape. The event
-// is emitted on Android only, via a loosely-typed WritableMap, so the raw runtime
-// values are still delivered to consumers unchanged.
+// `hasCaptions`, or a string for `videoType`. The event is emitted on BOTH iOS
+// (via `emit(onStreamPropertyChanged:)` in ios/Utils/Utils.swift) and Android,
+// each through a loosely-typed native map (NSDictionary / WritableMap) that
+// forwards the raw value to JS unchanged. React Native's New-Architecture codegen
+// (>= 0.82) rejects a non-homogenous union (object | boolean | string), so this
+// spec type declares only the structured `videoDimensions` shape to keep codegen
+// valid; the accurate public union is `StreamPropertyChangedEvent` in types.ts,
+// which is what consumers import.
 export type StreamPropertyChangedValue = {
   width?: number;
   height?: number;
