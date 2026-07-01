@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { OTSubscriber } from '@opentok/opentok-react-native';
+import { OTSubscriber } from '@vonage/client-sdk-video-react-native';
 import { styles } from '../styles/styles';
 
 interface Props {

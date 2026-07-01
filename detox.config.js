@@ -1,14 +1,23 @@
 const path = require('path');
-const e2eAppRoot = path.join(__dirname, 'e2e/E2ETestingApp');
-const iosAppRoot = path.join(e2eAppRoot, 'ios');
-const androidAppRoot = path.join(e2eAppRoot, 'android');
+const testAppRoot = path.join(__dirname, 'React-native-TestApp');
+const iosAppRoot = path.join(testAppRoot, 'ios');
+const androidAppRoot = path.join(testAppRoot, 'android');
 
 module.exports = {
+  testRunner: {
+    args: {
+      '$0': 'jest',
+      config: 'React-native-TestApp/__tests__/jest.e2e.config.js'
+    },
+    jest: {
+      setupTimeout: 120000
+    }
+  },
   apps: {
     'ios.debug': {
       type: 'ios.app',
-      binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/E2ETestingApp.app`,
-      build: `xcodebuild -workspace ${iosAppRoot}/E2ETestingApp.xcworkspace -scheme E2ETestingApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+      binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app`,
+      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
     },
     'android.debug': {
       type: 'android.apk',

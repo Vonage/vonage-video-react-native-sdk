@@ -44,17 +44,17 @@ jobs:
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
-          path: e2e/E2ETestingApp/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('e2e/E2ETestingApp/ios/Podfile.lock') }}
+          path: React-native-TestApp/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Install E2E app dependencies
-        working-directory: e2e/E2ETestingApp
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
         run: npm install
 
       - name: Install CocoaPods dependencies
-        working-directory: e2e/E2ETestingApp/ios
+        working-directory: React-native-TestApp/ios
         run: pod install
 
       - name: Install OpenTok SDK for credential generation
@@ -78,7 +78,7 @@ jobs:
         run: npm run test:e2e:ios:build
 
       - name: Start Metro bundler
-        working-directory: e2e/E2ETestingApp
+        working-directory: React-native-TestApp
         run: |
           nohup npm start > metro.log 2>&1 &
           METRO_PID=$!
@@ -125,8 +125,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install E2E app dependencies
-        working-directory: e2e/E2ETestingApp
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
         run: npm install
 
       - name: Set up JDK
@@ -179,7 +179,7 @@ jobs:
           avdmanager list device | head -n 120 || true
 
       - name: Start Metro bundler
-        working-directory: e2e/E2ETestingApp
+        working-directory: React-native-TestApp
         run: |
           nohup npm start > metro.log 2>&1 &
           METRO_PID=$!
