@@ -72,7 +72,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioLevel?.(event.nativeEvent);
         }}
         onAudioNetworkStats={(event) => {
-          eventHandlers.audioNetworkStats?.(event.nativeEvent);
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" };
+          // parse them so consumers get the structured payload the type advertises.
+          const eventData = event.nativeEvent.jsonStats
+            ? JSON.parse(event.nativeEvent.jsonStats)
+            : event.nativeEvent;
+          eventHandlers.audioNetworkStats?.(eventData);
         }}
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
@@ -109,7 +114,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
         onVideoNetworkStats={(event) => {
-          eventHandlers.videoNetworkStats?.(event.nativeEvent);
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" };
+          // parse them so consumers get the structured payload the type advertises.
+          const eventData = event.nativeEvent.jsonStats
+            ? JSON.parse(event.nativeEvent.jsonStats)
+            : event.nativeEvent;
+          eventHandlers.videoNetworkStats?.(eventData);
         }}
         style={style}
       />
