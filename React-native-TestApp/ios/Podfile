@@ -36,13 +36,15 @@ target 'ReactNativeTesApp' do
       # :ccache_enabled => true
     )
     
-    # Fix for fmt library compilation issues in CI
+    # Fix for fmt library compilation issues with Xcode 26+
     installer.pods_project.targets.each do |target|
       if target.name == 'fmt'
         target.build_configurations.each do |config|
+          # Keep C++20 as required by fmt, but suppress the lambda warning
           config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
-          config.build_settings['GCC_C_LANGUAGE_STANDARD'] = 'c11'
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
+          config.build_settings['GCC_WARN_ABOUT_INVALID_OFFSETOF_MACRO'] = 'NO'
+          # Remove -Werror to prevent warnings from failing the build
+          config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         end
       end
     end
