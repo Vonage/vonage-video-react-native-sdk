@@ -11,14 +11,30 @@ import com.opentok.android.Stream;
 import com.opentok.android.SubscriberKit;
 import com.opentok.android.PublisherKit;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 public final class EventUtils {
+
+    // Matches the iOS SDK's creationTime format (see ios/Utils/EventUtils.swift):
+    // "yyyy-MM-dd HH:mm:ss" in UTC, so the field is portable across platforms.
+    public static String formatCreationTime(Date creationTime) {
+        if (creationTime == null) {
+            return "";
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat.format(creationTime);
+    }
 
     public static WritableMap prepareJSConnectionMap(Connection connection) {
 
         WritableMap connectionInfo = Arguments.createMap();
         if (connection != null) {
             connectionInfo.putString("connectionId", connection.getConnectionId());
-            connectionInfo.putString("creationTime", connection.getCreationTime().toString());
+            connectionInfo.putString("creationTime", formatCreationTime(connection.getCreationTime()));
             connectionInfo.putString("data", connection.getData());
         }
         return connectionInfo;
@@ -31,7 +47,7 @@ public final class EventUtils {
             streamInfo.putString("streamId", stream.getStreamId());
             streamInfo.putInt("height", stream.getVideoHeight());
             streamInfo.putInt("width", stream.getVideoWidth());
-            streamInfo.putString("creationTime", stream.getCreationTime().toString());
+            streamInfo.putString("creationTime", formatCreationTime(stream.getCreationTime()));
             streamInfo.putString("connectionId", stream.getConnection().getConnectionId());
             streamInfo.putString("sessionId", session.getSessionId());
             streamInfo.putMap("connection", prepareJSConnectionMap(stream.getConnection()));
