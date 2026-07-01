@@ -81,19 +81,21 @@ export type Stream = {
 
 export type StreamEvent = Stream;
 
+// NOTE: `oldValue`/`newValue` are polymorphic at runtime — a `{ width, height }`
+// object for `videoDimensions` changes, a boolean for `hasAudio`/`hasVideo`/
+// `hasCaptions`, or a string for `videoType`. React Native's New-Architecture
+// codegen (>= 0.82) rejects a non-homogenous union (object | boolean | string),
+// so the codegen type declares the structured `videoDimensions` shape. The event
+// is emitted on Android only, via a loosely-typed WritableMap, so the raw runtime
+// values are still delivered to consumers unchanged.
+export type StreamPropertyChangedValue = {
+  width?: number;
+  height?: number;
+};
+
 export type StreamPropertyChangedEvent = {
-  oldValue:
-    | {
-        width?: number;
-        height?: number;
-      }
-    | boolean;
-  newValue:
-    | {
-        width?: number;
-        height?: number;
-      }
-    | boolean;
+  oldValue: StreamPropertyChangedValue;
+  newValue: StreamPropertyChangedValue;
   stream: Stream;
   changedProperty: string;
 };
