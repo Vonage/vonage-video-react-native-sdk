@@ -17,7 +17,7 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app`,
-      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
     },
     'android.debug': {
       type: 'android.apk',
@@ -30,7 +30,7 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 17',
+        type: 'iPhone 15 Pro',
       },
     },
     emulator: {
