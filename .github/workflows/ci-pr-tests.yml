@@ -74,7 +74,12 @@ jobs:
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
         run: node scripts/inject-e2e-credentials.js
 
+      - name: List available iOS simulators
+        run: applesimutils --list
+
       - name: Build iOS Detox app
+        env:
+          DETOX_DEVICE_NAME: iPhone 14
         run: npm run test:e2e:ios:build
 
       - name: Start Metro bundler
@@ -104,6 +109,8 @@ jobs:
           exit 1
 
       - name: Run iOS Detox tests
+        env:
+          DETOX_DEVICE_NAME: iPhone 14
         run: npm run test:e2e:ios
 
   e2e-android-tests:
