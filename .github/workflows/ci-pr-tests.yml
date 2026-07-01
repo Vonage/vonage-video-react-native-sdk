@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: React-native-TestApp/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock') }}
+          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
