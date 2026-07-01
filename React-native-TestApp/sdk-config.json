@@ -29,9 +29,9 @@
   "currentProfile": "local",
   "credentials": {
     "video": {
-      "apiKey": "77413141",
-      "sessionId": "2_MX43NzQxMzE0MX5-MTc4Mjg5NzU0MjA1N343WHNpZ1VCMWwyV1JncHRpVFd2TmkvT3V-fn4",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI3NzQxMzE0MSIsImlzdCI6InByb2plY3QiLCJpYXQiOjE3ODI5MDA4NTYsImV4cCI6MTc4Mjk4NzI1Niwic2Vzc2lvbl9pZCI6IjJfTVg0M056UXhNekUwTVg1LU1UYzRNamc1TnpVME1qQTFOMzQzV0hOcFoxVkNNV3d5VjFKbmNIUnBWRmQyVG1rdlQzVi1mbjQiLCJjcmVhdGVfdGltZSI6MTc4MjkwMDg1Nywibm9uY2UiOjAuNzY4MTU0MzcyODc0Mzg2Niwicm9sZSI6InB1Ymxpc2hlciIsImV4cGlyZV90aW1lIjoxNzgyOTg3MjU2LCJpbml0aWFsX2xheW91dF9jbGFzc19saXN0IjoiIiwic2NvcGUiOiJzZXNzaW9uLmNvbm5lY3QifQ.-HyKYVdwv3sJSbYA4NMj9gOve8lliEw2EIaY0sUn7nU"
+      "apiKey": "YOUR_API_KEY",
+      "sessionId": "YOUR_SESSION_ID",
+      "token": "YOUR_TOKEN"
     },
     "meet": {
       "authHeader": "YOUR_MEET_AUTH_HEADER",
