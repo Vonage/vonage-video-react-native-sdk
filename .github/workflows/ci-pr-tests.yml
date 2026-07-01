@@ -74,12 +74,27 @@ jobs:
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
         run: node scripts/inject-e2e-credentials.js
 
-      - name: List available iOS simulators
-        run: applesimutils --list
+      - name: Detect available iOS simulator
+        id: detect-simulator
+        run: |
+          # List available simulators and extract first available iPhone
+          AVAILABLE_SIMULATORS=$(applesimutils --list | grep -o "iPhone [^,]*" | head -1)
+          echo "Available simulators:"
+          applesimutils --list
+          
+          if [ -z "$AVAILABLE_SIMULATORS" ]; then
+            echo "No iPhone simulators found, using default"
+            DEVICE_NAME="iPhone 15"
+          else
+            DEVICE_NAME="$AVAILABLE_SIMULATORS"
+          fi
+          
+          echo "Selected simulator: $DEVICE_NAME"
+          echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
 
       - name: Build iOS Detox app
         env:
-          DETOX_DEVICE_NAME: iPhone 14
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
         run: npm run test:e2e:ios:build
 
       - name: Start Metro bundler
@@ -110,7 +125,7 @@ jobs:
 
       - name: Run iOS Detox tests
         env:
-          DETOX_DEVICE_NAME: iPhone 14
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
         run: npm run test:e2e:ios
 
   e2e-android-tests:
