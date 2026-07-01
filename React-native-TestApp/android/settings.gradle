@@ -11,6 +11,14 @@ plugins {
     id("com.facebook.react.settings") 
 }
 
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "../node_modules/detox/Detox-android" }
+    }
+}
+
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> 
     ex.autolinkLibrariesFromCommand() 
 }
