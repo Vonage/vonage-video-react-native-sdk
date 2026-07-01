@@ -46,6 +46,18 @@ target 'ReactNativeTesApp' do
           config.build_settings['GCC_WARN_ABOUT_INVALID_OFFSETOF_MACRO'] = 'NO'
           # Remove -Werror to prevent warnings from failing the build
           config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+          
+          # Remove -Werror from compiler flags
+          ['OTHER_CFLAGS', 'OTHER_CPLUSPLUSFLAGS', 'WARNING_CFLAGS'].each do |flag|
+            if config.build_settings[flag]
+              flags = config.build_settings[flag]
+              if flags.is_a?(Array)
+                config.build_settings[flag] = flags.reject { |f| f == '-Werror' }
+              elsif flags.is_a?(String)
+                config.build_settings[flag] = flags.gsub('-Werror', '').strip
+              end
+            end
+          end
         end
       end
     end
