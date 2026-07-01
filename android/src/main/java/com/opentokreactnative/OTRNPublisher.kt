@@ -78,7 +78,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
         val reactContext = context as ReactContext
         val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
-        val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(reactContext, id)
+        val eventDispatcher = UIManagerHelper.getEventDispatcher(reactContext)
         val event = OpenTokEvent(surfaceId, id, name, payload)
         eventDispatcher?.dispatchEvent(event)
     }
