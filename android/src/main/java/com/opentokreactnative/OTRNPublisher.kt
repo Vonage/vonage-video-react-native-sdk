@@ -75,6 +75,19 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         this.setLayoutParams(params)
     }
 
+    // Releases the publisher's native resources (camera capturer, encoder, renderer)
+    // and detaches its view on final teardown. Called from
+    // OTRNPublisherManager.onDropViewInstance (fires on real destruction, not recycling),
+    // so the ~0.6 MB/cycle native leak of an un-destroyed Publisher is reclaimed.
+    fun cleanUpMemory() {
+        removeAllViews()
+        (props?.get("publisherId") as? String)?.let {
+            sharedState.getPublishers().remove(it)
+        }
+        publisher?.destroy()
+        publisher = null
+    }
+
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
         val reactContext = context as ReactContext
         val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
