@@ -1,4 +1,4 @@
-import { PermissionsAndroid } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { each } from 'underscore';
 
 import OpentokReactNative from './NativeOpentok';
@@ -9,7 +9,16 @@ const OT = OpentokReactNative;
 const checkAndroidPermissions = (audioTrack, videoTrack, isScreenSharing) =>
   new Promise((resolve, reject) => {
     const permissionsToCheck = [
-      ...(audioTrack ? [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] : []),
+      ...(audioTrack
+        ? [
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            // BLUETOOTH_CONNECT is a dangerous runtime permission on Android 12+
+            // (API 31+); without it the OS blocks routing audio to BT headsets.
+            ...(Platform.OS === 'android' && Number(Platform.Version) >= 31
+              ? [PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT]
+              : []),
+          ]
+        : []),
       ...(videoTrack && !isScreenSharing
         ? [PermissionsAndroid.PERMISSIONS.CAMERA]
         : []),
