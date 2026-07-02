@@ -31,7 +31,7 @@ Before running E2E tests, make sure your machine is ready for your target platfo
 
 - Xcode is installed and opened the testing app at least once
 - iOS Simulator is installed and available
-- The simulator type used in [detox.config.js](../detox.config.js) (currently `iPhone 17`) exists on your machine (or edit the config file to use another simulator you want to use)
+- The simulator type used in [detox.config.js](../detox.config.js) exists on your machine; by default Detox uses `iPhone 15`, or you can set `DETOX_DEVICE_NAME` to another simulator available locally
 
 Detox relies on `applesimutils` to control iOS simulators. Install it once on macOS before running E2E tests:
 
