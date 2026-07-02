@@ -15,6 +15,11 @@ if (!applicationId || !sessionId || !token) {
 }
 
 const config = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+if (!config?.credentials?.video) {
+  throw new Error(`Invalid sdk-config.json at ${filePath}: missing credentials.video`);
+}
+
 config.credentials.video.apiKey = applicationId;
 config.credentials.video.sessionId = sessionId;
 config.credentials.video.token = token;
