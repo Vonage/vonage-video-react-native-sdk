@@ -100,7 +100,7 @@ export default class OTPublisher extends React.Component {
           });
         })
         .catch((error) => {
-          // this.otrnEventHandler(error);
+          this.eventHandlers.error?.(error);
         });
     } else {
       OT.publish(this.context.sessionId, this.state.publisherId);
@@ -143,7 +143,7 @@ export default class OTPublisher extends React.Component {
           });
         })
         .catch((error) => {
-          // this.otrnEventHandler(error);
+          this.eventHandlers.error?.(error);
         });
     } else {
       // Context and publisherId might not be available immediately
