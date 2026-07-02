@@ -84,9 +84,8 @@ import React
         if let err = error {
             reject("ERROR", err.localizedDescription, err)
         } else {
-            OTRN.sharedState.sessionConnectCallbacks[sessionId] = { _ in
-                resolve(nil)
-            }
+            // Store resolve + reject so an async failure (didFailWithError) can settle it.
+            OTRN.sharedState.sessionConnectCallbacks[sessionId] = (resolve, reject)
         }
     }
 
@@ -108,10 +107,8 @@ import React
         if let err = error {
             reject("ERROR", err.localizedDescription, err)
         } else {
-            // Store resolve callback to be called after session fully disconnects
-            OTRN.sharedState.sessionDisconnectCallbacks[sessionId] = { _ in
-                resolve(nil)
-            }
+            // Store resolve + reject so an async failure (didFailWithError) can settle it.
+            OTRN.sharedState.sessionDisconnectCallbacks[sessionId] = (resolve, reject)
         }
     }
 
@@ -471,9 +468,8 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
         OTRN.sharedState.connections.updateValue(
             session.connection!, forKey: session.connection!.connectionId)
         // Multi-session: resolve promise callback if present
-        if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
-            callback(nil)
-            OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId)
+        if let callback = OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId) {
+            callback.resolve(nil)
         }
         let sessionInfo = EventUtils.prepareJSSessionEventData(session);
         impl?.ot?.emit(onSessionConnected: sessionInfo)
@@ -481,6 +477,13 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
 
     public func session(_ session: OTSession, didFailWithError error: OTError) {
         let errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+        // Settle any pending connect()/disconnect() promise so it can't hang forever.
+        if let callback = OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId) {
+            callback.reject("ERROR", error.localizedDescription, error)
+        }
+        if let callback = OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId) {
+            callback.reject("ERROR", error.localizedDescription, error)
+        }
         impl?.ot?.emit(onSessionError: errorInfo)
     }
 
@@ -503,9 +506,8 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     public func sessionDidDisconnect(_ session: OTSession) {
         let sessionInfo = EventUtils.prepareJSSessionEventData(session);
         // Multi-session: resolve promise callback if present
-        if let callback = OTRN.sharedState.sessionDisconnectCallbacks[session.sessionId] {
-            callback(nil)
-            OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId)
+        if let callback = OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId) {
+            callback.resolve(nil)
         }
         impl?.ot?.emit(onSessionDisconnected: sessionInfo)
 
