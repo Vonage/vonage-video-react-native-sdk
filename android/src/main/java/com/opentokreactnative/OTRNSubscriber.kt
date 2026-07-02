@@ -190,7 +190,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
-        val reactContext = context as ThemedReactContext
+        val reactContext = context as? ThemedReactContext ?: return
+        if (!reactContext.hasActiveReactInstance()) return
         val eventDispatcher = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)?.eventDispatcher
         val event = OpenTokEvent(reactContext.surfaceId, id, name, payload)
         eventDispatcher?.dispatchEvent(event)
