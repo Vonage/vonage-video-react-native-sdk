@@ -198,6 +198,14 @@ import React
         // This ensures stale cache entries don't leak across recycles on Fabric.
         clearAllStreamDataCaches()
 
+        // Also release the KVO stream observers (registered via Utils.setStreamObservers)
+        // for this stream. This Fabric teardown/recycle path can fire without a
+        // session(_:streamDestroyed:) callback, so it must remove streamObservers here
+        // too — done before the guard so it still runs if the subscriber is already gone.
+        if let sid = self.streamId, !sid.isEmpty {
+            OTRN.sharedState.streamObservers.removeValue(forKey: sid)
+        }
+
         guard let streamId = self.streamId,
             let subscriber = OTRN.sharedState.subscribers[streamId]
         else {
