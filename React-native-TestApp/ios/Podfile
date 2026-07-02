@@ -40,6 +40,13 @@ target 'ReactNativeTesApp' do
     # Affects pods like fmt, Yoga, and other C++ libraries
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
+        # Special handling for fmt pod - downgrade to C++17 to avoid consteval issues
+        # fmt 11.0.2 has consteval compatibility issues with Xcode 26.6's strict C++20
+        if target.name == 'fmt'
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+          config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+        end
+        
         # Check if this is a C++ target using C++20
         if config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] == 'c++20' || 
            config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] == 'gnu++20'
