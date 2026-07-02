@@ -44,17 +44,17 @@ jobs:
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
-          path: e2e/E2ETestingApp/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('e2e/E2ETestingApp/ios/Podfile.lock') }}
+          path: React-native-TestApp/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Install E2E app dependencies
-        working-directory: e2e/E2ETestingApp
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
         run: npm install
 
       - name: Install CocoaPods dependencies
-        working-directory: e2e/E2ETestingApp/ios
+        working-directory: React-native-TestApp/ios
         run: pod install
 
       - name: Install OpenTok SDK for credential generation
@@ -74,11 +74,31 @@ jobs:
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
         run: node scripts/inject-e2e-credentials.js
 
+      - name: Detect available iOS simulator
+        id: detect-simulator
+        run: |
+          echo "Available simulators:"
+          applesimutils --list
+          
+          # Extract first available iPhone device name, clean up format
+          # applesimutils output format: "iPhone X", <uuid>, <os version>, <status>, <simdevicetype>
+          DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
+          
+          if [ -z "$DEVICE_NAME" ]; then
+            echo "No iPhone simulators found, using default"
+            DEVICE_NAME="iPhone 15"
+          fi
+          
+          echo "Selected simulator: $DEVICE_NAME"
+          echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
+
       - name: Build iOS Detox app
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
         run: npm run test:e2e:ios:build
 
       - name: Start Metro bundler
-        working-directory: e2e/E2ETestingApp
+        working-directory: React-native-TestApp
         run: |
           nohup npm start > metro.log 2>&1 &
           METRO_PID=$!
@@ -104,6 +124,8 @@ jobs:
           exit 1
 
       - name: Run iOS Detox tests
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
         run: npm run test:e2e:ios
 
   e2e-android-tests:
@@ -125,8 +147,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install E2E app dependencies
-        working-directory: e2e/E2ETestingApp
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
         run: npm install
 
       - name: Set up JDK
@@ -179,7 +201,7 @@ jobs:
           avdmanager list device | head -n 120 || true
 
       - name: Start Metro bundler
-        working-directory: e2e/E2ETestingApp
+        working-directory: React-native-TestApp
         run: |
           nohup npm start > metro.log 2>&1 &
           METRO_PID=$!

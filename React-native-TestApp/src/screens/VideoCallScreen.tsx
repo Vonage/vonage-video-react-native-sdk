@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text, ScrollView, ImageBackground, Alert } from 'react-native';
-import { OTSession, OTPublisher, OTSubscriber } from '@opentok/opentok-react-native';
+import { OTSession, OTPublisher, OTSubscriber } from '@vonage/client-sdk-video-react-native';
 import { State, DegradationPreference, VideoStats } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
 import { createSessionHandlers } from '../handlers/sessionHandlers';

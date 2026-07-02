@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, '../e2e/E2ETestingApp/App.tsx');
+const filePath = path.join(__dirname, '../React-native-TestApp/sdk-config.json');
 const applicationId = process.env.TESTING_APPLICATION_ID;
 const sessionId = process.env.TESTING_SESSION_ID;
 const token = process.env.TESTING_TOKEN;
@@ -14,14 +14,13 @@ if (!applicationId || !sessionId || !token) {
   );
 }
 
-let source = fs.readFileSync(filePath, 'utf8');
-source = source.replace(
-  /applicationId:\s*'[^']*'/,
-  `applicationId: ${JSON.stringify(applicationId)}`
-);
-source = source.replace(
-  /sessionId:\s*'[^']*'/,
-  `sessionId: ${JSON.stringify(sessionId)}`
-);
-source = source.replace(/token:\s*'[^']*'/, `token: ${JSON.stringify(token)}`);
-fs.writeFileSync(filePath, source);
+const config = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+if (!config?.credentials?.video) {
+  throw new Error(`Invalid sdk-config.json at ${filePath}: missing credentials.video`);
+}
+
+config.credentials.video.apiKey = applicationId;
+config.credentials.video.sessionId = sessionId;
+config.credentials.video.token = token;
+fs.writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n');

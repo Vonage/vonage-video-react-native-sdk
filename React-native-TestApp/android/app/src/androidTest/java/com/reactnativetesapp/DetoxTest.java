@@ -1,4 +1,4 @@
-package com.e2etestingapp;
+package com.reactnativetesapp;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ActivityTestRule;
