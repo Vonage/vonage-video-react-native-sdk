@@ -1,6 +1,5 @@
 import React from 'react';
 import { Platform, View } from 'react-native';
-import { ViewPropTypes } from 'deprecated-react-native-prop-types';
 import PropTypes from 'prop-types';
 import { isEqual } from 'underscore';
 import uuid from 'react-native-uuid';
@@ -232,7 +231,7 @@ export default class OTPublisher extends React.Component {
 OTPublisher.propTypes = {
   eventHandlers: PropTypes.object,
   properties: PropTypes.object,
-  style: ViewPropTypes.style,
+  style: PropTypes.any,
 };
 
 OTPublisher.defaultProps = {

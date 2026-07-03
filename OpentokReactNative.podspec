@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
       "\"${PODS_ROOT}/../build/generated/ios\""
     ].join(" "),
     "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
-    "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
+    "CLANG_CXX_LANGUAGE_STANDARD" => "c++20"
   }
   
   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.
