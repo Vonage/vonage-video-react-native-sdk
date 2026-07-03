@@ -389,7 +389,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
-            audioStats.putDouble("startTime", stat.startTime)
+            audioStats.putDouble("timestamp", stat.startTime)
             statsArray.pushMap(audioStats)
         }
         val payload =
@@ -417,7 +417,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("startTime", stat.startTime)
+                audioStats.putDouble("timestamp", stat.startTime)
                 statsArrayMap.pushMap(audioStats)
             }
             val payload =

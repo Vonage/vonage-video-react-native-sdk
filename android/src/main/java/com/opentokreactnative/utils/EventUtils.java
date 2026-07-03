@@ -147,7 +147,7 @@ public final class EventUtils {
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent);
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost);
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent);
-            audioStats.putDouble("startTime", stat.startTime);
+            audioStats.putDouble("timestamp", stat.startTime);
             statsArrayMap.pushMap(audioStats);
         }
         return statsArrayMap;
@@ -162,7 +162,7 @@ public final class EventUtils {
             videoStats.putDouble("videoBytesSent", stat.videoBytesSent);
             videoStats.putDouble("videoPacketsLost", stat.videoPacketsLost);
             videoStats.putDouble("videoPacketsSent", stat.videoPacketsSent);
-            videoStats.putDouble("startTime", stat.startTime);
+            videoStats.putDouble("timestamp", stat.startTime);
             statsArrayMap.pushMap(videoStats);
         }
         return statsArrayMap;
