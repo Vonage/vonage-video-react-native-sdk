@@ -26,7 +26,7 @@ public class OTScreenCapturer extends BaseVideoCapturer {
     private Runnable newFrame = new Runnable() {
         @Override
         public void run() {
-            if (capturing) {
+            if (capturing && contentView != null) {
                 int width = contentView.getWidth();
                 int height = contentView.getHeight();
 
@@ -110,7 +110,17 @@ public class OTScreenCapturer extends BaseVideoCapturer {
 
     @Override
     public void destroy() {
-
+        capturing = false;
+        mHandler.removeCallbacks(newFrame);
+        if (bmp != null) {
+            bmp.recycle();
+            bmp = null;
+        }
+        canvas = null;
+        frame = null;
+        // contentView retains the Activity's whole view tree — drop it so the
+        // capturer cannot keep the hierarchy alive after the publisher is destroyed.
+        contentView = null;
     }
 
     @Override
