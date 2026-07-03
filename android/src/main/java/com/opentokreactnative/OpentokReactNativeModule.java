@@ -185,6 +185,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
             mSession.publish(publisher);
+        } else {
+            // The publisher view has not attached yet (its Publisher is built in
+            // onAttachedToWindow -> publishStream on a later UI-thread layout pass).
+            // Remember the request; publishStream completes it once the publisher exists.
+            sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
         }
     }
 
