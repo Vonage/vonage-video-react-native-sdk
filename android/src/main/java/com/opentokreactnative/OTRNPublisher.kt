@@ -324,7 +324,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
-        val publisherId = this.props?.get("publisherId") as String
+        // Safe cast: if props haven't fully populated during attach, bail out instead
+        // of throwing on an unchecked `as String` (matches the prop-cast hardening in
+        // this PR); the pending-publish path retries once the view is attached.
+        val publisherId = this.props?.get("publisherId") as? String ?: return
         sharedState.getPublishers()
             .put(publisherId, publisher ?: return);
         if (publisher?.view != null) {
