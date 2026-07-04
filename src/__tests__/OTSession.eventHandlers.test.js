@@ -61,8 +61,11 @@ describe('OTSession eventHandlers prop update', () => {
     const session = new OTSession(props);
 
     // React contract: props are replaced, then componentDidUpdate runs.
+    // Reuse the same props object and swap only eventHandlers, so signal/options
+    // keep their identity and componentDidUpdate doesn't exercise unrelated
+    // signal-resend behavior.
     const previous = props;
-    session.props = { ...baseProps(), eventHandlers: { sessionConnected: second } };
+    session.props = { ...props, eventHandlers: { sessionConnected: second } };
     session.componentDidUpdate(previous);
 
     // Native session-connected event fires after the handler prop changed.
