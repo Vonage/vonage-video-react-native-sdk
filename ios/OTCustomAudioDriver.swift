@@ -268,10 +268,17 @@ class OTCustomAudioDriver: NSObject {
             if let avAudioSessionMode = avAudioSessionMode {
                 try session.setMode(avAudioSessionMode)
             }
-            try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
-            try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
+            // Only restore values we actually captured during setup; the defaults
+            // are 0, and setPreferred*(0) is invalid and throws (which would also
+            // skip the remaining restores in this do-block).
+            if avAudioSessionPreffSampleRate > 0 {
+                try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
+            }
+            if avAudioSessionChannels > 0 {
+                try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
+            }
         } catch {
-            print("Error reseting AVAudioSession: \(error)")
+            print("Error resetting AVAudioSession: \(error)")
         }
     }
     
