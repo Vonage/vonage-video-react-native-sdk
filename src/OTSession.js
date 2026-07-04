@@ -153,7 +153,17 @@ export default class OTSession extends Component {
       }),
     ];
 
-    OT.connect(sessionId, token);
+    // OT.connect is typed as a Promise, but its rejection behaviour can differ
+    // across architectures. Handle it defensively so a native rejection can't
+    // surface as an unhandled promise rejection. User-facing connect failures
+    // are still delivered through OT.onSessionError -> eventHandlers.error above,
+    // so we only log here rather than double-dispatching.
+    const connectResult = OT.connect(sessionId, token);
+    if (connectResult && typeof connectResult.catch === 'function') {
+      connectResult.catch((error) => {
+        logOT({ sessionId, action: 'rn_connect_error', error });
+      });
+    }
   }
 
   initComponent = () => {
