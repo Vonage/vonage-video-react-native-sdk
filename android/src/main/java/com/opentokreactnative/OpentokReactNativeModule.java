@@ -85,6 +85,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         sharedState.getSubscribers().clear();
         sharedState.getConnections().clear();
         sharedState.getSubscriberStreams().clear();
+        sharedState.getAndroidOnTopMap().clear();
+        sharedState.getAndroidZOrderMap().clear();
         super.invalidate();
     }
 
