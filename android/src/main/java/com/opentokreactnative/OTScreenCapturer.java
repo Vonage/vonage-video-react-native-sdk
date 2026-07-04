@@ -115,8 +115,8 @@ public class OTScreenCapturer extends BaseVideoCapturer {
 
     @Override
     public void destroy() {
-        capturing = false;
-        mHandler.removeCallbacks(newFrame);
+        // Centralize capture teardown so it can't drift from stopCapture().
+        stopCapture();
         if (bmp != null) {
             bmp.recycle();
             bmp = null;
