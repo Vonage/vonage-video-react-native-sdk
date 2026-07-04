@@ -19,11 +19,14 @@ import { checkAndroidPermissions } from '../OT';
 describe('checkAndroidPermissions — BLUETOOTH_CONNECT on Android 12+', () => {
   beforeEach(() => {
     PermissionsAndroid.requestMultiple.mockReset();
-    PermissionsAndroid.requestMultiple.mockResolvedValue({
-      'android.permission.RECORD_AUDIO': 'granted',
-      'android.permission.CAMERA': 'granted',
-      'android.permission.BLUETOOTH_CONNECT': 'granted',
-    });
+    // Mirror React Native: return a 'granted' result only for the keys actually
+    // requested, rather than a fixed set, so the tests don't assume permissions
+    // that weren't asked for.
+    PermissionsAndroid.requestMultiple.mockImplementation((perms) =>
+      Promise.resolve(
+        Object.fromEntries((perms || []).map((perm) => [perm, 'granted']))
+      )
+    );
   });
 
   it('requests BLUETOOTH_CONNECT alongside RECORD_AUDIO on API 31+ when audio is enabled', async () => {
