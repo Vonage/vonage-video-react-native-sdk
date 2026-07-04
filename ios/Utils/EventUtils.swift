@@ -72,7 +72,10 @@ class EventUtils {
             stats["videoPacketsLost"] = value.videoPacketsLost;
             stats["videoBytesSent"] = value.videoBytesSent;
             stats["videoPacketsSent"] = value.videoPacketsSent;
+            // Emit both keys so the payload is consistent across platforms
+            // (Android historically emits "startTime", iOS "timestamp").
             stats["timestamp"] = value.timestamp;
+            stats["startTime"] = value.timestamp;
             statsArray.append(stats);
         }
         return statsArray;
@@ -87,7 +90,9 @@ class EventUtils {
             stats["audioPacketsLost"] = value.audioPacketsLost;
             stats["audioPacketsSent"] = value.audioPacketsSent;
             stats["audioBytesSent"] = value.audioBytesSent;
+            // Emit both keys for cross-platform consistency (see video stats above).
             stats["timestamp"] = value.timestamp;
+            stats["startTime"] = value.timestamp;
             statsArray.append(stats);
         }
         return statsArray;

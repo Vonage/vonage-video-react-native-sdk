@@ -89,6 +89,8 @@ export type PublisherAudioNetworkStats = {
   audioBytesSent: number;
   audioPacketsSent: number;
   timestamp: number;
+  /** Alias of `timestamp`; emitted on both platforms for cross-platform consistency. */
+  startTime: number;
 };
 
 export type PublisherVideoNetworkStats = {
@@ -98,6 +100,8 @@ export type PublisherVideoNetworkStats = {
   videoBytesSent: number;
   videoPacketsSent: number;
   timestamp: number;
+  /** Alias of `timestamp`; emitted on both platforms for cross-platform consistency. */
+  startTime: number;
 };
 
 export type SenderStats = {

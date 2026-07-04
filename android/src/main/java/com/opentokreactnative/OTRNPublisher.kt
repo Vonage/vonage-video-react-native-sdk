@@ -389,7 +389,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
+            // Emit both keys so the payload is consistent across platforms
+            // (iOS historically emits "timestamp", Android "startTime").
             audioStats.putDouble("timestamp", stat.startTime)
+            audioStats.putDouble("startTime", stat.startTime)
             statsArray.pushMap(audioStats)
         }
         val payload =
@@ -417,7 +420,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 videoStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 videoStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 videoStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
+                // Emit both keys for cross-platform consistency (see onAudioStats).
                 videoStats.putDouble("timestamp", stat.startTime)
+                videoStats.putDouble("startTime", stat.startTime)
                 statsArrayMap.pushMap(videoStats)
             }
             val payload =
