@@ -100,7 +100,10 @@ export default class OTPublisher extends React.Component {
           });
         })
         .catch((error) => {
-          this.eventHandlers.error?.(error);
+          // Read the current props so a parent that re-rendered with a new error
+          // handler still receives permission-denial errors (matches the render
+          // onError path, which also uses this.props.eventHandlers).
+          this.props.eventHandlers?.error?.(error);
         });
     } else {
       OT.publish(this.context.sessionId, this.state.publisherId);
@@ -143,7 +146,10 @@ export default class OTPublisher extends React.Component {
           });
         })
         .catch((error) => {
-          this.eventHandlers.error?.(error);
+          // Read the current props so a parent that re-rendered with a new error
+          // handler still receives permission-denial errors (matches the render
+          // onError path, which also uses this.props.eventHandlers).
+          this.props.eventHandlers?.error?.(error);
         });
     } else {
       // Context and publisherId might not be available immediately
