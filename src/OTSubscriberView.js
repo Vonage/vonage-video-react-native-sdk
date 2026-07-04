@@ -72,11 +72,18 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioLevel?.(event.nativeEvent);
         }}
         onAudioNetworkStats={(event) => {
-          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" };
-          // parse them so consumers get the structured payload the type advertises.
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent;
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" }.
+          // Parse the structured stats but keep the wrapper's other fields (e.g.
+          // stream), and guard the parse so malformed JSON can't crash the JS thread.
+          const { jsonStats, ...rest } = event.nativeEvent;
+          let eventData = event.nativeEvent;
+          if (jsonStats) {
+            try {
+              eventData = { ...rest, ...JSON.parse(jsonStats) };
+            } catch (e) {
+              eventData = rest;
+            }
+          }
           eventHandlers.audioNetworkStats?.(eventData);
         }}
         onSubscriberConnected={(event) => {
@@ -114,11 +121,18 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
         onVideoNetworkStats={(event) => {
-          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" };
-          // parse them so consumers get the structured payload the type advertises.
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent;
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" }.
+          // Parse the structured stats but keep the wrapper's other fields (e.g.
+          // stream), and guard the parse so malformed JSON can't crash the JS thread.
+          const { jsonStats, ...rest } = event.nativeEvent;
+          let eventData = event.nativeEvent;
+          if (jsonStats) {
+            try {
+              eventData = { ...rest, ...JSON.parse(jsonStats) };
+            } catch (e) {
+              eventData = rest;
+            }
+          }
           eventHandlers.videoNetworkStats?.(eventData);
         }}
         style={style}
