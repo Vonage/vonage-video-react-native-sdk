@@ -75,7 +75,8 @@ export default class OTSession extends Component {
       // (event.connectionId is undefined). Keep an instance mirror for the
       // synchronous read in onStreamCreated below, and put it in state so
       // context consumers re-render with the connectionId.
-      const connectionId = event.connection?.connectionId;
+      // Normalize to null (not undefined) so the context value stays string|null.
+      const connectionId = event.connection?.connectionId ?? null;
       this.connectionId = connectionId;
       this.setState({ connectionId });
       setIsConnected(sessionId, true);
@@ -212,8 +213,15 @@ export default class OTSession extends Component {
       // `signal` is object-shaped and is frequently passed as an inline literal,
       // which changes reference every render. Compare by value so an unchanged
       // payload is not re-sent on every parent re-render (would flood signaling).
+      // The signal contract is { type, data, to }; compare those fields directly
+      // rather than JSON.stringify, which can throw on cyclic/BigInt payloads and
+      // would crash componentDidUpdate.
       if (deep) {
-        return JSON.stringify(previous) !== JSON.stringify(current);
+        return (
+          previous?.type !== current?.type ||
+          previous?.data !== current?.data ||
+          previous?.to !== current?.to
+        );
       }
       return previous !== current;
     };
