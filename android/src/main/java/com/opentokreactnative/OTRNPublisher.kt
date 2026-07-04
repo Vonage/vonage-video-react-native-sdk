@@ -411,14 +411,14 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         if (publisherId.isNotEmpty()) {
             val statsArrayMap: WritableArray = Arguments.createArray()
             for (stat in stats!!) {
-                val audioStats: WritableMap = Arguments.createMap()
-                audioStats.putString("connectionId", stat.connectionId)
-                audioStats.putString("subscriberId", stat.subscriberId)
-                audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
-                audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
-                audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("timestamp", stat.startTime)
-                statsArrayMap.pushMap(audioStats)
+                val videoStats: WritableMap = Arguments.createMap()
+                videoStats.putString("connectionId", stat.connectionId)
+                videoStats.putString("subscriberId", stat.subscriberId)
+                videoStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
+                videoStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
+                videoStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
+                videoStats.putDouble("timestamp", stat.startTime)
+                statsArrayMap.pushMap(videoStats)
             }
             val payload =
                 Arguments.createMap().apply {
