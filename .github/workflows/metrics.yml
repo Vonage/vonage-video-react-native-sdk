@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+# Least-privilege GITHUB_TOKEN. Aggregit only reads repo metadata (commits,
+# issues, PRs); it never writes. Avoids the default (potentially write-all) token.
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 jobs:
   recordMetrics:
     runs-on: ubuntu-latest

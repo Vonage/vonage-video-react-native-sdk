@@ -5,7 +5,12 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
-    
+
+# Least-privilege GITHUB_TOKEN: this workflow only checks out and builds the
+# sample apps; it needs no write access.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-latest
