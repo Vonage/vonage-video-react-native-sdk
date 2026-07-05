@@ -86,4 +86,23 @@ describe('OTPublisher video filters', () => {
     expect(() => pub.applyVideoFilter({ type: 'sepia' })).toThrow(/unsupported filter type/);
     expect(OT.setVideoTransformers).not.toHaveBeenCalled();
   });
+
+  it('applyVideoFilter throws on an invalid blurStrength', () => {
+    const pub = makePublisher();
+    expect(() =>
+      pub.applyVideoFilter({ type: 'backgroundBlur', blurStrength: 'medium' })
+    ).toThrow(/blurStrength must be/);
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+  });
+
+  it('applyVideoFilter throws when backgroundReplacement has no image', () => {
+    const pub = makePublisher();
+    expect(() => pub.applyVideoFilter({ type: 'backgroundReplacement' })).toThrow(
+      /non-empty backgroundImgUrl/
+    );
+    expect(() =>
+      pub.applyVideoFilter({ type: 'backgroundReplacement', backgroundImgUrl: '' })
+    ).toThrow(/non-empty backgroundImgUrl/);
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+  });
 });

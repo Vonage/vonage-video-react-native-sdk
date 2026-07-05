@@ -152,11 +152,26 @@ export default class OTPublisher extends React.Component {
   applyVideoFilter(filter) {
     let transformer;
     if (filter && filter.type === 'backgroundBlur') {
+      const blurStrength = filter.blurStrength || 'high';
+      if (blurStrength !== 'low' && blurStrength !== 'high') {
+        throw new Error(
+          `applyVideoFilter: blurStrength must be "low" or "high" (got "${filter.blurStrength}").`
+        );
+      }
       transformer = {
         name: 'BackgroundBlur',
-        properties: JSON.stringify({ radius: filter.blurStrength || 'high' }),
+        properties: JSON.stringify({ radius: blurStrength }),
       };
     } else if (filter && filter.type === 'backgroundReplacement') {
+      if (
+        typeof filter.backgroundImgUrl !== 'string' ||
+        filter.backgroundImgUrl.length === 0
+      ) {
+        throw new Error(
+          'applyVideoFilter: backgroundReplacement requires a non-empty ' +
+            'backgroundImgUrl (a local image file path on mobile).'
+        );
+      }
       transformer = {
         name: 'BackgroundReplacement',
         properties: JSON.stringify({ image_file_path: filter.backgroundImgUrl }),

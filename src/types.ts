@@ -325,6 +325,10 @@ export type OTSessionInstance = React.Component<OTSessionProps> & {
 /** A single low-level video transformer forwarded to the native media library. */
 export type VideoTransformer = {
   name: string;
+  /**
+   * A JSON string of the transformer's properties (not an object), e.g.
+   * `JSON.stringify({ radius: 'high' })`. The native module deserializes it.
+   */
   properties?: string;
 };
 
