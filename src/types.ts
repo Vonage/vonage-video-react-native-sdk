@@ -322,8 +322,26 @@ export type OTSessionInstance = React.Component<OTSessionProps> & {
   forceDisconnect: (connectionId: string) => Promise<boolean>;
 };
 
+/** A single low-level video transformer forwarded to the native media library. */
+export type VideoTransformer = {
+  name: string;
+  properties?: string;
+};
+
+/**
+ * High-level video filter, mirroring the Web SDK's Publisher.applyVideoFilter().
+ * NOTE (mobile): for `backgroundReplacement`, `backgroundImgUrl` must be a LOCAL
+ * image file path — a remote URL is not fetched by the native media library.
+ */
+export type VideoFilter =
+  | { type: 'backgroundBlur'; blurStrength?: 'low' | 'high' }
+  | { type: 'backgroundReplacement'; backgroundImgUrl: string };
+
 export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   getRtcStatsReport: () => void;
+  setVideoTransformers: (transformers: VideoTransformer[]) => void;
+  applyVideoFilter: (filter: VideoFilter) => void;
+  clearVideoFilter: () => void;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {

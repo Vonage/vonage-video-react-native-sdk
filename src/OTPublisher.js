@@ -134,6 +134,47 @@ export default class OTPublisher extends React.Component {
     );
   }
 
+  setVideoTransformers(transformers = []) {
+    //NOSONAR - this method is exposed externally
+    OT.setVideoTransformers(
+      this.context.sessionId,
+      this.state.publisherId,
+      transformers
+    );
+  }
+
+  // Convenience wrapper mirroring the Web SDK's Publisher.applyVideoFilter().
+  // Translates a high-level filter into the native video transformer format and
+  // forwards it to setVideoTransformers.
+  // NOTE (mobile): backgroundReplacement expects a LOCAL image file path — unlike
+  // the Web SDK's backgroundImgUrl, a remote URL is not fetched by the native
+  // media library, so download the image to a local file first.
+  applyVideoFilter(filter) {
+    let transformer;
+    if (filter && filter.type === 'backgroundBlur') {
+      transformer = {
+        name: 'BackgroundBlur',
+        properties: JSON.stringify({ radius: filter.blurStrength || 'high' }),
+      };
+    } else if (filter && filter.type === 'backgroundReplacement') {
+      transformer = {
+        name: 'BackgroundReplacement',
+        properties: JSON.stringify({ image_file_path: filter.backgroundImgUrl }),
+      };
+    } else {
+      throw new Error(
+        `applyVideoFilter: unsupported filter type "${
+          filter && filter.type
+        }". Use "backgroundBlur" or "backgroundReplacement".`
+      );
+    }
+    this.setVideoTransformers([transformer]);
+  }
+
+  clearVideoFilter() {
+    this.setVideoTransformers([]);
+  }
+
   componentWillUnmount() {
     OT.unpublish(this.context.sessionId, this.state.publisherId);
     const publisherStreamId = getPublisherStream(this.context.sessionId);
