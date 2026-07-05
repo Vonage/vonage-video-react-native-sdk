@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 
 import com.opentok.android.BaseVideoCapturer;
@@ -21,7 +22,7 @@ public class OTScreenCapturer extends BaseVideoCapturer {
     private Bitmap bmp;
     private Canvas canvas;
 
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler(Looper.getMainLooper());
 
     private Runnable newFrame = new Runnable() {
         @Override
