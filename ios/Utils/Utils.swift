@@ -72,7 +72,7 @@ class Utils {
     }
 
     static func getPublisherId(_ publisher: OTPublisher) -> String {
-        let publisherIds = OTRN.sharedState.publishers.filter {
+        let publisherIds = OTRN.sharedState.publishers.snapshot.filter {
             $0.value == publisher
         }
         guard let publisherId = publisherIds.first else { return "" }
