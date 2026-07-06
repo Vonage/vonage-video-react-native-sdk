@@ -17,27 +17,31 @@ describe('App Launch Test', () => {
   });
 
   it('should launch the app successfully', async () => {
-    // Wait for app to try to connect to Metro
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Wait for the initial Metro bundle load to complete before issuing a reload
+    console.log('Waiting for initial bundle load before reload...');
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     
     // Reload the React Native app to force reconnection
+    console.log('Calling reloadReactNative...');
     await device.reloadReactNative();
-    
-    // Wait for reload to complete
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log('reloadReactNative returned, waiting for UI to appear...');
     
     try {
-      // Check if the app has loaded by looking for any text
-      await expect(element(by.text('Connection Settings'))).toBeVisible();
+      // Poll until the app has loaded — give it up to 4 minutes on slow CI runners
+      await waitFor(element(by.text('Connection Settings')))
+        .toBeVisible()
+        .withTimeout(240000);
+      console.log('App launched successfully — "Connection Settings" is visible');
     } catch (error) {
-      // If not found, try to get view hierarchy for debugging
-      console.log('View hierarchy:', error.message);
+      // Print the full error so the view hierarchy (verbose mode) appears in the log
+      console.log('Could not find "Connection Settings":', error.message);
       
       // Try alternate text that might be present
       try {
-        await expect(element(by.text('Manual'))).toBeVisible();
+        const isManualVisible = await element(by.text('Manual')).isVisible();
+        console.log('"Manual" element visible:', isManualVisible);
       } catch (e) {
-        // Pass for now to see other elements
+        console.log('Could not check "Manual" element:', e.message);
       }
       
       throw error;
@@ -49,11 +53,13 @@ describe('App Launch Test', () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     
     // Check that API key input has value (credentials loaded)
+    console.log('Waiting for apiKeyInput to be visible...');
     const apiKeyInput = element(by.id('apiKeyInput'));
-    await expect(apiKeyInput).toBeVisible();
+    await waitFor(apiKeyInput).toBeVisible().withTimeout(60000);
+    console.log('apiKeyInput is visible');
     
     // Check for submit button
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(30000);
     
     console.log('About to tap submit button');
 
