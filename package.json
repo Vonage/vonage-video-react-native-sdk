@@ -132,6 +132,9 @@
   "engines": {
     "node": ">= 22.11.0"
   },
+  "overrides": {
+    "form-data": "^4.0.6"
+  },
   "workspaces": [
     "e2e/E2ETestingApp"
   ],
