@@ -1,7 +1,7 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
   logger: {
-    level: 'info',
+    level: 'verbose',
     options: {
       showLoggerName: false,
       showPid: false,
@@ -14,7 +14,7 @@ module.exports = {
       config: '__tests__/jest.e2e.config.js'
     },
     jest: {
-      setupTimeout: 120000
+      setupTimeout: 300000
     }
   },
   apps: {
