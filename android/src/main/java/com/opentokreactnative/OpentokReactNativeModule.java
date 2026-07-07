@@ -184,6 +184,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
+            // Consume any pending request so publishStream() won't publish this
+            // same Publisher again when its view attaches (idempotent handshake).
+            sharedState.getPendingPublishers().remove(publisherId);
             mSession.publish(publisher);
         } else {
             // The publisher view has not attached yet (its Publisher is built in
