@@ -22,7 +22,7 @@ public class OTScreenCapturer extends BaseVideoCapturer {
     private Bitmap bmp;
     private Canvas canvas;
 
-    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     private Runnable newFrame = new Runnable() {
         @Override
