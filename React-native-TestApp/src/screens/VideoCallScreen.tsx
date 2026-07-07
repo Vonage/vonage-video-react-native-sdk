@@ -820,7 +820,7 @@ class VideoCallScreen extends Component<{}, State> {
   render() {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
-        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
           {this.renderConnectionInputs()}
           {this.renderVideoSection()}
           {this.renderControls()}

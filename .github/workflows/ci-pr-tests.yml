@@ -85,8 +85,7 @@ jobs:
           echo "Available simulators:"
           applesimutils --list
           
-          # Extract first available iPhone device name, clean up format
-          # applesimutils output format: "iPhone X", <uuid>, <os version>, <status>, <simdevicetype>
+          # Extract first available iPhone device name
           DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
           
           if [ -z "$DEVICE_NAME" ]; then
