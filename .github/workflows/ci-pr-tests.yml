@@ -192,6 +192,21 @@ jobs:
           API_URL: ${{ secrets.API_URL }}
         run: node scripts/inject-e2e-credentials.js
 
+      - name: Verify Detox Android setup
+        run: |
+          echo "=== Node / npm versions ==="
+          node --version
+          npm --version
+          echo "=== Installed Detox npm version ==="
+          node -e "console.log(require('./node_modules/detox/package.json').version)"
+          echo "=== Java version ==="
+          java -version
+          echo "=== Gradle wrapper properties ==="
+          cat React-native-TestApp/android/gradle/wrapper/gradle-wrapper.properties
+          echo "=== Detox Android maven artifacts ==="
+          ls -la node_modules/detox/Detox-android/ || echo "Detox-android directory not found"
+          find node_modules/detox/Detox-android -name "*.pom" 2>/dev/null | head -20 || echo "No POM files found"
+
       - name: Build Android Detox app
         run: npm run test:e2e:android:build
 
