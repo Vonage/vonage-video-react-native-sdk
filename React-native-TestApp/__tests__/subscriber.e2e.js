@@ -26,9 +26,6 @@ describe('Subscriber Tests', () => {
     if (bot) {
       await bot.close();
     }
-    try {
-      await device.enableSynchronization();
-    } catch (e) {}
   });
 
   it('subscriber appears when bot publishes', async () => {

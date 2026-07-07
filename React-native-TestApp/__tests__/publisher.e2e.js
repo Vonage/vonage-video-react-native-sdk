@@ -35,9 +35,6 @@ describe('Basic Connectivity', () => {
     if (bot) {
       await bot.close();
     }
-    try {
-      await device.enableSynchronization();
-    } catch (e) {}
   });
 
   it('app publishes stream and bot receives it', async () => {
