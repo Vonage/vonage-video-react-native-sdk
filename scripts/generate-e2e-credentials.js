@@ -42,10 +42,19 @@ const createSession = (options) =>
 
 (async () => {
   const session = await createSession({ mediaMode: 'routed' });
+
+  // Token for the RN app under test
   const token = opentok.generateToken(session.sessionId, {
-    role: 'publisher',
+    role: 'moderator',
     expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
     data: `environmentUrl=${apiUrl}`,
+  });
+
+  // Token for the Playwright bot (second participant)
+  const tokenBot = opentok.generateToken(session.sessionId, {
+    role: 'publisher',
+    expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
+    data: `environmentUrl=${apiUrl}&participant=bot`,
   });
 
   fs.appendFileSync(
@@ -54,6 +63,7 @@ const createSession = (options) =>
       `TESTING_APPLICATION_ID=${apiKey}`,
       `TESTING_SESSION_ID=${session.sessionId}`,
       `TESTING_TOKEN=${token}`,
+      `TESTING_TOKEN_BOT=${tokenBot}`,
     ].join('\n') + '\n'
   );
 })().catch((error) => {

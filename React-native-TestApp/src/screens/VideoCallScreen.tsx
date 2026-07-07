@@ -487,29 +487,31 @@ class VideoCallScreen extends Component<{}, State> {
           token={this.state.input.token}
           encryptionSecret={this.state.input.encryptionSecret}
           signal={this.state.input.signal}
-          options={{ apiUrl: 'https://api.dev.opentok.com' }}
+          options={{ apiUrl: credentials.apiUrl || undefined }}
           eventHandlers={this.sessionEventHandlers}
           ref={this.sessionRef}>
           <View style={styles.videoLayout}>
             {!this.state.forceDisconnect && (
-              <OTPublisher
-                testID="publisher"
-                properties={this.state.publisherProperties}
-                style={styles.video}
-                eventHandlers={this.publisherEventHandlers}
-                ref={this.pubRef}>
-                {this.state.showRecIndicator && (
-                  <Text style={styles.recording}>● REC</Text>
-                )}
-              </OTPublisher>
+              <View testID="publisher" style={styles.video}>
+                <OTPublisher
+                  properties={this.state.publisherProperties}
+                  style={{ flex: 1 }}
+                  eventHandlers={this.publisherEventHandlers}
+                  ref={this.pubRef}>
+                  {this.state.showRecIndicator && (
+                    <Text style={styles.recording}>● REC</Text>
+                  )}
+                </OTPublisher>
+              </View>
             )}
             {/* Try auto-subscribe mode - no streamId specified */}
-            <OTSubscriber
-              testID="subscriber"
-              properties={this.state.subscriberProperties}
-              style={styles.video}
-              eventHandlers={this.subscriberEventHandlers}
-            />
+            <View testID="subscriber" style={styles.video}>
+              <OTSubscriber
+                properties={this.state.subscriberProperties}
+                style={{ flex: 1 }}
+                eventHandlers={this.subscriberEventHandlers}
+              />
+            </View>
           </View>
         </OTSession>
       </View>
@@ -797,6 +799,24 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
+  renderEventIndicators() {
+    if (!this.state.connectedToSession) return null;
+
+    return (
+      <View testID="eventIndicators" style={{ padding: 4 }}>
+        {this.state.sessionEvents.signalReceived && (
+          <Text testID="signalReceivedIndicator">signal-received</Text>
+        )}
+        {this.state.sessionEvents.forceMute && (
+          <Text testID="forceMuteActiveIndicator">force-mute-active</Text>
+        )}
+        {this.state.sessionEvents.streamCreated && (
+          <Text testID="streamCreatedIndicator">stream-created</Text>
+        )}
+      </View>
+    );
+  }
+
   render() {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
@@ -804,6 +824,7 @@ class VideoCallScreen extends Component<{}, State> {
           {this.renderConnectionInputs()}
           {this.renderVideoSection()}
           {this.renderControls()}
+          {this.renderEventIndicators()}
           {this.renderDegradationPreferenceSettings()}
           {this.renderCodecSettings()}
         </ScrollView>

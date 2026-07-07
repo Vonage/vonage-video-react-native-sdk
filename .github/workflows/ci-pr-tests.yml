@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
       - name: Install applesimutils
         run: |
           brew tap wix/brew
@@ -72,6 +75,8 @@ jobs:
           TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
           TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
+          API_URL: ${{ secrets.API_URL }}
         run: node scripts/inject-e2e-credentials.js
 
       - name: Detect available iOS simulator
@@ -147,6 +152,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
       - name: Install React-native-TestApp dependencies
         working-directory: React-native-TestApp
         run: npm install
@@ -180,6 +188,8 @@ jobs:
           TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
           TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
+          API_URL: ${{ secrets.API_URL }}
         run: node scripts/inject-e2e-credentials.js
 
       - name: Build Android Detox app

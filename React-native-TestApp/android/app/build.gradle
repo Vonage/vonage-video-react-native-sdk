@@ -116,8 +116,8 @@ dependencies {
     // MultiDex support for apps with >64K methods
     implementation("androidx.multidex:multidex:2.0.1")
 
-    // Detox for E2E testing
-    androidTestImplementation("com.wix:detox:20.50.1")
+    // Detox for E2E testing - version resolved from node_modules
+    androidTestImplementation("com.wix:detox:+")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("junit:junit:4.13.2")

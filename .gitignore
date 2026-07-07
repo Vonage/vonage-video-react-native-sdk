@@ -75,3 +75,7 @@ android/generated
 android/build
 android/src/main/java/com/facebook
 android/.gradle
+
+.kiro/
+
+artifacts/
