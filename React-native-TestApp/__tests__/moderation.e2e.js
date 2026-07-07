@@ -21,10 +21,11 @@ describe('Moderation', () => {
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const { waitForAppReady } = require('./helpers/waitForApp');
+    await waitForAppReady();
 
     // Connect app (moderator token)
-    await expect(element(by.id('submitButton'))).toBeVisible();
     await element(by.id('submitButton')).tap();
     console.log('[moderation] Connecting app...');
     await new Promise((resolve) => setTimeout(resolve, 30000));

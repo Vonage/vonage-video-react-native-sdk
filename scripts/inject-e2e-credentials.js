@@ -32,4 +32,7 @@ config.credentials.video.apiUrl = process.env.API_URL || '';
 if (tokenBot) {
   config.credentials.video.tokenBot = tokenBot;
 }
+if (process.env.TESTING_TOKEN_BOT2) {
+  config.credentials.video.tokenBot2 = process.env.TESTING_TOKEN_BOT2;
+}
 fs.writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n');

@@ -48,6 +48,7 @@ async function getCredentials() {
     sessionId: video.sessionId,
     tokenApp: video.token,
     tokenBot: video.tokenBot || null,
+    tokenBot2: video.tokenBot2 || null,
   };
 }
 

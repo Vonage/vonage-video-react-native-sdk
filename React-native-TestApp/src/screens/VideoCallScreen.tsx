@@ -508,6 +508,7 @@ class VideoCallScreen extends Component<{}, State> {
             <View testID="subscriber" style={styles.video}>
               <OTSubscriber
                 properties={this.state.subscriberProperties}
+                containerStyle={{ flex: 1 }}
                 style={{ flex: 1 }}
                 eventHandlers={this.subscriberEventHandlers}
               />

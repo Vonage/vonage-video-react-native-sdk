@@ -54,7 +54,20 @@ const createSession = (options) =>
   const tokenBot = opentok.generateToken(session.sessionId, {
     role: 'publisher',
     expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
-    data: `environmentUrl=${apiUrl}&participant=bot`,
+    data: `environmentUrl=${apiUrl}&participant=bot1`,
+  });
+
+  // Additional bot tokens for multi-party tests (AMR transitions)
+  const tokenBot2 = opentok.generateToken(session.sessionId, {
+    role: 'publisher',
+    expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
+    data: `environmentUrl=${apiUrl}&participant=bot2`,
+  });
+
+  const tokenBot3 = opentok.generateToken(session.sessionId, {
+    role: 'publisher',
+    expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
+    data: `environmentUrl=${apiUrl}&participant=bot3`,
   });
 
   fs.appendFileSync(
@@ -64,6 +77,7 @@ const createSession = (options) =>
       `TESTING_SESSION_ID=${session.sessionId}`,
       `TESTING_TOKEN=${token}`,
       `TESTING_TOKEN_BOT=${tokenBot}`,
+      `TESTING_TOKEN_BOT2=${tokenBot2}`,
     ].join('\n') + '\n'
   );
 })().catch((error) => {

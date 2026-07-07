@@ -19,7 +19,9 @@ describe('Subscriber Tests', () => {
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const { waitForAppReady } = require('./helpers/waitForApp');
+    await waitForAppReady();
   });
 
   afterAll(async () => {

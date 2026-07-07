@@ -36,10 +36,11 @@ describe('Publisher Options', () => {
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const { waitForAppReady } = require('./helpers/waitForApp');
+    await waitForAppReady();
 
     // Connect to session
-    await expect(element(by.id('submitButton'))).toBeVisible();
     await element(by.id('submitButton')).tap();
     console.log('[publisherOptions] Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 30000));

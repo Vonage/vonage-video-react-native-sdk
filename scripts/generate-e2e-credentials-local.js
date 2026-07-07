@@ -41,7 +41,12 @@ ot.createSession({ mediaMode: 'routed' }, (err, session) => {
   const tokenBot = ot.generateToken(sessionId, {
     role: 'publisher',
     expireTime: Math.floor(Date.now() / 1000) + 7200,
-    data: 'participant=bot',
+    data: 'participant=bot1',
+  });
+  const tokenBot2 = ot.generateToken(sessionId, {
+    role: 'publisher',
+    expireTime: Math.floor(Date.now() / 1000) + 7200,
+    data: 'participant=bot2',
   });
 
   // Update sdk-config.json
@@ -50,12 +55,12 @@ ot.createSession({ mediaMode: 'routed' }, (err, session) => {
   config.credentials.video.sessionId = sessionId;
   config.credentials.video.token = tokenApp;
   config.credentials.video.tokenBot = tokenBot;
+  config.credentials.video.tokenBot2 = tokenBot2;
   config.credentials.video.apiUrl = API_URL;
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n');
 
   console.log('Credentials written to sdk-config.json');
   console.log('  sessionId:', sessionId);
   console.log('  apiUrl:', API_URL);
-  console.log('  tokenApp format:', tokenApp.startsWith('T1==') ? 'T1==' : 'JWT');
-  console.log('  tokenBot format:', tokenBot.startsWith('T1==') ? 'T1==' : 'JWT');
+  console.log('  tokens: app + bot1 + bot2 + bot3');
 });

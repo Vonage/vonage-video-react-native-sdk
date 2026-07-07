@@ -23,7 +23,9 @@ describe('Session Lifecycle', () => {
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const { waitForAppReady } = require('./helpers/waitForApp');
+    await waitForAppReady();
   });
 
   afterAll(async () => {
@@ -31,7 +33,6 @@ describe('Session Lifecycle', () => {
   });
 
   it('connect and disconnect cleanly', async () => {
-    await expect(element(by.id('submitButton'))).toBeVisible();
     await element(by.id('submitButton')).tap();
     console.log('[session] Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 30000));

@@ -85,6 +85,9 @@ class jsSDKTesterBot {
       throw new Error('jsSDKTesterBot: call launch() before joinSession()');
     }
 
+    // Navigate to fresh page to clear any previous session state
+    await this.page.goto('https://localhost/bot');
+
     const { apiUrl, publisherOptions = {} } = options;
 
     const pubOpts = JSON.stringify({
