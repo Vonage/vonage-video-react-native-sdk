@@ -1,34 +1,29 @@
 'use strict';
 
-const { VonageBot } = require('./helpers/VonageBot');
+const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
-const jestExpect = require('expect');
 
-describe('Basic Connectivity', () => {
+/**
+ * Basic connectivity tests verifying publish/subscribe between
+ * the RN app and the jsSDKTesterBot (headless Chromium with JS SDK).
+ */
+describe('Publish and Subscribe', () => {
   let credentials;
   let bot;
 
   beforeAll(async () => {
-    console.log('[beforeAll] Starting...');
+    console.log('[setup] Getting credentials...');
+    credentials = await getCredentials();
+    console.log('[setup] sessionId:', credentials.sessionId);
 
-    try {
-      console.log('[beforeAll] Getting credentials...');
-      credentials = await getCredentials();
-      console.log('[beforeAll] Credentials OK. sessionId:', credentials.sessionId);
-    } catch (e) {
-      console.error('[beforeAll] Credentials FAILED:', e.message);
-      throw e;
-    }
-
-    console.log('[beforeAll] Launching app...');
+    console.log('[setup] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
-    console.log('[beforeAll] App launched. Waiting 5s...');
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    console.log('[beforeAll] Done.');
+    console.log('[setup] App ready.');
   });
 
   afterAll(async () => {
@@ -37,44 +32,53 @@ describe('Basic Connectivity', () => {
     }
   });
 
-  it('app publishes stream and bot receives it', async () => {
-    // App connects
+  it('RN app publishes → bot receives stream', async () => {
+    // App connects and publishes
     await expect(element(by.id('submitButton'))).toBeVisible();
-    console.log('[test1] Tapping submit...');
+    console.log('[publish→bot] Connecting app...');
     await element(by.id('submitButton')).tap();
-
-    console.log('[test1] Waiting 30s for connection...');
     await new Promise((resolve) => setTimeout(resolve, 30000));
-
     await expect(element(by.id('disconnectSession'))).toBeVisible();
     await expect(element(by.id('publisher'))).toBeVisible();
-    console.log('[test1] App connected and publishing.');
+    console.log('[publish→bot] App connected and publishing.');
 
-    // Now launch bot and join
-    console.log('[test1] Launching bot...');
-    bot = new VonageBot({ timeout: 30000 });
+    // Bot joins — should receive the app's stream
+    console.log('[publish→bot] Launching bot...');
+    bot = new jsSDKTesterBot({ timeout: 30000 });
     await bot.launch();
-
-    console.log('[test1] Bot joining session...');
+    console.log('[publish→bot] Bot joining session...');
     await bot.joinSession(
       credentials.apiKey,
       credentials.sessionId,
       credentials.tokenBot,
       { apiUrl: credentials.apiUrl }
     );
-    console.log('[test1] Bot connected. Waiting for subscriber...');
+    console.log('[publish→bot] Bot connected and publishing.');
 
-    await bot.waitForSubscriber(20000);
+    // Wait for bot to receive the app's stream
+    console.log('[publish→bot] Waiting for bot to receive app stream (30s)...');
+    try {
+      await bot.waitForSubscriber(30000);
+    } catch (e) {
+      const state = await bot.getState();
+      console.log('[publish→bot] Bot state at timeout:', JSON.stringify(state));
+      throw new Error(
+        `Bot did not receive app stream within 30s. Bot state: ${JSON.stringify(state)}`
+      );
+    }
     const state = await bot.getState();
-    console.log('[test1] Bot received stream! subscriberCount:', state.subscriberCount);
+    console.log('[publish→bot] Bot subscriberCount:', state.subscriberCount);
+    if (state.subscriberCount < 1) {
+      throw new Error(`Expected bot to have at least 1 subscriber, got ${state.subscriberCount}`);
+    }
   });
 
-  it('bot publishes stream and app shows subscriber', async () => {
-    // Bot is already publishing from previous test
-    console.log('[test2] Waiting 15s for app to show subscriber...');
+  it('Bot publishes → RN app shows subscriber', async () => {
+    // Bot is already connected and publishing from previous test.
+    // The app should have received the bot's stream.
+    console.log('[bot→subscribe] Waiting for app subscriber (15s)...');
     await new Promise((resolve) => setTimeout(resolve, 15000));
-
     await expect(element(by.id('subscriber'))).toBeVisible();
-    console.log('[test2] Subscriber visible!');
+    console.log('[bot→subscribe] Subscriber visible in app!');
   });
 });

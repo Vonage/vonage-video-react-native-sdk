@@ -3,13 +3,16 @@
 const { chromium } = require('playwright');
 
 /**
- * VonageBot - A headless Chromium-based bot that joins a Vonage Video session
- * as a second participant using the Vonage Video JS SDK.
+ * jsSDKTesterBot - A headless Chromium-based bot that joins a Vonage Video session
+ * as a remote participant using the OpenTok JS SDK.
  *
- * Used in e2e tests to simulate a remote participant that publishes streams,
- * sends signals, and receives media — all controlled from the Jest test process.
+ * Used in e2e tests to simulate remote participants that publish streams,
+ * send signals, and receive media — all controlled from the Jest test process.
+ *
+ * Multiple instances can run simultaneously to test multi-party scenarios
+ * (e.g. relayed → routed transitions with 3+ participants).
  */
-class VonageBot {
+class jsSDKTesterBot {
   constructor(options = {}) {
     this.browser = null;
     this.page = null;
@@ -59,11 +62,11 @@ class VonageBot {
     // Log page errors and console for debugging
     this.page.on('console', (msg) => {
       if (msg.type() === 'error') {
-        console.warn('[VonageBot] Console error:', msg.text());
+        console.warn('[jsSDKTesterBot] Console error:', msg.text());
       }
     });
     this.page.on('pageerror', (err) => {
-      console.warn('[VonageBot] Page error:', err.message);
+      console.warn('[jsSDKTesterBot] Page error:', err.message);
     });
   }
 
@@ -79,7 +82,7 @@ class VonageBot {
    */
   async joinSession(apiKey, sessionId, token, options = {}) {
     if (!this.page) {
-      throw new Error('VonageBot: call launch() before joinSession()');
+      throw new Error('jsSDKTesterBot: call launch() before joinSession()');
     }
 
     const { apiUrl, publisherOptions = {} } = options;
@@ -248,4 +251,4 @@ class VonageBot {
   }
 }
 
-module.exports = { VonageBot };
+module.exports = { jsSDKTesterBot };

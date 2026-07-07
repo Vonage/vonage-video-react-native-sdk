@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Standalone test for the VonageBot.
+ * Standalone test for the jsSDKTesterBot.
  * Run with:
  *   E2E_API_KEY=xxx E2E_API_SECRET=xxx E2E_API_URL=https://api.dev.opentok.com node scripts/test-bot-standalone.js
  *
@@ -9,7 +9,7 @@
  */
 
 const path = require('path');
-const { VonageBot } = require(path.join(__dirname, '../React-native-TestApp/__tests__/helpers/VonageBot'));
+const { jsSDKTesterBot } = require(path.join(__dirname, '../React-native-TestApp/__tests__/helpers/jsSDKTesterBot'));
 
 const API_KEY = process.env.E2E_API_KEY;
 const API_SECRET = process.env.E2E_API_SECRET;
@@ -43,7 +43,7 @@ async function main() {
 
   // Step 3: Launch bot
   console.log('3. Launching Chromium...');
-  const bot = new VonageBot({ timeout: 30000 });
+  const bot = new jsSDKTesterBot({ timeout: 30000 });
   await bot.launch();
   console.log('   Chromium launched.');
 

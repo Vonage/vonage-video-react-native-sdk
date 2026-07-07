@@ -1,6 +1,6 @@
 'use strict';
 
-const { VonageBot } = require('./helpers/VonageBot');
+const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
 
 describe('Subscriber Tests', () => {
@@ -40,7 +40,7 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] App connected.');
 
     // Bot joins and publishes
-    bot = new VonageBot({ timeout: 30000 });
+    bot = new jsSDKTesterBot({ timeout: 30000 });
     await bot.launch();
     await bot.joinSession(
       credentials.apiKey,
