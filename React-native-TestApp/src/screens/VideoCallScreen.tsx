@@ -553,6 +553,11 @@ class VideoCallScreen extends Component<{}, State> {
             label={audioLabel}
           />
           <ButtonComponent
+          testID="muteAll"
+          handleSubmit={this.sessionMethodForceMuteAll}
+          label="Mute All"
+        />
+        <ButtonComponent
             testID="toggleCameraPosition"
             handleSubmit={() =>
               this.updateEvent(
@@ -571,11 +576,6 @@ class VideoCallScreen extends Component<{}, State> {
             testID="toggleScreenShare"
             handleSubmit={this.toggleScreenShare}
             label={this.state.isScreenSharing ? 'Stop Share' : 'Screen Share'}
-          />
-          <ButtonComponent
-            testID="muteAll"
-            handleSubmit={this.sessionMethodForceMuteAll}
-            label="Mute All"
           />
           <ButtonComponent
           testID="toggleSubscribeVideo"

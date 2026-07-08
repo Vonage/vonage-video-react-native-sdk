@@ -58,6 +58,7 @@ describe('Media Quality (partial)', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot) await bot.close();
   });
 

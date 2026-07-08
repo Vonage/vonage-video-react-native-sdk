@@ -35,6 +35,7 @@ describe('Subscriber Options', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot1) await bot1.close();
     if (bot2) await bot2.close();
   });
@@ -69,7 +70,7 @@ describe('Subscriber Options', () => {
       await bot2.joinSession(
         credentials.apiKey,
         credentials.sessionId,
-        credentials.tokenBot,
+        credentials.tokenBot2 || credentials.tokenBot,
         { apiUrl: credentials.apiUrl }
       );
     } catch (e) {

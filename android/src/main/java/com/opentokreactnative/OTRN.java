@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OTRN {
     public static OTRN sharedState;
     private ConcurrentHashMap<String, Stream> subscriberStreams = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Stream> publisherStreams = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Subscriber> subscribers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Publisher> publishers = new ConcurrentHashMap<>();
@@ -37,6 +38,10 @@ public class OTRN {
 
     public ConcurrentHashMap<String, Stream> getSubscriberStreams() {
         return this.subscriberStreams;
+    }
+
+    public ConcurrentHashMap<String, Stream> getPublisherStreams() {
+        return this.publisherStreams;
     }
 
 

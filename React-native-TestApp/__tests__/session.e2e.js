@@ -29,6 +29,7 @@ describe('Session Lifecycle', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot) await bot.close();
   });
 

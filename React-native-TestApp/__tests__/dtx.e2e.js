@@ -34,6 +34,7 @@ describe('DTX Codec Option', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot) await bot.close();
   });
 

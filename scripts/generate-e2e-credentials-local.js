@@ -62,5 +62,5 @@ ot.createSession({ mediaMode: 'routed' }, (err, session) => {
   console.log('Credentials written to sdk-config.json');
   console.log('  sessionId:', sessionId);
   console.log('  apiUrl:', API_URL);
-  console.log('  tokens: app + bot1 + bot2 + bot3');
+  console.log('  tokens: app + bot1 + bot2');
 });

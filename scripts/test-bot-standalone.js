@@ -34,10 +34,9 @@ async function main() {
   });
   console.log('   sessionId:', session.sessionId);
 
-  // Step 2: Generate token (T1== format — compatible with JS SDK on all envs)
+  // Step 2: Generate token using official SDK
   console.log('2. Generating token...');
-  const { generateT1Token } = require(path.join(__dirname, '../React-native-TestApp/__tests__/helpers/credentials'));
-  const token = generateT1Token(API_KEY, API_SECRET, session.sessionId, { role: 'publisher' });
+  const token = ot.generateToken(session.sessionId, { role: 'publisher' });
   console.log('   token starts with:', token.substring(0, 10));
   console.log('   token format:', token.startsWith('T1==') ? 'T1== (legacy)' : token.startsWith('eyJ') ? 'JWT' : 'unknown');
 

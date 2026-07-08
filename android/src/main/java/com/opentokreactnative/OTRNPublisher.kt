@@ -333,11 +333,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
+        OTRN.sharedState.getPublisherStreams()[stream.streamId] = stream
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamCreated", payload)
     }
 
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
+        OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
     }

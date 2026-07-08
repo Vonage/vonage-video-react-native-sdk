@@ -29,6 +29,7 @@ describe('Publish and Subscribe', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot) {
       await bot.close();
     }

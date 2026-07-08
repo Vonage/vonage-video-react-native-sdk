@@ -64,12 +64,6 @@ const createSession = (options) =>
     data: `environmentUrl=${apiUrl}&participant=bot2`,
   });
 
-  const tokenBot3 = opentok.generateToken(session.sessionId, {
-    role: 'publisher',
-    expireTime: Math.floor(Date.now() / 1000) + 120 * 60,
-    data: `environmentUrl=${apiUrl}&participant=bot3`,
-  });
-
   fs.appendFileSync(
     githubEnvFile,
     [

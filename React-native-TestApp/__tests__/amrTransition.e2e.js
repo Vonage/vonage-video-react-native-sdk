@@ -49,6 +49,7 @@ describe('AMR Transitions', () => {
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot1) await bot1.close();
     if (bot2) await bot2.close();
   });

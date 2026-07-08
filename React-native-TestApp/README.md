@@ -133,7 +133,7 @@ You've successfully run and modified your React Native App. :partying_face:
 
 # E2E Testing
 
-The project includes end-to-end tests using [Detox](https://wix.github.io/Detox/) with a headless Chromium bot ([jsSDKTesterBot](/__tests__/helpers/jsSDKTesterBot.js)) that acts as a remote participant via the OpenTok JS SDK.
+The project includes end-to-end tests using [Detox](https://wix.github.io/Detox/) with a headless Chromium bot ([jsSDKTesterBot](./__tests__/helpers/jsSDKTesterBot.js)) that acts as a remote participant via the OpenTok JS SDK.
 
 ## Prerequisites
 

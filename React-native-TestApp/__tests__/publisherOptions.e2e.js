@@ -47,7 +47,7 @@ describe('Publisher Options', () => {
     console.log('[publisherOptions] Connected.');
   });
 
-  afterAll(async () => {});
+  afterAll(async () => { await device.terminateApp(); });
 
   it('toggle audio off then on (mute/unmute)', async () => {
     await tapButton('hasAudio');

@@ -42,33 +42,29 @@ describe('Moderation', () => {
       { apiUrl: credentials.apiUrl }
     );
     console.log('[moderation] Bot connected and publishing.');
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 20000));
   });
 
   afterAll(async () => {
+    await device.terminateApp();
     if (bot) await bot.close();
   });
 
-  // it('forceMuteAll mutes the bot', async () => {
-  //   // Verify subscriber is visible (bot is publishing)
-  //   await expect(element(by.id('subscriber'))).toExist();
-  //   console.log('[forceMute] Subscriber exists. Scrolling to muteAll...');
+  it('forceMuteAll mutes the bot', async () => {
+    console.log('[forceMute] Tapping muteAll...');
+    await element(by.id('muteAll')).tap();
 
-  //   // Tap muteAll (fixed action bar — always visible)
-  //   console.log('[forceMute] Tapping muteAll...');
-  //   await element(by.id('muteAll')).tap();
+    console.log('[forceMute] muteAll tapped. Waiting 5s...');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-  //   console.log('[forceMute] muteAll tapped. Waiting 5s...');
-  //   await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  //   // Verify bot received muteForced event
-  //   const state = await bot.getState();
-  //   console.log('[forceMute] Bot state:', JSON.stringify({ muteForced: state.muteForced }));
-  //   if (!state.muteForced) {
-  //     throw new Error('Bot did not receive muteForced event after forceMuteAll');
-  //   }
-  //   console.log('[forceMute] Bot was force-muted!');
-  // });
+    // Verify bot received muteForced event
+    const state = await bot.getState();
+    console.log('[forceMute] Bot state:', JSON.stringify({ muteForced: state.muteForced }));
+    if (!state.muteForced) {
+      throw new Error('Bot did not receive muteForced event after forceMuteAll');
+    }
+    console.log('[forceMute] Bot was force-muted!');
+  });
 
   it('force-disconnect bot via REST API', async () => {
     const apiKey = process.env.E2E_API_KEY;

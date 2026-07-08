@@ -44,7 +44,8 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   videoContainer: {
-    height: 250,
+    flex: 1,
+    minHeight: 200,
     backgroundColor: '#000',
     borderRadius: 12,
     overflow: 'hidden',
