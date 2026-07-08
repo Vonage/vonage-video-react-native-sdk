@@ -1,0 +1,37 @@
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_c19649cbf80e25::t_11a75b182f7b11 62,64-78
+  s_c19649cbf80e25::t_2cb813d95196a5 85-89
+React-native-TestApp/__tests__/session.e2e.js
+  s_c19649cbf80e25::t_5beb69964a64ff 50-56,65-74
+React-native-TestApp/index.js
+  s_c19649cbf80e25::t_8c6cf10245b5b8 9,11-12,17
+  s_c19649cbf80e25::t_134088c48b5045 5,10,13-16
+  s_c19649cbf80e25::t_a4e813feb7e081 18
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_c19649cbf80e25::t_05fb5d8f147ac0 508,517
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_c19649cbf80e25::t_2d250f9ba7fe07 30-31,36,38,41,48-49,51-58
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  h_25a96a0890a0d0 98-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "032bf85de4fd8d846022f05b54804bfc5a9905c9",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_c19649cbf80e25": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "4f5bba9c-3d9a-4290-b62b-71af404c2f3b",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
