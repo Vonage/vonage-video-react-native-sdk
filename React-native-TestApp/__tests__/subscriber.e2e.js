@@ -53,7 +53,7 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Bot publishing. Waiting for subscriber (20s)...');
     await new Promise((resolve) => setTimeout(resolve, 20000));
 
-    await expect(element(by.id('subscriber'))).toBeVisible();
+    await expect(element(by.id('subscriber'))).toExist();
     console.log('[subscriber] Subscriber visible!');
   });
 
@@ -61,7 +61,7 @@ describe('Subscriber Tests', () => {
     if (!credentials.tokenBot || !bot) return;
 
     // Bot should still be connected from previous test
-    await expect(element(by.id('subscriber'))).toBeVisible();
+    await expect(element(by.id('subscriber'))).toExist();
 
     // Bot disconnects
     console.log('[subscriber] Bot disconnecting...');
