@@ -13,18 +13,10 @@ const { getCredentials } = require('./helpers/credentials');
  */
 
 /**
- * Scrolls to make an element visible and taps it.
- * Handles the case where controls are below the video area.
+ * Taps a button by testID. No scrolling needed — action bar is always visible.
  */
-async function scrollAndTap(testID) {
-  try {
-    await element(by.id(testID)).tap();
-  } catch (e) {
-    // Element not hittable — scroll down and retry
-    await element(by.id('mainScrollView')).swipe('up', 'slow', 0.3);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await element(by.id(testID)).tap();
-  }
+async function tapButton(testID) {
+  await element(by.id(testID)).tap();
 }
 
 describe('Publisher Options', () => {
@@ -45,54 +37,50 @@ describe('Publisher Options', () => {
     console.log('[publisherOptions] Connecting...');
     await new Promise((resolve) => setTimeout(resolve, 30000));
     await expect(element(by.id('disconnectSession'))).toBeVisible();
-    console.log('[publisherOptions] Connected. Scrolling to controls...');
-
-    // Scroll to make controls visible
-    await element(by.id('mainScrollView')).swipe('up', 'slow', 0.5);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log('[publisherOptions] Connected.');
   });
 
   afterAll(async () => {});
 
   it('toggle audio off then on (mute/unmute)', async () => {
-    await scrollAndTap('hasAudio');
+    await tapButton('hasAudio');
     console.log('[audio] Muted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    await scrollAndTap('hasAudio');
+    await tapButton('hasAudio');
     console.log('[audio] Unmuted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
   });
 
   it('toggle video off then on (camera off/on)', async () => {
-    await scrollAndTap('hasVideo');
+    await tapButton('hasVideo');
     console.log('[video] Camera off.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    await scrollAndTap('hasVideo');
+    await tapButton('hasVideo');
     console.log('[video] Camera on.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
   });
 
   it('switch camera front to back and back to front', async () => {
-    await scrollAndTap('toggleCameraPosition');
+    await tapButton('toggleCameraPosition');
     console.log('[camera] Switched.');
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    await scrollAndTap('toggleCameraPosition');
+    await tapButton('toggleCameraPosition');
     console.log('[camera] Switched back.');
     await new Promise((resolve) => setTimeout(resolve, 3000));
     await expect(element(by.id('publisher'))).toExist();
   });
 
   it('unpublish then republish', async () => {
-    await scrollAndTap('stopPublishing');
+    await tapButton('stopPublishing');
     console.log('[unpublish] Unpublished.');
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    await scrollAndTap('stopPublishing');
+    await tapButton('stopPublishing');
     console.log('[unpublish] Republished.');
     await new Promise((resolve) => setTimeout(resolve, 8000));
     await expect(element(by.id('publisher'))).toExist();
@@ -100,24 +88,24 @@ describe('Publisher Options', () => {
   });
 
   it('publish audio-only (video off)', async () => {
-    await scrollAndTap('hasVideo');
+    await tapButton('hasVideo');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
     console.log('[audio-only] Publishing audio only.');
 
     // Restore
-    await scrollAndTap('hasVideo');
+    await tapButton('hasVideo');
     await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 
   it('publish video-only (audio off)', async () => {
-    await scrollAndTap('hasAudio');
+    await tapButton('hasAudio');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
     console.log('[video-only] Publishing video only.');
 
     // Restore
-    await scrollAndTap('hasAudio');
+    await tapButton('hasAudio');
     await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 });

@@ -92,4 +92,34 @@ describe('Session Lifecycle', () => {
     await expect(element(by.id('submitButton'))).toBeVisible();
     console.log('[session] Disconnected while subscribing — no crash.');
   });
+
+  it('app receives signal from bot', async () => {
+    // Reconnect
+    await element(by.id('submitButton')).tap();
+    console.log('[signal] Connecting...');
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await expect(element(by.id('disconnectSession'))).toBeVisible();
+
+    // Ensure bot is connected
+    if (!bot) {
+      bot = new jsSDKTesterBot({ timeout: 30000 });
+      await bot.launch();
+    }
+    await bot.joinSession(
+      credentials.apiKey,
+      credentials.sessionId,
+      credentials.tokenBot,
+      { apiUrl: credentials.apiUrl }
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Bot sends signal
+    console.log('[signal] Bot sending signal...');
+    await bot.sendSignal('chat', 'hello-from-bot');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Verify app received signal (indicator in view tree)
+    await expect(element(by.id('signalReceivedIndicator'))).toExist();
+    console.log('[signal] App received signal from bot!');
+  });
 });

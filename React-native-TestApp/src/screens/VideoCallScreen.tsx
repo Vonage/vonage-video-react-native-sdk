@@ -520,15 +520,11 @@ class VideoCallScreen extends Component<{}, State> {
   }
 
   renderControls() {
-    if (!this.state.connectedToSession) return null;
-
     const videoLabel = this.state.publisherProperties?.publishVideo !== false ? 'Video Off' : 'Video On';
     const audioLabel = this.state.publisherProperties?.publishAudio !== false ? 'Audio Off' : 'Audio On';
 
     return (
-      <View style={styles.controlsCard}>
-        <Text style={styles.cardTitle}>Controls</Text>
-        <View style={styles.controlsGrid}>
+      <View style={styles.controlsGrid}>
           <ButtonComponent
             testID="stopPublishing"
             handleSubmit={this.startOrstopPublishing}
@@ -582,11 +578,15 @@ class VideoCallScreen extends Component<{}, State> {
             label="Mute All"
           />
           <ButtonComponent
+          testID="toggleSubscribeVideo"
+          handleSubmit={this.toggleVideoSubscription}
+          label="Toggle Sub Video"
+        />
+        <ButtonComponent
             testID="logNextSubscriberVideoStats"
             handleSubmit={this.logNextSubscriberVideoStats}
             label="Log Subscriber Stats"
-          />
-        </View>
+        />
       </View>
     );
   }
@@ -821,14 +821,21 @@ class VideoCallScreen extends Component<{}, State> {
   render() {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
-        <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
-          {this.renderConnectionInputs()}
-          {this.renderVideoSection()}
-          {this.renderControls()}
-          {this.renderEventIndicators()}
-          {this.renderDegradationPreferenceSettings()}
-          {this.renderCodecSettings()}
-        </ScrollView>
+        <View style={{ flex: 1 }}>
+          <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
+            {this.renderConnectionInputs()}
+            {this.renderVideoSection()}
+            {this.renderEventIndicators()}
+            {this.renderDegradationPreferenceSettings()}
+            {this.renderCodecSettings()}
+          </ScrollView>
+
+          {this.state.connectedToSession && (
+            <View testID="actionBar" style={styles.actionBar}>
+              {this.renderControls()}
+            </View>
+          )}
+        </View>
       </ImageBackground>
     );
   }

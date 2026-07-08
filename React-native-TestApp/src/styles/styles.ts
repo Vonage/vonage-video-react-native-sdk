@@ -94,6 +94,13 @@ export const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  actionBar: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
   controlsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

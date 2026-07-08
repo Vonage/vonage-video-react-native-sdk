@@ -102,4 +102,31 @@ describe('Subscriber Options', () => {
       console.log('[disappear] Subscriber view still mounted (empty placeholder — acceptable).');
     }
   });
+
+  it('toggle subscribeToVideo off and on', async () => {
+    // Reconnect bot1 for this test
+    await bot1.joinSession(
+      credentials.apiKey,
+      credentials.sessionId,
+      credentials.tokenBot,
+      { apiUrl: credentials.apiUrl }
+    );
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await expect(element(by.id('subscriber'))).toExist();
+
+    // Toggle subscribeToVideo off (action bar — always visible)
+    await element(by.id('toggleSubscribeVideo')).tap();
+    console.log('[subVideo] Toggled subscribeToVideo off.');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // Subscriber should still exist (audio-only now)
+    await expect(element(by.id('subscriber'))).toExist();
+
+    // Toggle back on
+    await element(by.id('toggleSubscribeVideo')).tap();
+    console.log('[subVideo] Toggled subscribeToVideo on.');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await expect(element(by.id('subscriber'))).toExist();
+    console.log('[subVideo] Subscribe video toggle works.');
+  });
 });
