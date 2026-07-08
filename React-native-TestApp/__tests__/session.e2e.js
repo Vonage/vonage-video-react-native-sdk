@@ -47,8 +47,13 @@ describe('Session Lifecycle', () => {
   });
 
   it('reconnect after disconnect', async () => {
-    // Should see submitButton from previous test
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    // Ensure we start disconnected (guard against previous test failing mid-connect)
+    try {
+      await element(by.id('disconnectSession')).tap();
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    } catch (_) {
+      // Already disconnected — expected path
+    }
     await element(by.id('submitButton')).tap();
     console.log('[session] Reconnecting...');
     await new Promise((resolve) => setTimeout(resolve, 30000));
@@ -57,7 +62,16 @@ describe('Session Lifecycle', () => {
   });
 
   it('disconnect while publishing does not crash', async () => {
-    // Still connected from previous test
+    // Establish connected state explicitly instead of relying on previous test outcome
+    try {
+      await element(by.id('disconnectSession')).tap();
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    } catch (_) {
+      // Already disconnected
+    }
+    await element(by.id('submitButton')).tap();
+    console.log('[session] Connecting...');
+    await new Promise((resolve) => setTimeout(resolve, 30000));
     await expect(element(by.id('publisher'))).toExist();
     console.log('[session] Publishing. Disconnecting...');
 

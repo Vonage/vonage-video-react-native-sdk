@@ -95,13 +95,12 @@ describe('Subscriber Options', () => {
   it('subscriber disappears when last bot disconnects', async () => {
     console.log('[disappear] Disconnecting bot1...');
     await bot1.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    try {
-      await expect(element(by.id('subscriber'))).not.toBeVisible();
-      console.log('[disappear] Subscriber gone.');
-    } catch (e) {
-      console.log('[disappear] Subscriber view still mounted (empty placeholder — acceptable).');
-    }
+
+    // Subscriber should disappear — wait up to 15s for the view to become invisible
+    await waitFor(element(by.id('subscriber')))
+      .not.toBeVisible()
+      .withTimeout(15000);
+    console.log('[disappear] Subscriber gone.');
   });
 
   it('toggle subscribeToVideo off and on', async () => {

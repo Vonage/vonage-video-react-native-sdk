@@ -505,6 +505,7 @@ class VideoCallScreen extends Component<{}, State> {
               </View>
             )}
             {/* Try auto-subscribe mode - no streamId specified */}
+            {this.state.streams.length > 0 && (
             <View testID="subscriber" style={styles.video}>
               <OTSubscriber
                 properties={this.state.subscriberProperties}
@@ -513,6 +514,7 @@ class VideoCallScreen extends Component<{}, State> {
                 eventHandlers={this.subscriberEventHandlers}
               />
             </View>
+            )}
           </View>
         </OTSession>
       </View>

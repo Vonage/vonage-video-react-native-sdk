@@ -75,7 +75,6 @@ describe('Moderation', () => {
       return;
     }
 
-    // Bot should still be connected from previous test
     let botState = await bot.getState();
     if (!botState.connected) {
       // Reconnect bot

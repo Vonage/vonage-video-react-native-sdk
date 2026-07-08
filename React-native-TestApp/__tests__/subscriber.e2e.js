@@ -59,22 +59,33 @@ describe('Subscriber Tests', () => {
   });
 
   it('subscriber disappears when bot disconnects', async () => {
-    if (!credentials.tokenBot || !bot) return;
+    if (!credentials.tokenBot) return;
 
-    // Bot should still be connected from previous test
+    // Ensure bot is connected and subscriber is visible before testing its disappearance
+    if (!bot) {
+      bot = new jsSDKTesterBot({ timeout: 30000 });
+      await bot.launch();
+    }
+    const botState = await bot.getState();
+    if (!botState.connected) {
+      await bot.joinSession(
+        credentials.apiKey,
+        credentials.sessionId,
+        credentials.tokenBot,
+        { apiUrl: credentials.apiUrl }
+      );
+      await new Promise((resolve) => setTimeout(resolve, 20000));
+    }
     await expect(element(by.id('subscriber'))).toExist();
 
     // Bot disconnects
     console.log('[subscriber] Bot disconnecting...');
     await bot.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    // Subscriber should disappear
-    try {
-      await expect(element(by.id('subscriber'))).not.toBeVisible();
-      console.log('[subscriber] Subscriber gone after bot disconnect.');
-    } catch (e) {
-      console.log('[subscriber] Subscriber still visible — may need longer wait or view stays mounted empty.');
-    }
+    // Subscriber should disappear — wait up to 15s for the view to become invisible
+    await waitFor(element(by.id('subscriber')))
+      .not.toBeVisible()
+      .withTimeout(15000);
+    console.log('[subscriber] Subscriber gone after bot disconnect.');
   });
 });

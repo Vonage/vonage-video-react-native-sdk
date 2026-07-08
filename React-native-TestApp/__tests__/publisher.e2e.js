@@ -26,6 +26,26 @@ describe('Publish and Subscribe', () => {
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
     console.log('[setup] App ready.');
+
+    // Connect app and launch bot here so each test starts from a known shared state
+    console.log('[setup] Connecting app...');
+    await element(by.id('submitButton')).tap();
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await expect(element(by.id('publisher'))).toExist();
+    console.log('[setup] App connected and publishing.');
+
+    console.log('[setup] Launching bot...');
+    bot = new jsSDKTesterBot({ timeout: 30000 });
+    await bot.launch();
+    console.log('[setup] Bot joining session...');
+    await bot.joinSession(
+      credentials.apiKey,
+      credentials.sessionId,
+      credentials.tokenBot,
+      { apiUrl: credentials.apiUrl }
+    );
+    console.log('[setup] Bot connected and publishing.');
   });
 
   afterAll(async () => {
@@ -36,29 +56,6 @@ describe('Publish and Subscribe', () => {
   });
 
   it('RN app publishes → bot receives stream', async () => {
-    // App connects and publishes
-    await expect(element(by.id('submitButton'))).toBeVisible();
-    console.log('[publish→bot] Connecting app...');
-    await element(by.id('submitButton')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-    await expect(element(by.id('publisher'))).toExist();
-    console.log('[publish→bot] App connected and publishing.');
-
-    // Bot joins — should receive the app's stream
-    console.log('[publish→bot] Launching bot...');
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    console.log('[publish→bot] Bot joining session...');
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    console.log('[publish→bot] Bot connected and publishing.');
-
-    // Wait for bot to receive the app's stream
     console.log('[publish→bot] Waiting for bot to receive app stream (30s)...');
     try {
       await bot.waitForSubscriber(30000);
@@ -77,8 +74,6 @@ describe('Publish and Subscribe', () => {
   });
 
   it('Bot publishes → RN app shows subscriber', async () => {
-    // Bot is already connected and publishing from previous test.
-    // The app should have received the bot's stream.
     console.log('[bot→subscribe] Waiting for app subscriber (15s)...');
     await new Promise((resolve) => setTimeout(resolve, 15000));
     await expect(element(by.id('subscriber'))).toExist();
