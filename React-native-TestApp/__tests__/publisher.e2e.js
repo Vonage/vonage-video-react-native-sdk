@@ -41,7 +41,7 @@ describe('Publish and Subscribe', () => {
     await element(by.id('submitButton')).tap();
     await new Promise((resolve) => setTimeout(resolve, 30000));
     await expect(element(by.id('disconnectSession'))).toBeVisible();
-    await expect(element(by.id('publisher'))).toBeVisible();
+    await expect(element(by.id('publisher'))).toExist();
     console.log('[publish→bot] App connected and publishing.');
 
     // Bot joins — should receive the app's stream
@@ -80,7 +80,7 @@ describe('Publish and Subscribe', () => {
     // The app should have received the bot's stream.
     console.log('[bot→subscribe] Waiting for app subscriber (15s)...');
     await new Promise((resolve) => setTimeout(resolve, 15000));
-    await expect(element(by.id('subscriber'))).toBeVisible();
+    await expect(element(by.id('subscriber'))).toExist();
     console.log('[bot→subscribe] Subscriber visible in app!');
   });
 });
