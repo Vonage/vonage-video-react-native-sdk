@@ -580,7 +580,18 @@ class VideoCallScreen extends Component<{}, State> {
           <ButtonComponent
           testID="toggleSubscribeVideo"
           handleSubmit={this.toggleVideoSubscription}
-          label="Toggle Sub Video"
+          label="Sub Video Off/On"
+        />
+        <ButtonComponent
+          testID="toggleSubscribeAudio"
+          handleSubmit={() =>
+            this.updateEvent(
+              'subscriberProperties',
+              'subscribeToAudio',
+              !this.state.subscriberProperties.subscribeToAudio
+            )
+          }
+          label="Sub Audio Off/On"
         />
         <ButtonComponent
             testID="logNextSubscriberVideoStats"

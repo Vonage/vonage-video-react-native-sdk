@@ -129,4 +129,22 @@ describe('Subscriber Options', () => {
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[subVideo] Subscribe video toggle works.');
   });
+
+  it('toggle subscribeToAudio off and on (video-only subscribe)', async () => {
+    // Bot1 should still be connected
+    await expect(element(by.id('subscriber'))).toExist();
+
+    // Toggle subscribeToAudio off
+    await element(by.id('toggleSubscribeAudio')).tap();
+    console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await expect(element(by.id('subscriber'))).toExist();
+
+    // Toggle back on
+    await element(by.id('toggleSubscribeAudio')).tap();
+    console.log('[subAudio] Toggled subscribeToAudio on.');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await expect(element(by.id('subscriber'))).toExist();
+    console.log('[subAudio] Subscribe audio toggle works.');
+  });
 });

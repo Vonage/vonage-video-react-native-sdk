@@ -63,4 +63,19 @@ async function forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionI
   }
 }
 
-module.exports = { forceDisconnect };
+/**
+ * Force-mutes a specific stream in a session via REST API.
+ */
+async function forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId) {
+  const jwt = generateJwt(apiKey, apiSecret);
+  const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/stream/${streamId}/mute`;
+  const res = await httpRequest('POST', url, {
+    'X-OPENTOK-AUTH': jwt,
+    'Content-Type': 'application/json',
+  });
+  if (res.status !== 200) {
+    throw new Error(`forceMuteStream failed: HTTP ${res.status} — ${res.body}`);
+  }
+}
+
+module.exports = { forceDisconnect, forceMuteStream };

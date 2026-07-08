@@ -155,6 +155,7 @@ class jsSDKTesterBot {
             window.botState.connected = true;
 
             const publisher = OT.initPublisher('videos', ${pubOpts});
+            window.botPublisher = publisher;
 
             publisher.on('streamCreated', () => {
               window.botState.publishing = true;
