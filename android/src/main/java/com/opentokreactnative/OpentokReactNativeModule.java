@@ -239,7 +239,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void forceMuteAll(String sessionId, ReadableArray excludedStreamIds, Promise promise) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
-        ConcurrentHashMap<String, Stream> streams = sharedState.getSubscriberStreams();
+        ConcurrentHashMap<String, Stream> subscriberStreams = sharedState.getSubscriberStreams();
+        ConcurrentHashMap<String, Stream> publisherStreams = sharedState.getPublisherStreams();
         ArrayList<Stream> mExcludedStreams = new ArrayList<Stream>();
         if (mSession == null) {
             promise.reject("Session not found.");
@@ -247,15 +248,17 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         }
         for (int i = 0; i < excludedStreamIds.size(); i++) {
             String streamId = excludedStreamIds.getString(i);
-            Stream mStream = streams.get(streamId);
+            Stream mStream = subscriberStreams.get(streamId);
             if (mStream == null) {
-                promise.reject("Stream not found.");
+                mStream = publisherStreams.get(streamId);
+            }
+            if (mStream == null) {
                 continue;
             }
             mExcludedStreams.add(mStream);
         }
         mSession.forceMuteAll(mExcludedStreams);
-        promise.resolve(null);
+        promise.resolve(true);
     }
 
     @Override
