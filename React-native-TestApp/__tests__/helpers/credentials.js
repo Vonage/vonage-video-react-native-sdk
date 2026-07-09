@@ -44,7 +44,7 @@ async function getCredentials() {
 
   return {
     apiKey: video.apiKey,
-    apiUrl: video.apiUrl || 'https://api.dev.opentok.com',
+    apiUrl: video.apiUrl || '',
     sessionId: video.sessionId,
     tokenApp: video.token,
     tokenBot: video.tokenBot || null,

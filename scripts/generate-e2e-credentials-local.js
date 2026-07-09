@@ -16,7 +16,7 @@ const OpenTok = require('opentok');
 
 const API_KEY = process.env.E2E_API_KEY;
 const API_SECRET = process.env.E2E_API_SECRET;
-const API_URL = process.env.E2E_API_URL || 'https://api.dev.opentok.com';
+const API_URL = process.env.E2E_API_URL || 'https://api.opentok.com';
 const CONFIG_PATH = path.join(__dirname, '../React-native-TestApp/sdk-config.json');
 
 if (!API_KEY || !API_SECRET) {

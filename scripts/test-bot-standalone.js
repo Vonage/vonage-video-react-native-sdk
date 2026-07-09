@@ -3,7 +3,7 @@
 /**
  * Standalone test for the jsSDKTesterBot.
  * Run with:
- *   E2E_API_KEY=xxx E2E_API_SECRET=xxx E2E_API_URL=https://api.dev.opentok.com node scripts/test-bot-standalone.js
+ *   E2E_API_KEY=xxx E2E_API_SECRET=xxx E2E_API_URL=xxx node scripts/test-bot-standalone.js
  *
  * This isolates the bot from Detox to debug connectivity issues.
  */
@@ -13,7 +13,7 @@ const { jsSDKTesterBot } = require(path.join(__dirname, '../React-native-TestApp
 
 const API_KEY = process.env.E2E_API_KEY;
 const API_SECRET = process.env.E2E_API_SECRET;
-const API_URL = process.env.E2E_API_URL || 'https://api.dev.opentok.com';
+const API_URL = process.env.E2E_API_URL || 'https://api.opentok.com';
 
 if (!API_KEY || !API_SECRET) {
   console.error('Set E2E_API_KEY and E2E_API_SECRET env vars');

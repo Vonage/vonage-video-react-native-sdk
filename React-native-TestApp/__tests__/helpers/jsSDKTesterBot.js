@@ -99,9 +99,10 @@ class jsSDKTesterBot {
       ...publisherOptions,
     });
 
-    const sdkUrl = apiUrl && apiUrl.includes('dev')
-      ? 'https://static.dev.tokbox.com/v2/js/opentok.js'
-      : 'https://static.opentok.com/v2/js/opentok.min.js';
+    // JS SDK URL: defaults to production CDN.
+    // For non-production environments, set E2E_JS_SDK_URL env var.
+    const sdkUrl = process.env.E2E_JS_SDK_URL
+      || 'https://static.opentok.com/v2/js/opentok.min.js';
 
     await this.page.setContent(`
       <!DOCTYPE html>
