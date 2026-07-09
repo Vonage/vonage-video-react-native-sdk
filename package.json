@@ -62,7 +62,7 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint-fix": "eslint \"**/*.{js,ts,tsx}\" --fix",
     "generate:package-info": "node scripts/generate-package-info.js",
-    "clean": "del-cli android/build e2e/E2ETestingApp/android/build e2e/E2ETestingApp/android/app/build e2e/E2ETestingApp/ios/build lib",
+    "clean": "del-cli android/build lib",
     "prepare": "node scripts/generate-package-info.js && bob build && node build-expo.js",
     "release": "release-it",
     "version:local": "node -pe 'require(\"./package.json\").version'",
@@ -135,9 +135,7 @@
   "overrides": {
     "form-data": "^4.0.6"
   },
-  "workspaces": [
-    "e2e/E2ETestingApp"
-  ],
+  "workspaces": [],
   "jest": {
     "preset": "@react-native/jest-preset",
     "clearMocks": true,
@@ -145,7 +143,6 @@
       "<rootDir>/jest.setup.js"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/e2e/E2ETestingApp/node_modules",
       "<rootDir>/lib/"
     ],
     "moduleNameMapper": {

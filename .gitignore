@@ -42,11 +42,6 @@ android.iml
 
 # Cocoapods
 #
-e2e/E2ETestingApp/ios/Pods
-e2e/E2ETestingApp/ios/.xcode.env.local
-
-# Ruby
-e2e/E2ETestingApp/vendor/
 
 # node.js
 #
