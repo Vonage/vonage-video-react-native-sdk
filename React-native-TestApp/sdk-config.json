@@ -26,16 +26,18 @@
       "importPath": "@vonage/client-sdk-video-react-native"
     }
   },
-  "currentProfile": "vonage",
+  "currentProfile": "local",
   "credentials": {
     "video": {
-      "apiKey": "YOUR_API_KEY",
-      "sessionId": "YOUR_SESSION_ID",
-      "token": "YOUR_TOKEN"
+      "apiKey": "",
+      "sessionId": "",
+      "token": "",
+      "tokenBot": "",
+      "apiUrl": ""
     },
     "meet": {
-      "authHeader": "YOUR_MEET_AUTH_HEADER",
-      "baseUrl": "YOUR_MEET_BASE_URL"
+      "authHeader": "",
+      "baseUrl": "https://meet.tokbox.com"
     },
     "github": {
       "authToken": "YOUR_GITHUB_TOKEN"

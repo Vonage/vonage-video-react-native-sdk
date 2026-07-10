@@ -1,182 +1,146 @@
 # Testing in the Vonage Video React Native SDK
 
-This document outlines the testing strategies and practices used in the Vonage Video React Native SDK project.
+## E2E Testing with Detox + jsSDKTesterBot
 
-## End-to-End Testing with Detox and Jest
+We use [Detox](https://wix.github.io/Detox/) with a headless Chromium bot ([jsSDKTesterBot](../React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js)) for end-to-end testing. The bot joins the same Vonage Video session as the app under test, enabling real multi-party scenario testing (publish, subscribe, signalling, moderation) without a second device.
 
-We use Detox with Jest for end-to-end (E2E) testing on iOS simulators and Android emulators. E2E tests verify that the SDK components work correctly within a sample React Native application. While we currently have a minimal setup with basic tests, the infrastructure is in place for comprehensive test coverage.
+### Prerequisites
 
-### Key Files
+- **iOS**: `applesimutils` (`brew tap wix/brew && brew install applesimutils`)
+- **Android**: `ANDROID_SDK_ROOT` set, emulator created
+- **Playwright**: `npx playwright install chromium` (for bot tests)
+- **opentok npm package**: `npm install --no-save opentok` (for credential generation)
 
-- **[e2e/app.e2e.js](../e2e/app.e2e.js)** — Main E2E test file containing test suites
-- **[e2e/jest.config.json](../e2e/jest.config.json)** — Jest configuration for E2E tests (120s timeout, Detox runner)
-- **[detox.config.js](../detox.config.js)** — Detox configuration (app build path, iOS/Android device setup)
-- **[e2e/E2ETestingApp/](../e2e/E2ETestingApp/)** — Test application where tests run against
+### Generate Credentials
 
-### Test Application
+Tests need fresh session credentials (tokens expire in 2h):
 
-The test app ([e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx)) provides a minimal test environment with:
+```sh
+export E2E_API_KEY="your_api_key"
+export E2E_API_SECRET="your_api_secret"
+export E2E_API_URL="https://api.opentok.com"
 
-- `OTSession`, `OTPublisher`, and `OTSubscriber` components
-- Test IDs (`testID`) for element queries
-- Session state management for testing different scenarios
-
-## Getting Started with Testing
-
-### Step 0: Prepare your testing environment
-
-Before running E2E tests, make sure your machine is ready for your target platform:
-
-#### iOS
-
-- Xcode is installed and opened the testing app at least once
-- iOS Simulator is installed and available
-- The simulator type used in [detox.config.js](../detox.config.js) exists on your machine; by default Detox uses `iPhone 15`, or you can set `DETOX_DEVICE_NAME` to another simulator available locally
-
-Detox relies on `applesimutils` to control iOS simulators. Install it once on macOS before running E2E tests:
-
-```bash
-brew tap wix/brew
-brew install applesimutils
+node scripts/generate-e2e-credentials-local.js
 ```
 
-#### Android
+This writes `apiKey`, `sessionId`, `token`, `tokenBot`, `tokenBot2`, and `apiUrl` to `React-native-TestApp/sdk-config.json`.
 
-- Android Studio is installed
-- Android SDK is installed and available in environment variables (`ANDROID_HOME` or `ANDROID_SDK_ROOT`)
-- At least one Android emulator (AVD) exists
-- Optional: set `DETOX_AVD_NAME` to the AVD name you want Detox to use (default is `Pixel_8_API_36`)
+### Build the App
 
-### Step 1: Add Credentials
+All commands run from the **root** of the repository:
 
-Add applicable credentials to [e2e/E2ETestingApp/App.tsx](../e2e/E2ETestingApp/App.tsx). In the future, this will be automated; for now, credentials must be added manually. You can generate credentials at the [Vonage Video API Playground](https://tools.vonage.com/video/playground).
-
-### Step 2: Prepare the SDK
-
-In the SDK root:
-```bash
-npm run prepare
-```
-
-In the test app (`e2e/E2ETestingApp` folder):
-```bash
-npm install  # Install JS dependencies
-cd ios && pod install  # Install iOS CocoaPods
-```
-
-### Step 3: Build the App
-
-#### iOS
-
-```bash
+```sh
+# iOS
 npm run test:e2e:ios:build
-```
 
-This builds the iOS app and Detox framework cache (one-time setup).
-
-#### Android
-
-```bash
+# Android
 npm run test:e2e:android:build
 ```
 
-This builds both the Android debug APK and Android test APK for Detox.
+### Run Tests
 
-### Step 4: Run E2E Tests
-
-Make sure metro is running before launching the test run. In the test app foder (`e2e/E2ETestingApp` folder) run:
-
-npm start
-
-Then in a separate terminal, from the root run:
-
-#### iOS
-
-```bash
+```sh
+# iOS — all suites
 npm run test:e2e:ios
+
+# Android (requires running emulator)
+DETOX_AVD_NAME=Pixel_9_API_36 npm run test:e2e:android
 ```
 
-#### Android
+### Run a Specific Suite
 
-```bash
-npm run test:e2e:android
+```sh
+# iOS
+npx detox test -c ios.sim.debug -- --testPathPattern "publisher"
+npx detox test -c ios.sim.debug -- --testPathPattern "amrTransition"
+
+# Android
+DETOX_AVD_NAME=Pixel_9_API_36 npx detox test -c android.emu.debug -- --testPathPattern "subscriber"
 ```
 
-This launches the selected simulator/emulator, installs the app, and executes all tests in `e2e/**/*.e2e.js`.
+### Use a Specific Device
+
+```sh
+DETOX_DEVICE_NAME="iPhone 15 Pro" npx detox test -c ios.sim.debug
+DETOX_AVD_NAME=Pixel_9_API_36 npx detox test -c android.emu.debug
+```
+
+### Convenience Script (local development)
+
+```sh
+./scripts/run-e2e-local.sh ios              # All tests on iOS
+./scripts/run-e2e-local.sh ios publisher    # Specific suite
+./scripts/run-e2e-local.sh android          # All tests on Android
+./scripts/run-e2e-local.sh ios --build      # Build before running
+```
+
+### Test the Bot Independently
+
+```sh
+E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/test-bot-standalone.js
+```
+
+## Available Test Suites
+
+| Suite | File | Description |
+|-------|------|-------------|
+| App Launch | `app.e2e.js` | Basic app launch and session connect/disconnect |
+| Publish & Subscribe | `publisher.e2e.js` | App publishes → bot receives, bot publishes → app subscribes |
+| Subscriber | `subscriber.e2e.js` | Subscriber appears/disappears with bot lifecycle |
+| Publisher Options | `publisherOptions.e2e.js` | Mute, camera off, unpublish/republish, audio/video-only |
+| Subscriber Options | `subscriberOptions.e2e.js` | Multiple bots, bot disconnect, subscribe audio/video toggles |
+| Session Lifecycle | `session.e2e.js` | Connect/disconnect cycles, disconnect while publishing/subscribing, signals |
+| Moderation | `moderation.e2e.js` | Force-disconnect, forceMuteStream via REST API |
+| AMR Transitions | `amrTransition.e2e.js` | Relayed ↔ routed transitions (2→3→2 participants) |
+| DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
+
+## How the Bot Works
+
+The `jsSDKTesterBot` is a headless Chromium browser (via Playwright) that loads the OpenTok JS SDK and joins the same Vonage Video session as the app under test. It publishes synthetic audio/video (Chromium's `--use-fake-device-for-media-stream` flag generates color bars + tone). Multiple bot instances can run simultaneously for multi-party tests.
+
+The JS SDK URL is configurable via `E2E_JS_SDK_URL` env var. Default: `https://static.opentok.com/v2/js/opentok.min.js`.
+
+## CI
+
+Tests run automatically on every PR via GitHub Actions (`ci-pr-tests.yml`). Credentials are generated from GitHub Secrets (`VONAGE_API_KEY`, `VONAGE_API_SECRET`, `API_URL`). Playwright Chromium is installed and cached.
 
 ## Writing Tests
 
-### Basic Test Structure
+### Pattern
+
+All test suites follow this pattern:
 
 ```javascript
-describe('Feature Name', () => {
+describe('Feature', () => {
   beforeAll(async () => {
-    await device.launchApp();
+    credentials = await getCredentials();
+    await device.launchApp({ newInstance: true, permissions: { camera: 'YES', microphone: 'YES' } });
+    await device.disableSynchronization();
+    const { waitForAppReady } = require('./helpers/waitForApp');
+    await waitForAppReady();
   });
 
-  beforeEach(async () => {
-    await device.reloadReactNative();
+  afterAll(async () => {
+    await device.terminateApp();
+    if (bot) await bot.close();
   });
 
-  it('should do something', async () => {
-    await expect(element(by.text('Expected Text'))).toBeVisible();
+  it('test case', async () => {
+    // Connect, interact, assert
   });
 });
 ```
 
-### Common Detox APIs
+### Key Points
 
-| API | Purpose |
-|-----|---------|
-| `element(by.text('...'))` | Find element by text |
-| `element(by.id('testID'))` | Find element by testID |
-| `expect(...).toBeVisible()` | Assert visibility |
-| `await element(...).tap()` | Tap element once |
-| `await element(...).multiTap(n)` | Tap element multiple times |
-| `await element(...).typeText('...')` | Type into input |
-| `device.reloadReactNative()` | Reset app state between tests |
-
-### Adding Test IDs
-
-Make elements queryable by adding `testID` props:
-
-```jsx
-<TouchableOpacity testID="start-session-btn">
-  <Text>Start Session</Text>
-</TouchableOpacity>
-```
-
-Then query in tests:
-
-```javascript
-await element(by.id('start-session-btn')).multiTap(1);
-```
-
-## Testing Best Practices
-
-### Isolation
-
-Use `beforeEach()` to reload the app between tests, ensuring each test runs in a clean state.
-
-### Stability
-
-Add explicit waits for async operations (e.g., session connection) to prevent flaky tests.
-
-### Debugging
-
-Run with the `--record-logs all` flag to capture device logs:
-
-```bash
-npm run test:e2e:ios -- --record-logs all
-```
-
-### Performance
-
-Tests run serially; keep individual tests focused and quick to maintain reasonable test suite execution times.
+- Use `device.disableSynchronization()` — the SDK keeps native threads busy
+- Use `setTimeout` waits instead of `waitFor` — Detox idle detection conflicts with WebRTC
+- Use `toExist()` instead of `toBeVisible()` for native video views on Android
+- Use `waitForAppReady()` helper for reliable app initialization
+- Call `device.terminateApp()` in `afterAll` to disconnect the session cleanly
 
 ## Resources
 
 - [Detox Documentation](https://wix.github.io/Detox/)
-- [Jest Matchers](https://jestjs.io/docs/expect)
-- [React Native Testing Best Practices](https://reactnative.dev/docs/testing-overview)
-
+- [Playwright Documentation](https://playwright.dev/)
+- [OpenTok JS SDK Reference](https://tokbox.com/developer/sdks/js/reference/)

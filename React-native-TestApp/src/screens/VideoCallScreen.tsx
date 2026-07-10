@@ -487,29 +487,34 @@ class VideoCallScreen extends Component<{}, State> {
           token={this.state.input.token}
           encryptionSecret={this.state.input.encryptionSecret}
           signal={this.state.input.signal}
-          options={{ apiUrl: 'https://api.dev.opentok.com' }}
+          options={{ apiUrl: credentials.apiUrl || undefined }}
           eventHandlers={this.sessionEventHandlers}
           ref={this.sessionRef}>
           <View style={styles.videoLayout}>
             {!this.state.forceDisconnect && (
-              <OTPublisher
-                testID="publisher"
-                properties={this.state.publisherProperties}
-                style={styles.video}
-                eventHandlers={this.publisherEventHandlers}
-                ref={this.pubRef}>
-                {this.state.showRecIndicator && (
-                  <Text style={styles.recording}>● REC</Text>
-                )}
-              </OTPublisher>
+              <View testID="publisher" style={styles.video}>
+                <OTPublisher
+                  properties={this.state.publisherProperties}
+                  style={{ flex: 1 }}
+                  eventHandlers={this.publisherEventHandlers}
+                  ref={this.pubRef}>
+                  {this.state.showRecIndicator && (
+                    <Text style={styles.recording}>● REC</Text>
+                  )}
+                </OTPublisher>
+              </View>
             )}
             {/* Try auto-subscribe mode - no streamId specified */}
-            <OTSubscriber
-              testID="subscriber"
-              properties={this.state.subscriberProperties}
-              style={styles.video}
-              eventHandlers={this.subscriberEventHandlers}
-            />
+            {this.state.streams.length > 0 && (
+            <View testID="subscriber" style={styles.video}>
+              <OTSubscriber
+                properties={this.state.subscriberProperties}
+                containerStyle={{ flex: 1 }}
+                style={{ flex: 1 }}
+                eventHandlers={this.subscriberEventHandlers}
+              />
+            </View>
+            )}
           </View>
         </OTSession>
       </View>
@@ -517,15 +522,11 @@ class VideoCallScreen extends Component<{}, State> {
   }
 
   renderControls() {
-    if (!this.state.connectedToSession) return null;
-
     const videoLabel = this.state.publisherProperties?.publishVideo !== false ? 'Video Off' : 'Video On';
     const audioLabel = this.state.publisherProperties?.publishAudio !== false ? 'Audio Off' : 'Audio On';
 
     return (
-      <View style={styles.controlsCard}>
-        <Text style={styles.cardTitle}>Controls</Text>
-        <View style={styles.controlsGrid}>
+      <View style={styles.controlsGrid}>
           <ButtonComponent
             testID="stopPublishing"
             handleSubmit={this.startOrstopPublishing}
@@ -554,6 +555,11 @@ class VideoCallScreen extends Component<{}, State> {
             label={audioLabel}
           />
           <ButtonComponent
+          testID="muteAll"
+          handleSubmit={this.sessionMethodForceMuteAll}
+          label="Mute All"
+        />
+        <ButtonComponent
             testID="toggleCameraPosition"
             handleSubmit={() =>
               this.updateEvent(
@@ -574,16 +580,26 @@ class VideoCallScreen extends Component<{}, State> {
             label={this.state.isScreenSharing ? 'Stop Share' : 'Screen Share'}
           />
           <ButtonComponent
-            testID="muteAll"
-            handleSubmit={this.sessionMethodForceMuteAll}
-            label="Mute All"
-          />
-          <ButtonComponent
+          testID="toggleSubscribeVideo"
+          handleSubmit={this.toggleVideoSubscription}
+          label="Sub Video Off/On"
+        />
+        <ButtonComponent
+          testID="toggleSubscribeAudio"
+          handleSubmit={() =>
+            this.updateEvent(
+              'subscriberProperties',
+              'subscribeToAudio',
+              !this.state.subscriberProperties.subscribeToAudio
+            )
+          }
+          label="Sub Audio Off/On"
+        />
+        <ButtonComponent
             testID="logNextSubscriberVideoStats"
             handleSubmit={this.logNextSubscriberVideoStats}
             label="Log Subscriber Stats"
-          />
-        </View>
+        />
       </View>
     );
   }
@@ -797,16 +813,42 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
+  renderEventIndicators() {
+    if (!this.state.connectedToSession) return null;
+
+    return (
+      <View testID="eventIndicators" style={{ padding: 4 }}>
+        {this.state.sessionEvents.signalReceived && (
+          <Text testID="signalReceivedIndicator">signal-received</Text>
+        )}
+        {this.state.sessionEvents.forceMute && (
+          <Text testID="forceMuteActiveIndicator">force-mute-active</Text>
+        )}
+        {this.state.sessionEvents.streamCreated && (
+          <Text testID="streamCreatedIndicator">stream-created</Text>
+        )}
+      </View>
+    );
+  }
+
   render() {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
-        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          {this.renderConnectionInputs()}
-          {this.renderVideoSection()}
-          {this.renderControls()}
-          {this.renderDegradationPreferenceSettings()}
-          {this.renderCodecSettings()}
-        </ScrollView>
+        <View style={{ flex: 1 }}>
+          <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
+            {this.renderConnectionInputs()}
+            {this.renderVideoSection()}
+            {this.renderEventIndicators()}
+            {this.renderDegradationPreferenceSettings()}
+            {this.renderCodecSettings()}
+          </ScrollView>
+
+          {this.state.connectedToSession && (
+            <View testID="actionBar" style={styles.actionBar}>
+              {this.renderControls()}
+            </View>
+          )}
+        </View>
       </ImageBackground>
     );
   }

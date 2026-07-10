@@ -44,7 +44,8 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   videoContainer: {
-    height: 400,
+    flex: 1,
+    minHeight: 200,
     backgroundColor: '#000',
     borderRadius: 12,
     overflow: 'hidden',
@@ -94,10 +95,17 @@ export const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  actionBar: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
   controlsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
   },
   controlButton: {
     minWidth: 100,
