@@ -44,7 +44,6 @@ local.properties
 #
 node_modules/
 npm-debug.log
-yarn-error.log
 *.log
 package-lock.json
 
