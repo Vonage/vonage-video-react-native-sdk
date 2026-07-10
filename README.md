@@ -30,8 +30,6 @@ npm install @vonage/client-sdk-video-react-native@<VERSION>
 **OpenTok Package:**
 ```bash
 npm install opentok-react-native@<VERSION>
-# or
-yarn add opentok-react-native@<VERSION>
 ```
 
 **Note:** Replace `<VERSION>` with the target version to use.
