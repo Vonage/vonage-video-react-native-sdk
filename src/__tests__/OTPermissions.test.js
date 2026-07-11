@@ -53,4 +53,32 @@ describe('checkAndroidPermissions — BLUETOOTH_CONNECT on Android 12+', () => {
     const requested = PermissionsAndroid.requestMultiple.mock.calls[0][0];
     expect(requested).not.toContain('android.permission.BLUETOOTH_CONNECT');
   });
+
+  it('resolves when BLUETOOTH_CONNECT is denied but audio + camera are granted', async () => {
+    // A denied Bluetooth permission only disables BT audio routing; it must NOT
+    // block publishing of mic + camera.
+    Platform.Version = 31;
+    PermissionsAndroid.requestMultiple.mockResolvedValueOnce({
+      'android.permission.RECORD_AUDIO': 'granted',
+      'android.permission.BLUETOOTH_CONNECT': 'never_ask_again',
+      'android.permission.CAMERA': 'granted',
+    });
+    await expect(
+      checkAndroidPermissions(/*audio*/ true, /*video*/ true, /*screen*/ false)
+    ).resolves.toBeUndefined();
+  });
+
+  it('still rejects when a mandatory permission (CAMERA) is denied', async () => {
+    Platform.Version = 31;
+    PermissionsAndroid.requestMultiple.mockResolvedValueOnce({
+      'android.permission.RECORD_AUDIO': 'granted',
+      'android.permission.BLUETOOTH_CONNECT': 'granted',
+      'android.permission.CAMERA': 'denied',
+    });
+    await expect(
+      checkAndroidPermissions(/*audio*/ true, /*video*/ true, /*screen*/ false)
+    ).rejects.toMatchObject({
+      permissionsDenied: ['android.permission.CAMERA'],
+    });
+  });
 });
