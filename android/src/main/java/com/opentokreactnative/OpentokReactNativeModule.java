@@ -176,24 +176,38 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            // Consume any pending request so publishStream() won't publish this
-            // same Publisher again when its view attaches (idempotent handshake).
-            sharedState.getPendingPublishers().remove(publisherId);
-            mSession.publish(publisher);
-        } else {
-            // The publisher view has not attached yet (its Publisher is built in
-            // onAttachedToWindow -> publishStream on a later UI-thread layout pass).
-            // Remember the request; publishStream completes it once the publisher exists.
-            sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
-        }
+        // Marshal the pending-publisher handshake onto the UI thread so it cannot
+        // interleave with OTRNPublisher.publishStream() (which also runs on the UI
+        // thread via onAttachedToWindow). publish() runs on the TurboModule thread,
+        // and the two coordinate through the publishers / pendingPublishers maps
+        // with a non-atomic check-then-act: if publish() reads a null publisher and
+        // is preempted while publishStream() registers the Publisher and finds no
+        // pending flag, neither side calls session.publish() and the publish is
+        // silently dropped. Serialized on the one UI thread the handshake is atomic.
+        // Mirrors removeSubscriber()'s UI-thread marshaling.
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                Session mSession = mSessions.get(sessionId);
+                if (mSession == null) {
+                    return;
+                }
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher != null) {
+                    // Consume any pending request so publishStream() won't publish this
+                    // same Publisher again when its view attaches (idempotent handshake).
+                    sharedState.getPendingPublishers().remove(publisherId);
+                    mSession.publish(publisher);
+                } else {
+                    // The publisher view has not attached yet (its Publisher is built in
+                    // onAttachedToWindow -> publishStream on a later UI-thread layout pass).
+                    // Remember the request; publishStream completes it once the publisher exists.
+                    sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
+                }
+            }
+        });
     }
 
     @Override
