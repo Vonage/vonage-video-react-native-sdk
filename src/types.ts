@@ -288,6 +288,16 @@ export type OTSessionProps = ViewProps & {
 export type OTPublisherProps = ViewProps & {
   properties?: OTPublisherProperties;
   eventHandlers?: OTPublisherEventHandlers;
+  /**
+   * When true, the publisher renders the local camera preview without
+   * publishing into the session. Flip it to false to publish the same
+   * publisher into the session, or use it on a standalone OTPublisher
+   * (outside OTSession) for a pre-call lobby. Defaults to false.
+   *
+   * Note: the native SDKs only start audio capture when publishing begins,
+   * so audioLevel events are not emitted while previewing.
+   */
+  previewOnly?: boolean;
 };
 
 export type OTSubscriberProps = ViewProps & {

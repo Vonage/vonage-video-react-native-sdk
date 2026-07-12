@@ -176,6 +176,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
+        if (sessionId == null || publisherId == null) {
+            return;
+        }
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
         if (mSession == null) {
@@ -190,6 +193,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
+        if (sessionId == null || publisherId == null) {
+            return;
+        }
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
         if (mSession == null) {
@@ -199,7 +205,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
             mSession.unpublish(publisher);
-            publishers.remove(publisher);
+            publishers.remove(publisherId);
         }
     }
 

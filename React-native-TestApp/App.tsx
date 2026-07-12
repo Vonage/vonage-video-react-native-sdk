@@ -1,8 +1,8 @@
 import React from 'react';
-import VideoCallScreen from './src/screens/VideoCallScreen';
+import WaitingRoomScreen from './src/screens/WaitingRoomScreen';
 
 const App = () => {
-  return <VideoCallScreen />;
+  return <WaitingRoomScreen />;
 };
 
 export default App;

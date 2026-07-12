@@ -32,6 +32,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     private var sessionId: String? = ""
     private var publisherId: String? = ""
+    private var previewOnly: Boolean = false
+    private var pendingBackCameraCycle = false
+    private var isPublished = false
+    private var isDropped = false
 
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
@@ -88,6 +92,12 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setPreviewOnly(value: Boolean) {
+        // Only the value present when the view attaches matters natively;
+        // the preview-to-publish transition is driven from JS via OT.publish.
+        previewOnly = value
     }
 
     public fun setPublishAudio(value: Boolean) {
@@ -271,9 +281,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 )
             }
             if (this.props?.get("cameraPosition") as String == "back") {
-                // Do not set publishVideo here, start when stream is created
-                // to avoid front camera preview flash
-                publisher?.setPublishVideo(false)
+                if (previewOnly) {
+                    // No stream is created while previewing, so switch the
+                    // camera right away before the preview starts.
+                    publisher?.cycleCamera()
+                    publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
+                } else {
+                    // Do not set publishVideo here, start when stream is created
+                    // to avoid front camera preview flash
+                    publisher?.setPublishVideo(false)
+                    pendingBackCameraCycle = true
+                }
             } else {
                 publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
             }
@@ -325,11 +343,42 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.addView(publisher?.view)
             requestLayout()
         }
+
+        if (previewOnly) {
+            // Render the local camera preview without publishing. The
+            // preview-to-publish transition happens through OT.publish from
+            // JS when the previewOnly prop is set to false.
+            publisher?.startPreview()
+        }
+    }
+
+    fun cleanup() {
+        isDropped = true
+        if (!isPublished) {
+            destroyPublisher()
+        }
+        // A published publisher is unpublished from JS via OT.unpublish;
+        // destroyPublisher() then runs from onStreamDestroyed.
+    }
+
+    private fun destroyPublisher() {
+        val publisher = this.publisher ?: return
+        this.publisher = null
+        pendingBackCameraCycle = false
+        val pubId = this.props?.get("publisherId") as? String ?: publisherId
+        if (pubId != null) {
+            sharedState.getPublishers().remove(pubId, publisher)
+        }
+        publisher.view?.let { removeView(it) }
+        // Required after startPreview(), and releases the capturer for
+        // publishers that were never published.
+        publisher.destroy()
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
-        val cameraPosition = this.props?.get("cameraPosition") as? String ?: "front"
-        if (cameraPosition == "back") {
+        isPublished = true
+        if (pendingBackCameraCycle) {
+            pendingBackCameraCycle = false
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
@@ -339,9 +388,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
+        isPublished = false
         OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
+        if (isDropped) {
+            destroyPublisher()
+        }
     }
 
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
