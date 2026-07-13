@@ -15,6 +15,36 @@ import {
 import { sanitizeProperties } from './helpers/OTPublisherHelper';
 import OTContext from './contexts/OTContext';
 
+const parseStatsString = (rawStats) => {
+  if (typeof rawStats !== 'string' || rawStats.length === 0) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawStats);
+  } catch {
+    return undefined;
+  }
+};
+
+const getParsedStatsPayload = (nativeEvent) => {
+  if (!nativeEvent || typeof nativeEvent !== 'object') {
+    return nativeEvent;
+  }
+
+  const parsedJsonStats = parseStatsString(nativeEvent.jsonStats);
+  if (parsedJsonStats !== undefined) {
+    return parsedJsonStats;
+  }
+
+  const parsedLegacyStats = parseStatsString(nativeEvent.stats);
+  if (parsedLegacyStats !== undefined) {
+    return parsedLegacyStats;
+  }
+
+  return nativeEvent.stats ?? nativeEvent.jsonStats ?? nativeEvent;
+};
+
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
@@ -187,15 +217,15 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.muteForced?.();
         }}
         onAudioNetworkStats={(event) => {
-          // TODO - remove workaround for Android stats prop
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent.stats;
+          // Backward compatibility:
+          // - preferred key: jsonStats (iOS and updated Android)
+          // - legacy Android key: stats
+          const eventData = getParsedStatsPayload(event.nativeEvent);
           this.props.eventHandlers?.audioNetworkStats?.(eventData);
         }}
         onRtcStatsReport={(event) => {
           this.props.eventHandlers?.rtcStatsReport?.(
-            JSON.parse(event.nativeEvent.jsonStats)
+            getParsedStatsPayload(event.nativeEvent)
           );
         }}
         onVideoDisabled={(event) => {
@@ -213,10 +243,10 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.videoEnabled?.(event.nativeEvent);
         }}
         onVideoNetworkStats={(event) => {
-          // TODO - remove workaround for Android stats prop
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent.stats;
+          // Backward compatibility:
+          // - preferred key: jsonStats (iOS and updated Android)
+          // - legacy Android key: stats
+          const eventData = getParsedStatsPayload(event.nativeEvent);
           this.props.eventHandlers?.videoNetworkStats?.(eventData);
         }}
         style={this.props.style}
