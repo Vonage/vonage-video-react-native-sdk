@@ -7,6 +7,7 @@ import android.widget.FrameLayout;
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.uimanager.ReactStylesDiffMap
+import org.json.JSONObject
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.common.UIManagerType
@@ -354,7 +355,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
-                putString("jsonArrayOfReports", jsonArrayOfReports)
+                putString("jsonArrayOfReports", jsonArrayOfReports) // kept for backward compatibility
+                putString("jsonStats", jsonArrayOfReports) // matches iOS key and TS spec
                 putMap("stream", stream)
             }
         emitOpenTokEvent("onRtcStatsReport", payload)
@@ -385,21 +387,75 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberAudioStats?
     ) {
-        val audioStats: WritableMap = Arguments.createMap()
-        audioStats.putDouble("audioPacketsLost", stats?.audioPacketsLost?.toDouble() ?: 0.0)
-        audioStats.putDouble("audioPacketsReceived", stats?.audioPacketsReceived?.toDouble() ?: 0.0)
-        audioStats.putDouble("audioBytesReceived", stats?.audioBytesReceived?.toDouble() ?: 0.0)
-        audioStats.putDouble("startTime", stats?.timeStamp?.toDouble() ?: 0.0)
-        emitOpenTokEvent("onAudioNetworkStats", audioStats)
+        val audioPacketsLost = stats?.audioPacketsLost?.toDouble() ?: 0.0
+        val audioPacketsReceived = stats?.audioPacketsReceived?.toDouble() ?: 0.0
+        val audioBytesReceived = stats?.audioBytesReceived?.toDouble() ?: 0.0
+        val timeStamp = stats?.timeStamp?.toDouble() ?: 0.0
+
+        // Serialize stats to JSON string to match iOS Fabric event pattern.
+        // iOS sends { stream, jsonStats } where jsonStats is a JSON string.
+        val jsonStats = JSONObject().apply {
+            put("audioPacketsLost", audioPacketsLost)
+            put("audioPacketsReceived", audioPacketsReceived)
+            put("audioBytesReceived", audioBytesReceived)
+            put("startTime", timeStamp)   // kept for backward compatibility
+            put("timestamp", timeStamp)   // matches iOS field name
+        }.toString()
+
+        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val payload = Arguments.createMap().apply {
+            putString("jsonStats", jsonStats)     // matches iOS key, consumed by JS deserializer
+            putMap("stream", stream)              // matches iOS structure
+            // Backward compat: keep flat fields for existing Android consumers
+            putDouble("audioPacketsLost", audioPacketsLost)
+            putDouble("audioPacketsReceived", audioPacketsReceived)
+            putDouble("audioBytesReceived", audioBytesReceived)
+            putDouble("startTime", timeStamp)
+        }
+        emitOpenTokEvent("onAudioNetworkStats", payload)
     }
 
     override fun onVideoStats(
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberVideoStats?
     ) {
-        val videoStats: WritableMap = EventUtils.prepareSubscriberVideoNetworkStats(stats)
-        
-        emitOpenTokEvent("onVideoNetworkStats", videoStats)
+        val videoPacketsLost = stats?.videoPacketsLost ?: 0
+        val videoBytesReceived = stats?.videoBytesReceived ?: 0
+        val videoPacketsReceived = stats?.videoPacketsReceived ?: 0
+        val timeStamp = stats?.timeStamp ?: 0.0
+
+        // Serialize stats to JSON string to match iOS Fabric event pattern.
+        // iOS sends { stream, jsonStats } where jsonStats is a JSON string.
+        val statsJson = JSONObject().apply {
+            put("videoPacketsLost", videoPacketsLost)
+            put("videoBytesReceived", videoBytesReceived)
+            put("videoPacketsReceived", videoPacketsReceived)
+            put("timestamp", timeStamp)
+            stats?.senderStats?.let { sender ->
+                put("senderStats", JSONObject().apply {
+                    put("connectionMaxAllocatedBitrate", sender.connectionMaxAllocatedBitrate)
+                    put("connectionEstimatedBandwidth", sender.connectionEstimatedBandwidth)
+                })
+            }
+        }
+
+        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
+        val payload = Arguments.createMap().apply {
+            putString("jsonStats", statsJson.toString()) // matches iOS key, consumed by JS deserializer
+            putMap("stream", stream)                     // matches iOS structure
+            // Backward compat: keep flat fields so existing Android consumers still work
+            putInt("videoPacketsLost", videoPacketsLost)
+            putInt("videoBytesReceived", videoBytesReceived)
+            putInt("videoPacketsReceived", videoPacketsReceived)
+            putDouble("timestamp", timeStamp)
+            stats?.senderStats?.let { sender ->
+                putMap("senderStats", Arguments.createMap().apply {
+                    putDouble("connectionMaxAllocatedBitrate", sender.connectionMaxAllocatedBitrate.toDouble())
+                    putDouble("connectionEstimatedBandwidth", sender.connectionEstimatedBandwidth.toDouble())
+                })
+            }
+        }
+        emitOpenTokEvent("onVideoNetworkStats", payload)
     }
 
     override fun onVideoDataReceived(subscriber: SubscriberKit?) {

@@ -138,6 +138,19 @@ export type SubscriberAudioNetworkStatsEvent = {
   startTime: number;
 };
 
+/**
+ * Payload shape for subscriber RTC stats reports.
+ * The `jsonStats` field is legacy and will be removed in a future major release.
+ * Use `stats` when available.
+ */
+export type SubscriberRtcStatsReportPayload = {
+  stream: Stream;
+  /** @deprecated Use `stats` when available. */
+  jsonStats: string;
+  /** Parsed subscriber RTC stats report data. */
+  stats?: unknown;
+};
+
 export type SubscriberCaptionReceivedEvent = {
   text: string;
   isFinal: boolean;
@@ -256,7 +269,11 @@ export type OTSubscriberEventHandlers = {
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
   otrnError?: CallbackWithParam<unknown>;
   reconnected?: CallbackWithParam<SubscriberStreamEvent>;
-  rtcStatsReport?: CallbackWithParam<SubscriberRTCStatsReportEvent>;
+  /**
+    * Note: `jsonStats` in this callback payload is deprecated and will be
+    * removed in a future major release. Use `stats` when available.
+   */
+  rtcStatsReport?: CallbackWithParam<SubscriberRTCStatsReportEvent | SubscriberRtcStatsReportPayload>;
   subscriberConnected?: CallbackWithParam<SubscriberStreamEvent>;
   videoDataReceived?: CallbackWithParam<SubscriberStreamEvent>;
   videoDisabled?: CallbackWithParam<VideoDisabledEvent>;

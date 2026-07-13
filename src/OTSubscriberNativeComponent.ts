@@ -37,12 +37,33 @@ export interface StreamErrorEvent extends StreamEvent {
 
 export type EmptyEvent = {};
 
+export interface ParsedSubscriberAudioStats {
+  audioPacketsLost: Double;
+  audioBytesReceived: Double;
+  audioPacketsReceived: Double;
+  startTime?: Double;
+  timestamp: Double;
+}
+
+export interface ParsedSubscriberVideoStats {
+  videoPacketsLost: Int32;
+  videoBytesReceived: Int32;
+  videoPacketsReceived: Int32;
+  timestamp: Double;
+  senderStats?: {
+    connectionMaxAllocatedBitrate: Double;
+    connectionEstimatedBandwidth: Double;
+  };
+}
+
 export interface SubscriberVideoNetworkStatsEvent extends StreamEvent {
-  jsonStats: string; // JSON string containing all video stats
+  jsonStats: string; // Deprecated: JSON string containing all video stats
+  stats?: ParsedSubscriberVideoStats; // Parsed stats object
 }
 
 export interface SubscriberAudioStatsEvent extends StreamEvent {
-  jsonStats: string; // JSON string containing all audio stats
+  jsonStats: string; // Deprecated: JSON string containing all audio stats
+  stats?: ParsedSubscriberAudioStats; // Parsed stats object
 }
 
 export interface SubscriberAudioLevelEvent extends StreamEvent {

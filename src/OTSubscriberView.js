@@ -4,6 +4,26 @@ import { OT } from './OT';
 import OTRNSubscriber from './OTSubscriberNativeComponent';
 import OTContext from './contexts/OTContext';
 
+const withParsedJsonStats = (nativeEvent) => {
+  if (!nativeEvent || typeof nativeEvent !== 'object') {
+    return nativeEvent;
+  }
+
+  const { jsonStats } = nativeEvent;
+  if (typeof jsonStats !== 'string' || jsonStats.length === 0) {
+    return nativeEvent;
+  }
+
+  try {
+    return {
+      ...nativeEvent,
+      stats: JSON.parse(jsonStats),
+    };
+  } catch {
+    return nativeEvent;
+  }
+};
+
 export default class OTSubscriberView extends React.Component {
   static defaultProps = {
     subscribeToAudio: true,
@@ -72,7 +92,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioLevel?.(event.nativeEvent);
         }}
         onAudioNetworkStats={(event) => {
-          eventHandlers.audioNetworkStats?.(event.nativeEvent);
+          // The Fabric codegen type for this event is { stream, jsonStats: string }.
+          // Keep backward compatibility by passing jsonStats unchanged, and also
+          // provide parsed stats when jsonStats is valid JSON.
+          eventHandlers.audioNetworkStats?.(
+            withParsedJsonStats(event.nativeEvent)
+          );
         }}
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
@@ -100,7 +125,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.videoDisableWarningLifted?.(event.nativeEvent);
         }}
         onRtcStatsReport={(event) => {
-          eventHandlers.rtcStatsReport?.(event.nativeEvent);
+          // The Fabric codegen type for this event is { stream, jsonStats: string }.
+          // Keep backward compatibility by passing jsonStats unchanged, and also
+          // provide parsed stats when jsonStats is valid JSON.
+          eventHandlers.rtcStatsReport?.(
+            withParsedJsonStats(event.nativeEvent)
+          );
         }}
         onVideoEnabled={(event) => {
           eventHandlers.videoEnabled?.(event.nativeEvent);
@@ -109,7 +139,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
         onVideoNetworkStats={(event) => {
-          eventHandlers.videoNetworkStats?.(event.nativeEvent);
+          // The Fabric codegen type for this event is { stream, jsonStats: string }.
+          // Keep backward compatibility by passing jsonStats unchanged, and also
+          // provide parsed stats when jsonStats is valid JSON.
+          eventHandlers.videoNetworkStats?.(
+            withParsedJsonStats(event.nativeEvent)
+          );
         }}
         style={style}
       />
