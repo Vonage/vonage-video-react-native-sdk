@@ -143,6 +143,9 @@
   "jest": {
     "preset": "@react-native/jest-preset",
     "clearMocks": true,
+    "testPathIgnorePatterns": [
+      "<rootDir>/React-native-TestApp/"
+    ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
     ],
