@@ -398,7 +398,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         val payload =
             Arguments.createMap().apply {
                 putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
-                putString("stats", serializedStats) // legacy key kept for backward compatibility
+                putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
             }
         emitOpenTokEvent("onAudioNetworkStats", payload)
     }
@@ -429,7 +429,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             val payload =
                 Arguments.createMap().apply {
                     putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
-                    putString("stats", serializedStats) // legacy key kept for backward compatibility
+                    putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
                 }
             emitOpenTokEvent("onVideoNetworkStats", payload)
         }

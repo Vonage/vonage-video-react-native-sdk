@@ -219,7 +219,7 @@ export default class OTPublisher extends React.Component {
         onAudioNetworkStats={(event) => {
           // Backward compatibility:
           // - preferred key: jsonStats (iOS and updated Android)
-          // - legacy Android key: stats
+          // - deprecated legacy Android key: stats
           const eventData = getParsedStatsPayload(event.nativeEvent);
           this.props.eventHandlers?.audioNetworkStats?.(eventData);
         }}
@@ -245,7 +245,7 @@ export default class OTPublisher extends React.Component {
         onVideoNetworkStats={(event) => {
           // Backward compatibility:
           // - preferred key: jsonStats (iOS and updated Android)
-          // - legacy Android key: stats
+          // - deprecated legacy Android key: stats
           const eventData = getParsedStatsPayload(event.nativeEvent);
           this.props.eventHandlers?.videoNetworkStats?.(eventData);
         }}

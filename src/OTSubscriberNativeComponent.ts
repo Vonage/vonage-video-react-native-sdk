@@ -13,7 +13,7 @@ export interface StreamEvent {
     name: string;
     streamId: string;
     hasAudio: boolean;
-    hasCaptions: boolean;
+    hasCaptions?: boolean;
     hasVideo: boolean;
     sessionId: string;
     width: Double;
@@ -38,11 +38,11 @@ export interface StreamErrorEvent extends StreamEvent {
 export type EmptyEvent = {};
 
 export interface SubscriberVideoNetworkStatsEvent extends StreamEvent {
-  jsonStats: string; // Deprecated: JSON string containing all video stats
+  jsonStats: string; // JSON string containing all video stats
 }
 
 export interface SubscriberAudioStatsEvent extends StreamEvent {
-  jsonStats: string; // Deprecated: JSON string containing all audio stats
+  jsonStats: string; // JSON string containing all audio stats
 }
 
 export interface SubscriberAudioLevelEvent extends StreamEvent {

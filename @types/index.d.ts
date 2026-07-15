@@ -142,19 +142,6 @@ declare module "@vonage/client-sdk-video-react-native" {
     timeStamp: number;
   }
 
-  /**
-   * Payload for subscriber audio network stats events.
-   * The `jsonStats` field is legacy and will be removed in a future major release.
-   * Use the `stats` field when available.
-   */
-  interface SubscriberAudioNetworkStatsPayload {
-    stream: Stream;
-    /** @deprecated Use `stats` when available. */
-    jsonStats: string;
-    /** Parsed subscriber audio stats. */
-    stats?: SubscriberAudioStatsEvent;
-  }
-
   //subscriber video stats event
   interface VideoNetworkStatsEvent { 
     senderStats?: SenderStats;
@@ -162,32 +149,6 @@ declare module "@vonage/client-sdk-video-react-native" {
     videoPacketsLost: number;
     videoPacketsReceived: number;
     timestamp: number;
-  }
-
-  /**
-   * Payload for subscriber video network stats events.
-   * The `jsonStats` field is legacy and will be removed in a future major release.
-   * Use the `stats` field when available.
-   */
-  interface SubscriberVideoNetworkStatsPayload {
-    stream: Stream;
-    /** @deprecated Use `stats` when available. */
-    jsonStats: string;
-    /** Parsed subscriber video stats. */
-    stats?: VideoNetworkStatsEvent;
-  }
-
-  /**
-   * Payload for subscriber RTC stats report events.
-   * The `jsonStats` field is legacy and will be removed in a future major release.
-   * Use the `stats` field when available.
-   */
-  interface SubscriberRtcStatsReportPayload {
-    stream: Stream;
-    /** @deprecated Use `stats` when available. */
-    jsonStats: string;
-    /** Parsed subscriber RTC report data. */
-    stats?: unknown;
   }
 
 
@@ -804,17 +765,13 @@ declare module "@vonage/client-sdk-video-react-native" {
 
     /**
      * Sent periodically to report audio statistics for the subscriber.
-     *
-     * Note: `jsonStats` in the payload is deprecated and will be removed in a future major release.
-     * Use the `stats` field (when available) which contains pre-parsed audio statistics.
-     * See {@link SubscriberAudioNetworkStatsPayload} for migration details.
      */
-    audioNetworkStats?: CallbackWithParam<SubscriberAudioStatsEvent | SubscriberAudioNetworkStatsPayload, any>;
+    audioNetworkStats?: CallbackWithParam<SubscriberAudioStatsEvent, any>;
 
     /**
      * Sent when the subscriber successfully connects to the stream.
-     * @deprecated Legacy alias for subscriber connection events.
-     * Use `OTSubscriberEventHandlers.subscriberConnected` in the current type surface.
+      * @deprecated Legacy alias for subscriber connection events.
+      * Use `OTSubscriberEventHandlers.subscriberConnected` in the current type surface.
      */
     connected?: Callback<any>;
 
@@ -846,15 +803,8 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Sent when an RTC stats report is available for the subscriber,
      * in response to calling the OTSubscriber.getRtcStatsReport() method.
-     *
-     * Note: `jsonStats` in the payload is deprecated and will be removed in a future major release.
-     * Use the `stats` field (when available) which contains parsed RTC report data.
-     * See {@link SubscriberRtcStatsReportPayload} for migration details.
-     *
-     * Note: The `RtcStatsReport` type in this union is a legacy artifact (undefined in codebase)
-     * and will be removed when this file is deprecated. Expect this to be `SubscriberRtcStatsReportPayload` only in future versions.
      */
-    rtcStatsReport?: CallbackWithParam<RtcStatsReport | SubscriberRtcStatsReportPayload, any>;
+    rtcStatsReport?: CallbackWithParam<RtcStatsReport, any>;
 
     /**
      * Sent when the subscriber successfully connects to the stream.
@@ -888,12 +838,8 @@ declare module "@vonage/client-sdk-video-react-native" {
 
     /**
      * Sent periodically to report video statistics for the subscriber.
-     *
-     * Note: `jsonStats` in the payload is deprecated and will be removed in a future major release.
-     * Use the `stats` field (when available) which contains pre-parsed video statistics.
-     * See {@link SubscriberVideoNetworkStatsPayload} for migration details.
      */
-    videoNetworkStats?: CallbackWithParam<VideoNetworkStatsEvent | SubscriberVideoNetworkStatsPayload, any>;
+    videoNetworkStats?: CallbackWithParam<VideoNetworkStatsEvent, any>;
   }
 
   interface OTSubscriberViewProps extends ViewProps {
