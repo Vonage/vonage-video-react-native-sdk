@@ -21,7 +21,7 @@ public final class EventUtils {
     // Previously used Java Date.toString() which was locale-dependent and non-standard.
     // iOS was emitting "yyyy-MM-dd HH:mm:ss" which was also non-standard.
     // Both platforms now emit the same ISO 8601 format: "yyyy-MM-dd'T'HH:mm:ss'Z'"
-    private static String toIso8601(Date date) {
+    public static String formatIso8601(Date date) {
         if (date == null) return "";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -33,7 +33,7 @@ public final class EventUtils {
         WritableMap connectionInfo = Arguments.createMap();
         if (connection != null) {
             connectionInfo.putString("connectionId", connection.getConnectionId());
-            connectionInfo.putString("creationTime", toIso8601(connection.getCreationTime()));
+            connectionInfo.putString("creationTime", formatIso8601(connection.getCreationTime()));
             connectionInfo.putString("data", connection.getData());
         }
         return connectionInfo;
@@ -46,7 +46,7 @@ public final class EventUtils {
             streamInfo.putString("streamId", stream.getStreamId());
             streamInfo.putInt("height", stream.getVideoHeight());
             streamInfo.putInt("width", stream.getVideoWidth());
-            streamInfo.putString("creationTime", toIso8601(stream.getCreationTime()));
+            streamInfo.putString("creationTime", formatIso8601(stream.getCreationTime()));
             streamInfo.putString("connectionId", stream.getConnection().getConnectionId());
             streamInfo.putString("sessionId", session.getSessionId());
             streamInfo.putMap("connection", prepareJSConnectionMap(stream.getConnection()));
