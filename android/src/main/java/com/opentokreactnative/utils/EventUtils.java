@@ -17,15 +17,21 @@ import java.util.TimeZone;
 
 public final class EventUtils {
 
+    private static final ThreadLocal<SimpleDateFormat> ISO8601_FORMATTER =
+        ThreadLocal.withInitial(() -> {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf;
+        });
+
     // Changed to ISO 8601 UTC format for cross-platform consistency.
     // Previously used Java Date.toString() which was locale-dependent and non-standard.
     // iOS was emitting "yyyy-MM-dd HH:mm:ss" which was also non-standard.
-    // Both platforms now emit the same ISO 8601 format: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+    // Both platforms now emit the same ISO 8601 format with milliseconds:
+    // "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'".
     public static String formatIso8601(Date date) {
         if (date == null) return "";
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT);
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return sdf.format(date);
+        return ISO8601_FORMATTER.get().format(date);
     }
 
     public static WritableMap prepareJSConnectionMap(Connection connection) {
