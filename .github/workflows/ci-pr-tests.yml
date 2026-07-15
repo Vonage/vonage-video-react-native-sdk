@@ -11,7 +11,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: NODE_OPTIONS=--experimental-require-module npm test
+
   e2e-ios-tests:
+    needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
     runs-on: macos-latest
@@ -133,6 +148,7 @@ jobs:
         run: npm run test:e2e:ios
 
   e2e-android-tests:
+    needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
     runs-on: ubuntu-latest
