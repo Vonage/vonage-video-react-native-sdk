@@ -33,10 +33,10 @@
       "sessionId": "",
       "token": "",
       "tokenBot": "",
-      "apiUrl": ""
+      "apiUrl": "https://api.dev.opentok.com"
     },
     "meet": {
-      "authHeader": "",
+      "authHeader": "John Wick sent me",
       "baseUrl": "https://meet.tokbox.com"
     },
     "github": {

@@ -107,6 +107,10 @@ export type PublisherAudioNetworkStats = {
   audioBytesSent: number;
   audioPacketsSent: number;
   timestamp: number;
+  /** @deprecated Use `timestamp`. */
+  startTime?: number;
+  /** @deprecated Use `timestamp`. */
+  timeStamp?: number;
 };
 
 export type PublisherVideoNetworkStats = {
@@ -116,6 +120,8 @@ export type PublisherVideoNetworkStats = {
   videoBytesSent: number;
   videoPacketsSent: number;
   timestamp: number;
+  /** @deprecated Use `timestamp`. */
+  startTime?: number;
 };
 
 export type SenderStats = {
@@ -135,18 +141,22 @@ export type SubscriberAudioNetworkStatsEvent = {
   audioPacketsLost: number;
   audioPacketsReceived: number;
   audioBytesReceived: number;
-  startTime: number;
+  timestamp?: number;
+  /** @deprecated Use `timestamp`. */
+  startTime?: number;
+  /** @deprecated Use `timestamp`. */
+  timeStamp?: number;
 };
 
 /**
  * Payload shape for subscriber RTC stats reports.
- * The `jsonStats` field is legacy and will be removed in a future major release.
- * Use `stats` when available.
+ * `jsonStats` is the canonical transport field from native.
+ * `jsonArrayOfReports` is a deprecated compatibility alias.
+ * `stats` is an optional parsed convenience payload added by the JS layer.
  */
-export type SubscriberRtcStatsReportPayload = {
-  stream: Stream;
-  /** @deprecated Use `stats` when available. */
-  jsonStats: string;
+export type SubscriberRtcStatsReportPayload = SubscriberRTCStatsReportEvent & {
+  /** @deprecated Use `jsonStats`. */
+  jsonArrayOfReports?: string;
   /** Parsed subscriber RTC stats report data. */
   stats?: unknown;
 };
@@ -258,29 +268,49 @@ export type OTSubscriberProperties = {
 
 export type OTSubscriberEventHandlers = {
   audioLevel?: CallbackWithParam<SubscriberAudioLevelEvent>;
-  audioNetworkStats?: CallbackWithParam<SubscriberAudioStatsEvent | SubscriberAudioNetworkStatsEvent>;
+  /**
+   * Preferred shape includes parsed `event.stats` when available.
+   * Fallback shape is the legacy flat event payload.
+   */
+  audioNetworkStats?: CallbackWithParam<
+    | (SubscriberAudioStatsEvent & { stats?: SubscriberAudioNetworkStatsEvent })
+    | SubscriberAudioNetworkStatsEvent
+  >;
   captionReceived?: CallbackWithParam<SubscriberCaptionEvent | SubscriberCaptionReceivedEvent>;
   /**
     * @deprecated Legacy alias for subscriber connection events.
     * Use `OTSubscriberEventHandlers.subscriberConnected` instead.
    */
   connected?: CallbackWithParam<SubscriberStreamEvent>;
+  /**
+    * @deprecated Legacy alias for subscriber disconnection events.
+    * Use `OTSubscriberEventHandlers.subscriberDisconnected` instead.
+   */
   disconnected?: CallbackWithParam<SubscriberStreamEvent>;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
   otrnError?: CallbackWithParam<unknown>;
   reconnected?: CallbackWithParam<SubscriberStreamEvent>;
   /**
-    * Note: `jsonStats` in this callback payload is deprecated and will be
-    * removed in a future major release. Use `stats` when available.
+    * `jsonStats` is the canonical transport field for this callback payload.
+    * `jsonArrayOfReports` is deprecated and kept only for backward compatibility.
+    * Use `stats` when available for parsed convenience data.
    */
-  rtcStatsReport?: CallbackWithParam<SubscriberRTCStatsReportEvent | SubscriberRtcStatsReportPayload>;
+  rtcStatsReport?: CallbackWithParam<SubscriberRtcStatsReportPayload>;
   subscriberConnected?: CallbackWithParam<SubscriberStreamEvent>;
+  subscriberDisconnected?: CallbackWithParam<SubscriberStreamEvent>;
   videoDataReceived?: CallbackWithParam<SubscriberStreamEvent>;
   videoDisabled?: CallbackWithParam<VideoDisabledEvent>;
   videoDisableWarning?: CallbackWithParam<SubscriberStreamEvent>;
   videoDisableWarningLifted?: CallbackWithParam<SubscriberStreamEvent>;
   videoEnabled?: CallbackWithParam<VideoEnabledEvent>;
-  videoNetworkStats?: CallbackWithParam<SubscriberVideoNetworkStatsEvent | VideoNetworkStatsEvent>;
+  /**
+   * Preferred shape includes parsed `event.stats` when available.
+   * Fallback shape is the legacy flat event payload.
+   */
+  videoNetworkStats?: CallbackWithParam<
+    | (SubscriberVideoNetworkStatsEvent & { stats?: VideoNetworkStatsEvent })
+    | VideoNetworkStatsEvent
+  >;
 };
 
 export type SubscriberStreamEvent = {

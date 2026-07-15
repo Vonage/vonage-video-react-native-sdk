@@ -355,7 +355,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
-                putString("jsonArrayOfReports", jsonArrayOfReports) // kept for backward compatibility
+                putString("jsonArrayOfReports", jsonArrayOfReports) // deprecated: use jsonStats
                 putString("jsonStats", jsonArrayOfReports) // matches iOS key and TS spec
                 putMap("stream", stream)
             }
@@ -410,7 +410,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             putDouble("audioPacketsLost", audioPacketsLost)
             putDouble("audioPacketsReceived", audioPacketsReceived)
             putDouble("audioBytesReceived", audioBytesReceived)
-            putDouble("startTime", timeStamp)
+            putDouble("startTime", timeStamp)     // deprecated: use timestamp
+            putDouble("timestamp", timeStamp)
         }
         emitOpenTokEvent("onAudioNetworkStats", payload)
     }
