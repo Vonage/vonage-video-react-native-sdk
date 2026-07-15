@@ -16,7 +16,6 @@ buildscript {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
@@ -43,7 +42,7 @@ android {
     }
   }
 
-  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+  compileSdkVersion(rootProject.ext.has("compileSdkVersion") ? rootProject.ext.get("compileSdkVersion") : (project.properties["OpentokReactNative_compileSdkVersion"]).toInteger())
 
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
@@ -71,16 +70,18 @@ android {
     targetCompatibility JavaVersion.VERSION_17
   }
 
-  kotlinOptions {
-    jvmTarget = "17"
-  }
-
   sourceSets {
     main {
       java.srcDirs += [
         "build/generated/source/codegen/java"
       ]
     }
+  }
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 

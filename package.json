@@ -108,9 +108,9 @@
     "@evilmartians/lefthook": "^1.12.3",
     "@expo/config-plugins": "^54.0.4",
     "@react-native-community/cli": "20.1.0",
-    "@react-native/babel-preset": "0.86.0",
-    "@react-native/eslint-config": "0.86.0",
-    "@react-native/jest-preset": "0.86.0",
+    "@react-native/babel-preset": "0.87.0-rc.0",
+    "@react-native/eslint-config": "0.87.0-rc.0",
+    "@react-native/jest-preset": "0.87.0-rc.0",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.2.0",
@@ -126,7 +126,7 @@
     "playwright": "^1.61.1",
     "prettier": "^3.6.2",
     "react": "19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.87.0-rc.0",
     "react-native-builder-bob": "^0.43.0",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
@@ -138,7 +138,7 @@
   },
   "react-native": "src/index.tsx",
   "engines": {
-    "node": ">= 22.11.0"
+    "node": ">= 22.13.0"
   },
   "overrides": {
     "form-data": "^4.0.6"
