@@ -16,12 +16,21 @@ describe('Moderation', () => {
   beforeAll(async () => {
     credentials = await getCredentials();
 
+    // On iOS, Detox tries to synchronize *during* launchApp() itself, which hangs
+    // indefinitely when the Video SDK keeps the main queue busy. Disabling sync
+    // at launch-time via launchArgs prevents this. On Android the equivalent
+    // device.disableSynchronization() call below is sufficient.
+    const isIOS = device.getPlatform() === 'ios';
     await device.launchApp({
       newInstance: true,
-      launchArgs: {
-        detoxEnableSynchronization: 0,
-        detoxPrintBusyIdleResources: 'YES',
-      },
+      ...(isIOS
+        ? {
+            launchArgs: {
+              detoxEnableSynchronization: 0,
+              detoxPrintBusyIdleResources: 'YES',
+            },
+          }
+        : {}),
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
