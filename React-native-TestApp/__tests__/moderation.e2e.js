@@ -18,6 +18,10 @@ describe('Moderation', () => {
 
     await device.launchApp({
       newInstance: true,
+      launchArgs: {
+        detoxEnableSynchronization: 0,
+        detoxPrintBusyIdleResources: 'YES',
+      },
       permissions: { camera: 'YES', microphone: 'YES' },
     });
     await device.disableSynchronization();
