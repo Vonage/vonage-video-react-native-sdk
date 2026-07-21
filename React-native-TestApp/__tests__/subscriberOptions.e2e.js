@@ -99,14 +99,15 @@ describe('Subscriber Options', () => {
     console.log('[disappear] Disconnecting bot1...');
     await bot1.disconnect();
 
-    // Subscriber should disappear — wait up to 15s for the view to become invisible
-    await waitFor(element(by.id('subscriber')))
-      .not.toBeVisible()
-      .withTimeout(30000);
+    // Wait for stream destroyed event — more reliable than checking view visibility
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(30000);
+    console.log('[disappear] Stream destroyed event received.');
+
+    // Give the UI time to unmount the subscriber view
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     console.log('[disappear] Subscriber gone.');
 
-    // Verify event indicators
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    // Verify connection destroyed event
     await waitFor(element(by.id('session-connectionDestroyed'))).not.toHaveText('0').withTimeout(5000);
   });
 

@@ -55,28 +55,29 @@ describe('Publisher Options', () => {
 
   it('toggle audio off then on (mute/unmute)', async () => {
     await element(by.id('tabPublisher')).tap();
-    await tapButton('hasAudio');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await element(by.id('hasAudio')).tap();
     console.log('[audio] Muted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Verify streamPropertyChanged fires when audio toggled
     await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
 
-    await tapButton('hasAudio');
+    await element(by.id('hasAudio')).tap();
     console.log('[audio] Unmuted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
   });
 
   it('toggle video off then on (camera off/on)', async () => {
-    await tapButton('hasVideo');
+    await element(by.id('hasVideo')).tap();
     console.log('[video] Camera off.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Verify streamPropertyChanged fires when video toggled
     await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
 
-    await tapButton('hasVideo');
+    await element(by.id('hasVideo')).tap();
     console.log('[video] Camera on.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
@@ -94,11 +95,13 @@ describe('Publisher Options', () => {
   // });
 
   it('unpublish then republish', async () => {
-    await tapButton('stopPublishing');
+    await element(by.id('tabSession')).tap();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Unpublished.');
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    await tapButton('stopPublishing');
+    await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Republished.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(8000);
     await expect(element(by.id('publisher'))).toExist();
@@ -106,24 +109,26 @@ describe('Publisher Options', () => {
   });
 
   it('publish audio-only (video off)', async () => {
-    await tapButton('hasVideo');
+    await element(by.id('tabPublisher')).tap();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await element(by.id('hasVideo')).tap();
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
     console.log('[audio-only] Publishing audio only.');
 
     // Restore
-    await tapButton('hasVideo');
+    await element(by.id('hasVideo')).tap();
     await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 
   it('publish video-only (audio off)', async () => {
-    await tapButton('hasAudio');
+    await element(by.id('hasAudio')).tap();
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await expect(element(by.id('publisher'))).toExist();
     console.log('[video-only] Publishing video only.');
 
     // Restore
-    await tapButton('hasAudio');
+    await element(by.id('hasAudio')).tap();
     await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 });

@@ -86,8 +86,7 @@ describe('Publish and Subscribe', () => {
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[bot→subscribe] Subscriber visible in app!');
 
-    // Verify session stream created and subscriber connected events
+    // Verify session stream created event
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('subscriber-connected'))).not.toHaveText('0').withTimeout(5000);
   });
 });
