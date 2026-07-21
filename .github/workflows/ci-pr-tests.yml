@@ -85,15 +85,6 @@ jobs:
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
         run: node scripts/generate-e2e-credentials.js
 
-      - name: Inject E2E credentials
-        env:
-          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
-          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
-          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
-          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
-          API_URL: ${{ secrets.API_URL }}
-        run: node scripts/inject-e2e-credentials.js
-
       - name: Detect available iOS simulator
         id: detect-simulator
         run: |
@@ -197,15 +188,6 @@ jobs:
           VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
         run: node scripts/generate-e2e-credentials.js
-
-      - name: Inject E2E credentials
-        env:
-          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
-          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
-          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
-          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
-          API_URL: ${{ secrets.API_URL }}
-        run: node scripts/inject-e2e-credentials.js
 
       - name: Verify Detox Android setup
         run: |

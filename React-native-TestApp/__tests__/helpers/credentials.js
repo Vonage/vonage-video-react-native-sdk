@@ -28,7 +28,7 @@ function readConfig() {
     throw new Error(
       `sdk-config.json not found at ${SDK_CONFIG_PATH}.\n` +
         'Generate credentials first:\n' +
-        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials-local.js'
+        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials.js'
     );
   }
   return JSON.parse(fs.readFileSync(SDK_CONFIG_PATH, 'utf8'));
@@ -47,7 +47,7 @@ async function getCredentials() {
     throw new Error(
       'sdk-config.json missing credentials (apiKey, sessionId, token).\n' +
         'Generate credentials first:\n' +
-        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials-local.js'
+        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials.js'
     );
   }
 
@@ -79,7 +79,7 @@ async function getRelayedCredentials() {
     throw new Error(
       'Relayed credentials not found in sdk-config.json.\n' +
         'Generate them first:\n' +
-        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials-local.js'
+        '  E2E_API_KEY=xxx E2E_API_SECRET=xxx node scripts/generate-e2e-credentials.js'
     );
   }
 
