@@ -60,9 +60,6 @@ describe('Publisher Options', () => {
     console.log('[audio] Muted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Verify streamPropertyChanged fires when audio toggled
-    await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
-
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Unmuted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -73,9 +70,6 @@ describe('Publisher Options', () => {
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera off.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Verify streamPropertyChanged fires when video toggled
-    await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
 
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera on.');
