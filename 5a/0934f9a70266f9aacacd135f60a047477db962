@@ -1,0 +1,20 @@
+React-native-TestApp/__tests__/p2p.e2e.js
+  s_169f9eb109ffd7::t_03ec193f0e8957 38-40
+  s_169f9eb109ffd7::t_f7a1b0d007dd59 36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5a0934f9a70266f9aacacd135f60a047477db962",
+  "prompts": {},
+  "sessions": {
+    "s_169f9eb109ffd7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_2a59cb58-3712-4f44-a9eb-16901c54111c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
