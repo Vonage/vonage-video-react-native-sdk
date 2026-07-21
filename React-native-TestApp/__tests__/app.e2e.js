@@ -28,10 +28,10 @@ describe('App Launch Test', () => {
     
     try {
       // Poll until the app has loaded — give it up to 4 minutes on slow CI runners
-      await waitFor(element(by.text('Connection Settings')))
+      await waitFor(element(by.id('submitButton')))
         .toBeVisible()
         .withTimeout(240000);
-      console.log('App launched successfully — "Connection Settings" is visible');
+      console.log('App launched successfully — "submitButton" is visible');
     } catch (error) {
       // Print the full error so the view hierarchy (verbose mode) appears in the log
       console.log('Could not find "Connection Settings":', error.message);

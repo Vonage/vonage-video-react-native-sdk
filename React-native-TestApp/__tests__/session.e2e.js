@@ -36,13 +36,15 @@ describe('Session Lifecycle', () => {
   it('connect and disconnect cleanly', async () => {
     await element(by.id('submitButton')).tap();
     console.log('[session] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-    console.log('[session] Connected. Disconnecting...');
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    console.log('[session] Connected.');
 
+    // Verify session connected event indicator
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
+
+    console.log('[session] Disconnecting...');
     await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected cleanly.');
   });
 
@@ -56,8 +58,7 @@ describe('Session Lifecycle', () => {
     }
     await element(by.id('submitButton')).tap();
     console.log('[session] Reconnecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[session] Reconnected successfully.');
   });
 
@@ -71,13 +72,11 @@ describe('Session Lifecycle', () => {
     }
     await element(by.id('submitButton')).tap();
     console.log('[session] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('publisher'))).toExist();
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(30000);
     console.log('[session] Publishing. Disconnecting...');
 
     await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while publishing — no crash.');
   });
 
@@ -85,8 +84,7 @@ describe('Session Lifecycle', () => {
     // Reconnect
     await element(by.id('submitButton')).tap();
     console.log('[session] Connecting for subscribe test...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
 
     // Bot joins
     bot = new jsSDKTesterBot({ timeout: 30000 });
@@ -98,13 +96,15 @@ describe('Session Lifecycle', () => {
       { apiUrl: credentials.apiUrl }
     );
     console.log('[session] Bot publishing. Waiting for subscriber...');
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[session] Subscribing. Disconnecting...');
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
+    console.log('[session] Subscribing.');
 
+    // Verify session stream created event
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+
+    console.log('[session] Disconnecting...');
     await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 
@@ -112,8 +112,7 @@ describe('Session Lifecycle', () => {
     // Reconnect
     await element(by.id('submitButton')).tap();
     console.log('[signal] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
 
     // Ensure bot is connected
     if (!bot) {
@@ -133,8 +132,9 @@ describe('Session Lifecycle', () => {
     await bot.sendSignal('chat', 'hello-from-bot');
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    // Verify app received signal (indicator in view tree)
-    await expect(element(by.id('signalReceivedIndicator'))).toExist();
+    // Verify app received signal via new event indicator
+    await waitFor(element(by.id('session-signalReceived'))).not.toHaveText('0').withTimeout(5000);
+
     console.log('[signal] App received signal from bot!');
   });
 });

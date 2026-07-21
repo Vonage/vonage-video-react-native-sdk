@@ -50,7 +50,14 @@ export const createSessionHandlers = (
   signal: (event: any) => {
     updateEvent('sessionEvents', 'signalReceived', true);
   },
+  sessionReconnecting: (event: any) => {
+    updateEvent('sessionEvents', 'sessionReconnecting', true);
+  },
+  sessionReconnected: (event: any) => {
+    updateEvent('sessionEvents', 'sessionReconnected', true);
+  },
   muteForced: (event: any) => {
+    updateEvent('sessionEvents', 'forceMute', true);
   },
   error: (event: any) => {
     updateEvent('sessionEvents', 'error', true);

@@ -99,10 +99,27 @@ class jsSDKTesterBot {
       ...publisherOptions,
     });
 
-    // JS SDK URL: defaults to production CDN.
-    // For non-production environments, set E2E_JS_SDK_URL env var.
-    const sdkUrl = process.env.E2E_JS_SDK_URL
-      || 'https://static.opentok.com/v2/js/opentok.min.js';
+    // JS SDK URL resolution order:
+    // 1. E2E_JS_SDK_URL env var (highest priority)
+    // 2. jsSdkUrl from sdk-config.json (set during credential generation)
+    // 3. Production CDN (default fallback)
+    let sdkUrl = process.env.E2E_JS_SDK_URL;
+    if (!sdkUrl) {
+      try {
+        const sdkConfig = JSON.parse(
+          require('fs').readFileSync(
+            require('path').join(__dirname, '../../sdk-config.json'),
+            'utf8'
+          )
+        );
+        sdkUrl = sdkConfig?.credentials?.video?.jsSdkUrl;
+      } catch (e) {
+        // Ignore read errors — fall through to default
+      }
+    }
+    if (!sdkUrl) {
+      sdkUrl = 'https://static.opentok.com/v2/js/opentok.min.js';
+    }
 
     await this.page.setContent(`
       <!DOCTYPE html>
@@ -123,7 +140,7 @@ class jsSDKTesterBot {
             streamCreated: false,
           };
 
-          const session = OT.initSession('${apiKey}', '${sessionId}');
+          const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
 
           session.on('streamCreated', (event) => {
             session.subscribe(event.stream, 'videos', { insertMode: 'append' });

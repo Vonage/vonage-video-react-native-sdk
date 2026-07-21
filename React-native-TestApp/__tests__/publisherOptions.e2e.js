@@ -42,17 +42,25 @@ describe('Publisher Options', () => {
     // Connect to session
     await element(by.id('submitButton')).tap();
     console.log('[publisherOptions] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[publisherOptions] Connected.');
+
+    // Verify initial session/publisher events
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    console.log('[publisherOptions] Event indicators confirmed.');
   });
 
   afterAll(async () => { await device.terminateApp(); });
 
   it('toggle audio off then on (mute/unmute)', async () => {
+    await element(by.id('tabPublisher')).tap();
     await tapButton('hasAudio');
     console.log('[audio] Muted.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Verify streamPropertyChanged fires when audio toggled
+    await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
 
     await tapButton('hasAudio');
     console.log('[audio] Unmuted.');
@@ -64,6 +72,9 @@ describe('Publisher Options', () => {
     await tapButton('hasVideo');
     console.log('[video] Camera off.');
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Verify streamPropertyChanged fires when video toggled
+    await waitFor(element(by.id('session-streamPropertyChanged'))).not.toHaveText('0').withTimeout(5000);
 
     await tapButton('hasVideo');
     console.log('[video] Camera on.');
@@ -89,7 +100,7 @@ describe('Publisher Options', () => {
 
     await tapButton('stopPublishing');
     console.log('[unpublish] Republished.');
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(8000);
     await expect(element(by.id('publisher'))).toExist();
     console.log('[unpublish] Publisher exists again.');
   });

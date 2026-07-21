@@ -28,8 +28,7 @@ describe('DTX Codec Option', () => {
     // Connect app
     await element(by.id('submitButton')).tap();
     console.log('[dtx] Connecting app...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[dtx] App connected.');
   });
 
@@ -64,9 +63,13 @@ describe('DTX Codec Option', () => {
       throw new Error('Bot did not receive app stream with DTX=false');
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[dtx-off] App publishes (DTX=false) → bot receives. Bot publishes → app subscribes. OK!');
+
+    // Verify event indicators
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
 
     // Disconnect bot for next test
     await bot.disconnect();
@@ -97,8 +100,12 @@ describe('DTX Codec Option', () => {
       throw new Error('Bot did not receive app stream when bot uses DTX=true');
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[dtx-on] Bot publishes (DTX=true) → app subscribes. App publishes → bot receives. OK!');
+
+    // Verify event indicators
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
   });
 });

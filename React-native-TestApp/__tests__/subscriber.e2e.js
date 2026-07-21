@@ -38,8 +38,7 @@ describe('Subscriber Tests', () => {
     await expect(element(by.id('submitButton'))).toBeVisible();
     await element(by.id('submitButton')).tap();
     console.log('[subscriber] Waiting for connection (30s)...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[subscriber] App connected.');
 
     // Bot joins and publishes
@@ -52,10 +51,14 @@ describe('Subscriber Tests', () => {
       { apiUrl: credentials.apiUrl }
     );
     console.log('[subscriber] Bot publishing. Waiting for subscriber (20s)...');
-    await new Promise((resolve) => setTimeout(resolve, 20000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
 
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[subscriber] Subscriber visible!');
+
+    // Verify event indicators
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
   });
 
   it('subscriber disappears when bot disconnects', async () => {
@@ -74,7 +77,7 @@ describe('Subscriber Tests', () => {
         credentials.tokenBot,
         { apiUrl: credentials.apiUrl }
       );
-      await new Promise((resolve) => setTimeout(resolve, 20000));
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
     }
     await expect(element(by.id('subscriber'))).toExist();
 
@@ -87,5 +90,8 @@ describe('Subscriber Tests', () => {
       .not.toBeVisible()
       .withTimeout(15000);
     console.log('[subscriber] Subscriber gone after bot disconnect.');
+
+    // Verify stream destroyed event
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
   });
 });

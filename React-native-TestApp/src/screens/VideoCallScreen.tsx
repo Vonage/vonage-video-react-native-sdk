@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text, ScrollView, ImageBackground, Alert } from 'react-native';
 import { OTSession, OTPublisher, OTSubscriber } from '@vonage/client-sdk-video-react-native';
-import { State, DegradationPreference, VideoStats } from '../types';
+import { State, DegradationPreference, VideoStats, TabName } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
 import { createSessionHandlers } from '../handlers/sessionHandlers';
 import { createPublisherHandlers } from '../handlers/publisherHandlers';
@@ -9,6 +9,7 @@ import { createSubscriberHandlers } from '../handlers/subscriberHandlers';
 import { parsePublisherProperty, parseSubscriberProperty } from '../utils/propertyUpdaters';
 import { styles } from '../styles/styles';
 import { credentials } from '../config/credentials';
+import TabBar from '../components/TabBar';
 import TextBoxComponent from '../../components/TextBoxComponent';
 import ButtonComponent from '../../components/ButtonComponent';
 import TextComponent from '../../components/TextComponent';
@@ -30,6 +31,7 @@ class VideoCallScreen extends Component<{}, State> {
 
   state: State = {
     connectedToSession: false,
+    connectionSettingsExpanded: false,
     isScreenSharing: false,
     showRecIndicator: false,
     forceDisconnect: false,
@@ -39,6 +41,9 @@ class VideoCallScreen extends Component<{}, State> {
     codecPreference: 'vp8',
     customCodecOrder: ['vp8', 'vp9', 'h264'],
     isLoadingMeetCredentials: false,
+    activeTab: 'session',
+    subscribedStreams: [],
+    unsubscribedStreams: [],
     input: {
       apiKey: credentials.apiKey,
       sessionId: credentials.sessionId,
@@ -49,40 +54,51 @@ class VideoCallScreen extends Component<{}, State> {
       signal: { data: 'hi' },
     },
     sessionEvents: {
-      archiveStart: false,
-      archiveStop: false,
-      connectionCreated: false,
-      connectionDestroyed: false,
-      error: false,
-      forceMute: false,
-      sessionConnected: false,
-      sessionDisconnected: false,
-      signalReceived: false,
-      streamCreated: false,
-      streamDestroyed: false,
-      streamPropertyChanged: false,
+      archiveStart: 0,
+      archiveStop: 0,
+      connectionCreated: 0,
+      connectionDestroyed: 0,
+      error: 0,
+      forceMute: 0,
+      sessionConnected: 0,
+      sessionDisconnected: 0,
+      sessionReconnecting: 0,
+      sessionReconnected: 0,
+      signalReceived: 0,
+      streamCreated: 0,
+      streamDestroyed: 0,
+      streamPropertyChanged: 0,
     },
     publisherEvents: {
-      audioLevel: false,
-      audioNetworkStats: false,
-      forceMute: false,
-      rtcStatsReport: true,
-      streamCreated: false,
-      streamDestroyed: false,
-      videoNetworkStats: false,
+      audioLevel: 0,
+      audioNetworkStats: 0,
+      error: 0,
+      forceMute: 0,
+      rtcStatsReport: 0,
+      streamCreated: 0,
+      streamDestroyed: 0,
+      videoDisabled: 0,
+      videoDisableWarning: 0,
+      videoDisableWarningLifted: 0,
+      videoEnabled: 0,
+      videoNetworkStats: 0,
     },
     subscriberEvents: {
-      audioLevel: false,
-      audioNetworkStats: false,
-      connected: false,
-      disconnected: false,
-      reconnected: false,
-      subscriberConnected: false,
-      rtcStatsReport: false,
-      videoDataReceived: false,
-      videoDisabled: false,
-      videoEnabled: false,
-      videoNetworkStats: true,
+      audioLevel: 0,
+      audioNetworkStats: 0,
+      captionReceived: 0,
+      connected: 0,
+      disconnected: 0,
+      error: 0,
+      reconnected: 0,
+      subscriberConnected: 0,
+      rtcStatsReport: 0,
+      videoDataReceived: 0,
+      videoDisabled: 0,
+      videoDisableWarning: 0,
+      videoDisableWarningLifted: 0,
+      videoEnabled: 0,
+      videoNetworkStats: 0,
     },
     publisherProperties: {
       cameraTorch: false,
@@ -142,13 +158,27 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   updateEvent = (eventGroup: string, eventType: string, eventValue: any) => {
-    this.setState((prevState) => ({
-      ...prevState,
-      [eventGroup]: {
-        ...(prevState as any)[eventGroup],
-        [eventType]: eventValue,
-      },
-    }));
+    this.setState((prevState) => {
+      // For event indicator groups, increment counter instead of setting boolean
+      if ((eventGroup === 'sessionEvents' || eventGroup === 'publisherEvents' || eventGroup === 'subscriberEvents') && eventValue === true) {
+        const currentVal = (prevState as any)[eventGroup][eventType];
+        const newVal = typeof currentVal === 'number' ? currentVal + 1 : 1;
+        return {
+          ...prevState,
+          [eventGroup]: {
+            ...(prevState as any)[eventGroup],
+            [eventType]: newVal,
+          },
+        };
+      }
+      return {
+        ...prevState,
+        [eventGroup]: {
+          ...(prevState as any)[eventGroup],
+          [eventType]: eventValue,
+        },
+      };
+    });
   };
 
   sessionMethodGetCapabilities = async () => {
@@ -171,7 +201,8 @@ class VideoCallScreen extends Component<{}, State> {
           streamId: stream.streamId,
           name: stream.name,
           connectionId: stream.connectionId,
-        }]
+        }],
+        subscribedStreams: [...prevState.subscribedStreams, stream.streamId],
       };
     });
   };
@@ -182,6 +213,8 @@ class VideoCallScreen extends Component<{}, State> {
     }
     this.setState((prevState) => ({
       streams: prevState.streams.filter(s => s.streamId !== streamId),
+      subscribedStreams: prevState.subscribedStreams.filter(id => id !== streamId),
+      unsubscribedStreams: prevState.unsubscribedStreams.filter(id => id !== streamId),
     }));
   };
 
@@ -258,6 +291,34 @@ class VideoCallScreen extends Component<{}, State> {
     }
   };
 
+  handleUnsubscribe = () => {
+    this.setState((prevState) => {
+      if (prevState.subscribedStreams.length === 0) {
+        return null; // No-op when no subscriber is active
+      }
+      // Remove the most recently subscribed stream
+      const streamToUnsubscribe = prevState.subscribedStreams[prevState.subscribedStreams.length - 1];
+      return {
+        subscribedStreams: prevState.subscribedStreams.filter(id => id !== streamToUnsubscribe),
+        unsubscribedStreams: [...prevState.unsubscribedStreams, streamToUnsubscribe],
+      };
+    });
+  };
+
+  handleResubscribe = () => {
+    this.setState((prevState) => {
+      if (prevState.unsubscribedStreams.length === 0) {
+        return null; // No-op when no streams to resubscribe
+      }
+      // Move the most recently unsubscribed stream back
+      const streamToResubscribe = prevState.unsubscribedStreams[prevState.unsubscribedStreams.length - 1];
+      return {
+        unsubscribedStreams: prevState.unsubscribedStreams.filter(id => id !== streamToResubscribe),
+        subscribedStreams: [...prevState.subscribedStreams, streamToResubscribe],
+      };
+    });
+  };
+
   subscriberEventHandlers = createSubscriberHandlers(
     this.updateEvent,
     this.state.subscriberEvents,
@@ -319,8 +380,8 @@ class VideoCallScreen extends Component<{}, State> {
   sessionMethodDisableForceMute = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.disableForceMute();
-      this.updateEvent('sessionEvents', 'forceMute', false);
-      this.updateEvent('publisherEvents', 'forceMute', false);
+      this.updateEvent('sessionEvents', 'forceMute', 0);
+      this.updateEvent('publisherEvents', 'forceMute', 0);
     }
   };
 
@@ -395,66 +456,77 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   renderConnectionInputs() {
+    const isCollapsed = this.state.connectedToSession && !this.state.connectionSettingsExpanded;
+
     return (
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Connection Settings</Text>
-        
-        <View style={styles.modeSelector}>
-          <View style={styles.modeSelectorButton}>
-            <ButtonComponent
-              testID="manualModeButton"
-              handleSubmit={() => this.setState({ connectionMode: 'manual' })}
-              label={this.state.connectionMode === 'manual' ? '✓ Manual' : 'Manual'}
-            />
-          </View>
-          <View style={styles.modeSelectorButton}>
-            <ButtonComponent
-              testID="meetModeButton"
-              handleSubmit={() => this.setState({ connectionMode: 'meet' })}
-              label={this.state.connectionMode === 'meet' ? '✓ Meet Room' : 'Meet Room'}
-            />
-          </View>
-        </View>
+        <Text
+          style={styles.cardTitle}
+          onPress={() => this.setState((prev: any) => ({ connectionSettingsExpanded: !prev.connectionSettingsExpanded }))}
+        >
+          {isCollapsed ? '▶ Connection Settings' : '▼ Connection Settings'}
+        </Text>
 
-        <View style={styles.inputContainer}>
-          {this.state.connectionMode === 'manual' ? (
-            <>
-              <TextBoxComponent
-                testID="apiKeyInput"
-                placeholder="API Key"
-                onChangeText={(text: string) => this.updateEvent('input', 'apiKey', text)}
-                value={this.state.input.apiKey}
-              />
-              <TextBoxComponent
-                testID="sessionIdInput"
-                placeholder="Session ID"
-                onChangeText={(text: string) => this.updateEvent('input', 'sessionId', text)}
-                value={this.state.input.sessionId}
-              />
-              <TextBoxComponent
-                testID="tokenInput"
-                placeholder="Token"
-                onChangeText={(text: string) => this.updateEvent('input', 'token', text)}
-                value={this.state.input.token}
-              />
-            </>
-          ) : (
-            <>
-              <TextBoxComponent
-                testID="meetRoomNameInput"
-                placeholder="Room Name"
-                onChangeText={(text: string) => this.updateEvent('input', 'meetRoomName', text)}
-                value={this.state.input.meetRoomName}
-              />
-              <TextBoxComponent
-                testID="userInitialsInput"
-                placeholder="Your Initials (optional)"
-                onChangeText={(text: string) => this.updateEvent('input', 'userInitials', text)}
-                value={this.state.input.userInitials}
-              />
-            </>
-          )}
-        </View>
+        {!isCollapsed && (
+          <>
+            <View style={styles.modeSelector}>
+              <View style={styles.modeSelectorButton}>
+                <ButtonComponent
+                  testID="manualModeButton"
+                  handleSubmit={() => this.setState({ connectionMode: 'manual' })}
+                  label={this.state.connectionMode === 'manual' ? '✓ Manual' : 'Manual'}
+                />
+              </View>
+              <View style={styles.modeSelectorButton}>
+                <ButtonComponent
+                  testID="meetModeButton"
+                  handleSubmit={() => this.setState({ connectionMode: 'meet' })}
+                  label={this.state.connectionMode === 'meet' ? '✓ Meet Room' : 'Meet Room'}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              {this.state.connectionMode === 'manual' ? (
+                <>
+                  <TextBoxComponent
+                    testID="apiKeyInput"
+                    placeholder="API Key"
+                    onChangeText={(text: string) => this.updateEvent('input', 'apiKey', text)}
+                    value={this.state.input.apiKey}
+                  />
+                  <TextBoxComponent
+                    testID="sessionIdInput"
+                    placeholder="Session ID"
+                    onChangeText={(text: string) => this.updateEvent('input', 'sessionId', text)}
+                    value={this.state.input.sessionId}
+                  />
+                  <TextBoxComponent
+                    testID="tokenInput"
+                    placeholder="Token"
+                    onChangeText={(text: string) => this.updateEvent('input', 'token', text)}
+                    value={this.state.input.token}
+                  />
+                </>
+              ) : (
+                <>
+                  <TextBoxComponent
+                    testID="meetRoomNameInput"
+                    placeholder="Room Name"
+                    onChangeText={(text: string) => this.updateEvent('input', 'meetRoomName', text)}
+                    value={this.state.input.meetRoomName}
+                  />
+                  <TextBoxComponent
+                    testID="userInitialsInput"
+                    placeholder="Your Initials (optional)"
+                    onChangeText={(text: string) => this.updateEvent('input', 'userInitials', text)}
+                    value={this.state.input.userInitials}
+                  />
+                </>
+              )}
+            </View>
+          </>
+        )}
 
         <View style={styles.connectionButton}>
           <ButtonComponent
@@ -502,10 +574,17 @@ class VideoCallScreen extends Component<{}, State> {
                     <Text style={styles.recording}>● REC</Text>
                   )}
                 </OTPublisher>
+                {this.state.publisherVideoStats && (
+                  <View style={{ position: 'absolute', bottom: 2, left: 2, backgroundColor: 'rgba(0,0,0,0.6)', padding: 2, borderRadius: 3 }}>
+                    <Text testID="liveStats" style={{ fontSize: 9, color: '#fff' }}>
+                      {`${this.state.publisherVideoStats.width}x${this.state.publisherVideoStats.height} ${this.state.publisherVideoStats.frameRate}fps`}
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
             {/* Try auto-subscribe mode - no streamId specified */}
-            {this.state.streams.length > 0 && (
+            {this.state.subscribedStreams.length > 0 && (
             <View testID="subscriber" style={styles.video}>
               <OTSubscriber
                 properties={this.state.subscriberProperties}
@@ -521,65 +600,79 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
-  renderControls() {
+  renderSessionControls() {
+    return (
+      <View style={styles.controlsGrid}>
+        <ButtonComponent
+          testID="stopPublishing"
+          handleSubmit={this.startOrstopPublishing}
+          label={this.state.forceDisconnect ? 'Publish' : 'Unpublish'}
+        />
+        <ButtonComponent
+          testID="toggleScreenShare"
+          handleSubmit={this.toggleScreenShare}
+          label={this.state.isScreenSharing ? 'Stop Share' : 'Screen Share'}
+        />
+        <ButtonComponent
+          testID="logNextSubscriberVideoStats"
+          handleSubmit={this.logNextSubscriberVideoStats}
+          label="Log Subscriber Stats"
+        />
+      </View>
+    );
+  }
+
+  renderPublisherControls() {
     const videoLabel = this.state.publisherProperties?.publishVideo !== false ? 'Video Off' : 'Video On';
     const audioLabel = this.state.publisherProperties?.publishAudio !== false ? 'Audio Off' : 'Audio On';
 
     return (
       <View style={styles.controlsGrid}>
-          <ButtonComponent
-            testID="stopPublishing"
-            handleSubmit={this.startOrstopPublishing}
-            label={this.state.forceDisconnect ? 'Publish' : 'Unpublish'}
-          />
-          <ButtonComponent
-            testID="hasVideo"
-            handleSubmit={() =>
-              this.updateEvent(
-                'publisherProperties',
-                'publishVideo',
-                !this.state.publisherProperties?.publishVideo
-              )
-            }
-            label={videoLabel}
-          />
-          <ButtonComponent
-            testID="hasAudio"
-            handleSubmit={() =>
-              this.updateEvent(
-                'publisherProperties',
-                'publishAudio',
-                !this.state.publisherProperties?.publishAudio
-              )
-            }
-            label={audioLabel}
-          />
-          <ButtonComponent
-          testID="muteAll"
-          handleSubmit={this.sessionMethodForceMuteAll}
-          label="Mute All"
+        <ButtonComponent
+          testID="hasVideo"
+          handleSubmit={() =>
+            this.updateEvent(
+              'publisherProperties',
+              'publishVideo',
+              !this.state.publisherProperties?.publishVideo
+            )
+          }
+          label={videoLabel}
         />
         <ButtonComponent
-            testID="toggleCameraPosition"
-            handleSubmit={() =>
-              this.updateEvent(
-                'publisherProperties',
-                'cameraPosition',
-                this.state.publisherProperties?.cameraPosition === 'back' ? 'front' : 'back'
-              )
-            }
-            label={
-              this.state.publisherProperties?.cameraPosition === 'front'
-                ? 'Back Camera'
-                : 'Front Camera'
-            }
-          />
-          <ButtonComponent
-            testID="toggleScreenShare"
-            handleSubmit={this.toggleScreenShare}
-            label={this.state.isScreenSharing ? 'Stop Share' : 'Screen Share'}
-          />
-          <ButtonComponent
+          testID="hasAudio"
+          handleSubmit={() =>
+            this.updateEvent(
+              'publisherProperties',
+              'publishAudio',
+              !this.state.publisherProperties?.publishAudio
+            )
+          }
+          label={audioLabel}
+        />
+        <ButtonComponent
+          testID="toggleCameraPosition"
+          handleSubmit={() =>
+            this.updateEvent(
+              'publisherProperties',
+              'cameraPosition',
+              this.state.publisherProperties?.cameraPosition === 'back' ? 'front' : 'back'
+            )
+          }
+          label={
+            this.state.publisherProperties?.cameraPosition === 'front'
+              ? 'Back Camera'
+              : 'Front Camera'
+          }
+        />
+      </View>
+    );
+  }
+
+  renderSubscriberControls() {
+    return (
+      <View style={styles.controlsGrid}>
+        <ButtonComponent
           testID="toggleSubscribeVideo"
           handleSubmit={this.toggleVideoSubscription}
           label="Sub Video Off/On"
@@ -596,11 +689,103 @@ class VideoCallScreen extends Component<{}, State> {
           label="Sub Audio Off/On"
         />
         <ButtonComponent
-            testID="logNextSubscriberVideoStats"
-            handleSubmit={this.logNextSubscriberVideoStats}
-            label="Log Subscriber Stats"
+          testID="unsubscribe"
+          handleSubmit={this.handleUnsubscribe}
+          label="Unsubscribe"
+        />
+        <ButtonComponent
+          testID="resubscribe"
+          handleSubmit={this.handleResubscribe}
+          label="Resubscribe"
+        />
+        <ButtonComponent
+          testID="setVolume0"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'audioVolume', 0)}
+          label="Volume 0"
+        />
+        <ButtonComponent
+          testID="setVolume50"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'audioVolume', 50)}
+          label="Volume 50"
         />
       </View>
+    );
+  }
+
+  renderModerationControls() {
+    return (
+      <View style={styles.controlsGrid}>
+        <ButtonComponent
+          testID="muteAll"
+          handleSubmit={this.sessionMethodForceMuteAll}
+          label="Mute All"
+        />
+      </View>
+    );
+  }
+
+  renderSettingsControls() {
+    const currentPref = this.state.publisherProperties.degradationPreference ?? DegradationPreference.NotSet;
+
+    return (
+      <ScrollView style={{ maxHeight: 200 }}>
+        <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>Degradation</Text>
+        <View style={styles.controlsGrid}>
+          <ButtonComponent
+            testID="degradationNotSet"
+            handleSubmit={() => this.updateEvent('publisherProperties', 'degradationPreference', DegradationPreference.NotSet)}
+            label={currentPref === DegradationPreference.NotSet ? '✓ Default' : 'Default'}
+          />
+          <ButtonComponent
+            testID="degradationMaintainBoth"
+            handleSubmit={() => this.updateEvent('publisherProperties', 'degradationPreference', DegradationPreference.MaintainFrameRateAndResolution)}
+            label={currentPref === DegradationPreference.MaintainFrameRateAndResolution ? '✓ Both' : 'Both'}
+          />
+          <ButtonComponent
+            testID="degradationMaintainFrameRate"
+            handleSubmit={() => this.updateEvent('publisherProperties', 'degradationPreference', DegradationPreference.MaintainFrameRate)}
+            label={currentPref === DegradationPreference.MaintainFrameRate ? '✓ FPS' : 'FPS'}
+          />
+          <ButtonComponent
+            testID="degradationMaintainResolution"
+            handleSubmit={() => this.updateEvent('publisherProperties', 'degradationPreference', DegradationPreference.MaintainResolution)}
+            label={currentPref === DegradationPreference.MaintainResolution ? '✓ Res' : 'Res'}
+          />
+          <ButtonComponent
+            testID="degradationBalanced"
+            handleSubmit={() => this.updateEvent('publisherProperties', 'degradationPreference', DegradationPreference.Balanced)}
+            label={currentPref === DegradationPreference.Balanced ? '✓ Balanced' : 'Balanced'}
+          />
+        </View>
+        <Text style={{ fontSize: 11, fontWeight: 'bold', marginTop: 8, marginBottom: 4 }}>Codec</Text>
+        <View style={styles.controlsGrid}>
+          <ButtonComponent
+            testID="codecDefault"
+            handleSubmit={() => { this.setState({ codecPreference: 'default' }, this.applyCodecPreference); }}
+            label={this.state.codecPreference === 'default' ? '✓ Default' : 'Default'}
+          />
+          <ButtonComponent
+            testID="codecAutomatic"
+            handleSubmit={() => { this.setState({ codecPreference: 'automatic' }, this.applyCodecPreference); }}
+            label={this.state.codecPreference === 'automatic' ? '✓ Auto' : 'Auto'}
+          />
+          <ButtonComponent
+            testID="codecVP8"
+            handleSubmit={() => { this.setState({ codecPreference: 'vp8' }, this.applyCodecPreference); }}
+            label={this.state.codecPreference === 'vp8' ? '✓ VP8' : 'VP8'}
+          />
+          <ButtonComponent
+            testID="codecVP9"
+            handleSubmit={() => { this.setState({ codecPreference: 'vp9' }, this.applyCodecPreference); }}
+            label={this.state.codecPreference === 'vp9' ? '✓ VP9' : 'VP9'}
+          />
+          <ButtonComponent
+            testID="codecH264"
+            handleSubmit={() => { this.setState({ codecPreference: 'h264' }, this.applyCodecPreference); }}
+            label={this.state.codecPreference === 'h264' ? '✓ H264' : 'H264'}
+          />
+        </View>
+      </ScrollView>
     );
   }
 
@@ -813,20 +998,91 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
+  resetEventIndicators = () => {
+    this.setState({
+      sessionEvents: {
+        archiveStart: 0,
+        archiveStop: 0,
+        connectionCreated: 0,
+        connectionDestroyed: 0,
+        error: 0,
+        forceMute: 0,
+        sessionConnected: this.state.sessionEvents.sessionConnected, // preserve connection state
+        sessionDisconnected: 0,
+        sessionReconnecting: 0,
+        sessionReconnected: 0,
+        signalReceived: 0,
+        streamCreated: 0,
+        streamDestroyed: 0,
+        streamPropertyChanged: 0,
+      },
+      publisherEvents: {
+        audioLevel: 0,
+        audioNetworkStats: 0,
+        error: 0,
+        forceMute: 0,
+        rtcStatsReport: 0,
+        streamCreated: this.state.publisherEvents.streamCreated, // preserve if still publishing
+        streamDestroyed: 0,
+        videoDisabled: 0,
+        videoDisableWarning: 0,
+        videoDisableWarningLifted: 0,
+        videoEnabled: 0,
+        videoNetworkStats: 0,
+      },
+      subscriberEvents: {
+        audioLevel: 0,
+        audioNetworkStats: 0,
+        captionReceived: 0,
+        connected: 0,
+        disconnected: 0,
+        error: 0,
+        reconnected: 0,
+        subscriberConnected: 0,
+        rtcStatsReport: 0,
+        videoDataReceived: 0,
+        videoDisabled: 0,
+        videoDisableWarning: 0,
+        videoDisableWarningLifted: 0,
+        videoEnabled: 0,
+        videoNetworkStats: 0,
+      },
+    });
+  };
+
   renderEventIndicators() {
     if (!this.state.connectedToSession) return null;
 
+    const { sessionEvents, publisherEvents, subscriberEvents } = this.state;
+
+    const renderGroup = (prefix: string, events: object) =>
+      Object.entries(events).map(([key, value]) => {
+        const flashKey = `${prefix}-${key}`;
+        const count = typeof value === 'number' ? value : 0;
+        return (
+          <View key={flashKey} style={{ flexDirection: 'row', paddingHorizontal: 2 }}>
+            <Text style={{ fontSize: 10, color: '#666' }}>{`${prefix === 'publisher' ? 'pub' : prefix === 'subscriber' ? 'sub' : prefix}.${key}: `}</Text>
+            <Text testID={flashKey} style={{ fontSize: 10, fontWeight: count > 0 ? 'bold' : 'normal', color: count > 0 ? '#090' : '#999' }}>
+              {String(count)}
+            </Text>
+          </View>
+        );
+      });
+
     return (
       <View testID="eventIndicators" style={{ padding: 4 }}>
-        {this.state.sessionEvents.signalReceived && (
-          <Text testID="signalReceivedIndicator">signal-received</Text>
-        )}
-        {this.state.sessionEvents.forceMute && (
-          <Text testID="forceMuteActiveIndicator">force-mute-active</Text>
-        )}
-        {this.state.sessionEvents.streamCreated && (
-          <Text testID="streamCreatedIndicator">stream-created</Text>
-        )}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 }}>
+          <Text
+            testID="resetEventIndicators"
+            onPress={this.resetEventIndicators}
+            style={{ fontSize: 10, color: '#c00', textDecorationLine: 'underline' }}
+          >
+            Reset Events
+          </Text>
+        </View>
+        {renderGroup('session', sessionEvents)}
+        {renderGroup('publisher', publisherEvents)}
+        {renderGroup('subscriber', subscriberEvents)}
       </View>
     );
   }
@@ -839,13 +1095,18 @@ class VideoCallScreen extends Component<{}, State> {
             {this.renderConnectionInputs()}
             {this.renderVideoSection()}
             {this.renderEventIndicators()}
-            {this.renderDegradationPreferenceSettings()}
-            {this.renderCodecSettings()}
           </ScrollView>
 
           {this.state.connectedToSession && (
-            <View testID="actionBar" style={styles.actionBar}>
-              {this.renderControls()}
+            <View>
+              <TabBar activeTab={this.state.activeTab} onTabPress={(tab: TabName) => this.setState({ activeTab: tab })} />
+              <View testID="actionBar" style={styles.actionBar}>
+                {this.state.activeTab === 'session' && this.renderSessionControls()}
+                {this.state.activeTab === 'publisher' && this.renderPublisherControls()}
+                {this.state.activeTab === 'subscriber' && this.renderSubscriberControls()}
+                {this.state.activeTab === 'moderation' && this.renderModerationControls()}
+                {this.state.activeTab === 'settings' && this.renderSettingsControls()}
+              </View>
             </View>
           )}
         </View>

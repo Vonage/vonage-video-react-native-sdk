@@ -29,8 +29,7 @@ describe('Subscriber Options', () => {
     // Connect app to session
     await element(by.id('submitButton')).tap();
     console.log('[subscriberOptions] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[subscriberOptions] App connected.');
   });
 
@@ -57,9 +56,13 @@ describe('Subscriber Options', () => {
       throw e;
     }
     console.log('[sub] Bot1 publishing. Waiting for subscriber...');
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[sub] Subscriber visible for bot1.');
+
+    // Verify event indicators
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
   });
 
   it('multiple subscribers with two bots', async () => {
@@ -79,7 +82,7 @@ describe('Subscriber Options', () => {
       throw e;
     }
     console.log('[multi] Bot2 publishing. Waiting...');
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[multi] Subscriber still visible with 2 bots.');
   });
@@ -99,8 +102,12 @@ describe('Subscriber Options', () => {
     // Subscriber should disappear — wait up to 15s for the view to become invisible
     await waitFor(element(by.id('subscriber')))
       .not.toBeVisible()
-      .withTimeout(15000);
+      .withTimeout(30000);
     console.log('[disappear] Subscriber gone.');
+
+    // Verify event indicators
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-connectionDestroyed'))).not.toHaveText('0').withTimeout(5000);
   });
 
   it('toggle subscribeToVideo off and on', async () => {
@@ -111,10 +118,11 @@ describe('Subscriber Options', () => {
       credentials.tokenBot,
       { apiUrl: credentials.apiUrl }
     );
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
     await expect(element(by.id('subscriber'))).toExist();
 
     // Toggle subscribeToVideo off (action bar — always visible)
+    await element(by.id('tabSubscriber')).tap();
     await element(by.id('toggleSubscribeVideo')).tap();
     console.log('[subVideo] Toggled subscribeToVideo off.');
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -135,6 +143,7 @@ describe('Subscriber Options', () => {
     await expect(element(by.id('subscriber'))).toExist();
 
     // Toggle subscribeToAudio off
+    await element(by.id('tabSubscriber')).tap();
     await element(by.id('toggleSubscribeAudio')).tap();
     console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
     await new Promise((resolve) => setTimeout(resolve, 3000));

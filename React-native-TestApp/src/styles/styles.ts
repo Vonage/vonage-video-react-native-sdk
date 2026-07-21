@@ -213,4 +213,36 @@ export const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: 'bold',
   },
+  tabBarContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingVertical: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  tabItemActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#2196F3',
+  },
+  tabLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  tabLabelActive: {
+    fontSize: 12,
+    color: '#2196F3',
+    fontWeight: 'bold',
+  },
+  tabIndicator: {
+    height: 2,
+    backgroundColor: '#2196F3',
+    borderRadius: 1,
+    marginTop: 2,
+    width: '80%',
+  },
 });

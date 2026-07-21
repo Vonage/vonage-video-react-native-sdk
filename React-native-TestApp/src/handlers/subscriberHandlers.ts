@@ -42,5 +42,15 @@ export const createSubscriberHandlers = (
     updateEvent('subscriberEvents', 'rtcStatsReport', true);
   },
   captionReceived: (event: any) => {
+    updateEvent('subscriberEvents', 'captionReceived', true);
+  },
+  error: (event: any) => {
+    updateEvent('subscriberEvents', 'error', true);
+  },
+  videoDisableWarning: (event: any) => {
+    updateEvent('subscriberEvents', 'videoDisableWarning', true);
+  },
+  videoDisableWarningLifted: (event: any) => {
+    updateEvent('subscriberEvents', 'videoDisableWarningLifted', true);
   },
 });

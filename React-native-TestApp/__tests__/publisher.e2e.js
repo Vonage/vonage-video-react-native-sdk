@@ -30,10 +30,14 @@ describe('Publish and Subscribe', () => {
     // Connect app and launch bot here so each test starts from a known shared state
     console.log('[setup] Connecting app...');
     await element(by.id('submitButton')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     await expect(element(by.id('publisher'))).toExist();
     console.log('[setup] App connected and publishing.');
+
+    // Verify session and publisher events fired
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    console.log('[setup] Session/publisher event indicators confirmed.');
 
     console.log('[setup] Launching bot...');
     bot = new jsSDKTesterBot({ timeout: 30000 });
@@ -71,12 +75,19 @@ describe('Publish and Subscribe', () => {
     if (state.subscriberCount < 1) {
       throw new Error(`Expected bot to have at least 1 subscriber, got ${state.subscriberCount}`);
     }
+
+    // Verify publisher stream created event indicator
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
   });
 
   it('Bot publishes → RN app shows subscriber', async () => {
     console.log('[bot→subscribe] Waiting for app subscriber (15s)...');
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[bot→subscribe] Subscriber visible in app!');
+
+    // Verify session stream created and subscriber connected events
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('subscriber-connected'))).not.toHaveText('0').withTimeout(5000);
   });
 });
