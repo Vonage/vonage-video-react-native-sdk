@@ -294,13 +294,11 @@ class VideoCallScreen extends Component<{}, State> {
   handleUnsubscribe = () => {
     this.setState((prevState) => {
       if (prevState.subscribedStreams.length === 0) {
-        return null; // No-op when no subscriber is active
+        return null;
       }
-      // Remove the most recently subscribed stream
-      const streamToUnsubscribe = prevState.subscribedStreams[prevState.subscribedStreams.length - 1];
       return {
-        subscribedStreams: prevState.subscribedStreams.filter(id => id !== streamToUnsubscribe),
-        unsubscribedStreams: [...prevState.unsubscribedStreams, streamToUnsubscribe],
+        subscribedStreams: [],
+        unsubscribedStreams: [...prevState.unsubscribedStreams, ...prevState.subscribedStreams],
       };
     });
   };
@@ -308,13 +306,11 @@ class VideoCallScreen extends Component<{}, State> {
   handleResubscribe = () => {
     this.setState((prevState) => {
       if (prevState.unsubscribedStreams.length === 0) {
-        return null; // No-op when no streams to resubscribe
+        return null;
       }
-      // Move the most recently unsubscribed stream back
-      const streamToResubscribe = prevState.unsubscribedStreams[prevState.unsubscribedStreams.length - 1];
       return {
-        unsubscribedStreams: prevState.unsubscribedStreams.filter(id => id !== streamToResubscribe),
-        subscribedStreams: [...prevState.subscribedStreams, streamToResubscribe],
+        unsubscribedStreams: [],
+        subscribedStreams: [...prevState.subscribedStreams, ...prevState.unsubscribedStreams],
       };
     });
   };

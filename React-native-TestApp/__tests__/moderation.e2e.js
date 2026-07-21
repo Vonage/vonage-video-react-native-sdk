@@ -55,6 +55,8 @@ describe('Moderation', () => {
     await element(by.id('muteAll')).tap();
 
     console.log('[forceMute] muteAll tapped. Waiting 5s...');
+    // Fixed wait: muteForced propagates over the network to the bot;
+    // no deterministic Detox condition exists for this (bot state is checked via Playwright).
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Verify bot received muteForced event

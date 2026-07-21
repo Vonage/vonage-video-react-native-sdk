@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-
-export type TabName = 'session' | 'publisher' | 'subscriber' | 'moderation' | 'settings';
+import { TabName } from '../types';
 
 interface TabBarProps {
   activeTab: TabName;

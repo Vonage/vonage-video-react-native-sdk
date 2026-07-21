@@ -34,7 +34,7 @@ describe('App Launch Test', () => {
       console.log('App launched successfully — "submitButton" is visible');
     } catch (error) {
       // Print the full error so the view hierarchy (verbose mode) appears in the log
-      console.log('Could not find "Connection Settings":', error.message);
+      console.log('Could not find "submitButton":', error.message);
       
       // Try alternate text that might be present
       try {
