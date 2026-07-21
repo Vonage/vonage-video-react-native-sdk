@@ -1,0 +1,36 @@
+React-native-TestApp/__tests__/helpers/credentials.js
+  678630be9073fa57 1-3
+scripts/generate-e2e-credentials.js
+  678630be9073fa57 1-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "2a739fe7b3237d40e59abf14b243308ca176f047",
+  "prompts": {
+    "678630be9073fa57": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "b6815e42-2099-4620-bb11-30e355b02765",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-07-21T16:00:40.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot-cli/gpt-4o).",
+          "timestamp": "2026-07-21T16:00:40.000Z"
+        }
+      ],
+      "total_additions": 123,
+      "total_deletions": 251,
+      "accepted_lines": 123,
+      "overriden_lines": 0
+    }
+  }
+}
