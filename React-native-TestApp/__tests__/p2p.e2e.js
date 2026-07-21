@@ -33,27 +33,11 @@ describe('P2P (Relayed) Session', () => {
 
     // Connect app with relayed session credentials
     // Need to input relayed credentials — tap the apiKey field and clear/type
-    // Actually, credentials are pre-loaded from sdk-config.json via the app's config.
-    // The app uses credentials.apiKey/sessionId/token from config.
-    // For relayed tests, we need to override. Use the text inputs.
-
-    // Expand connection settings if collapsed (tap the title)
-    try {
-      await element(by.id('apiKeyInput')).tap();
-    } catch (e) {
-      // Connection settings might be collapsed or showing manual mode already
-      // Try tapping the card title to expand
-      await element(by.text('▼ Connection Settings')).tap().catch(() => {});
-      await element(by.text('▶ Connection Settings')).tap().catch(() => {});
-    }
-
-    // Clear and set relayed credentials
-    await element(by.id('apiKeyInput')).clearText();
-    await element(by.id('apiKeyInput')).typeText(credentials.apiKey);
-    await element(by.id('sessionIdInput')).clearText();
-    await element(by.id('sessionIdInput')).typeText(credentials.sessionId);
-    await element(by.id('tokenInput')).clearText();
-    await element(by.id('tokenInput')).typeText(credentials.tokenApp);
+    // The inputs are visible at app start (connection settings only collapse when connected)
+    // Override the default credentials with relayed session credentials
+    await element(by.id('apiKeyInput')).replaceText(credentials.apiKey);
+    await element(by.id('sessionIdInput')).replaceText(credentials.sessionId);
+    await element(by.id('tokenInput')).replaceText(credentials.tokenApp);
 
     // Connect
     await element(by.id('submitButton')).tap();
