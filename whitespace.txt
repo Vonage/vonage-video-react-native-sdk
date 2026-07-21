@@ -4,3 +4,4 @@
 - Why did the TurboModule cross the road? To avoid the async message queue.
 - AI adoption report validation (Kiro IDE, 16 Jul 2026)
 - GH App installed, workflow no longer needed
+- Final test with correct git-ai 1.4.12 binary
