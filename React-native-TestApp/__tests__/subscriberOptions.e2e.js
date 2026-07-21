@@ -157,4 +157,58 @@ describe('Subscriber Options', () => {
     await expect(element(by.id('subscriber'))).toExist();
     console.log('[subAudio] Subscribe audio toggle works.');
   });
+
+  it('unsubscribe removes subscriber view', async () => {
+    // Ensure bot1 is connected and subscriber visible
+    const botState = await bot1.getState();
+    if (!botState.connected) {
+      await bot1.joinSession(
+        credentials.apiKey,
+        credentials.sessionId,
+        credentials.tokenBot,
+        { apiUrl: credentials.apiUrl }
+      );
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
+    }
+    await expect(element(by.id('subscriber'))).toExist();
+
+    // Navigate to Subscriber tab and tap unsubscribe
+    await element(by.id('tabSubscriber')).tap();
+    await element(by.id('unsubscribe')).tap();
+    console.log('[unsubscribe] Tapped unsubscribe.');
+
+    // Wait for subscriber to disappear
+    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
+    console.log('[unsubscribe] Subscriber view removed.');
+  });
+
+  it('resubscribe restores subscriber view', async () => {
+    // Bot should still be publishing — subscriber was just unsubscribed
+    await element(by.id('tabSubscriber')).tap();
+    await element(by.id('resubscribe')).tap();
+    console.log('[resubscribe] Tapped resubscribe.');
+
+    // Subscriber view should reappear
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+    console.log('[resubscribe] Subscriber view restored.');
+  });
+
+  it('set volume to 0 does not crash', async () => {
+    await expect(element(by.id('subscriber'))).toExist();
+    await element(by.id('tabSubscriber')).tap();
+    await element(by.id('setVolume0')).tap();
+    console.log('[volume] Set volume to 0.');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await expect(element(by.id('subscriber'))).toExist();
+    console.log('[volume] Subscriber still exists after volume 0.');
+  });
+
+  it('set volume to 50 does not crash', async () => {
+    await element(by.id('tabSubscriber')).tap();
+    await element(by.id('setVolume50')).tap();
+    console.log('[volume] Set volume to 50.');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await expect(element(by.id('subscriber'))).toExist();
+    console.log('[volume] Subscriber still exists after volume 50.');
+  });
 });
