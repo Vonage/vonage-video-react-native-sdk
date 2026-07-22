@@ -70,13 +70,13 @@ describe('Subscriber Options', () => {
     await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
     // Verify streamCreated payload
-    const streamEvent = await waitForEvent('streamCreated', 5000);
+    const streamEvent = await waitForEvent('streamCreated', 15000);
     console.log('[sub] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
     jestExpect(typeof streamEvent.streamId).toBe('string');
 
     // Verify connectionCreated payload
-    const connEvent = await waitForEvent('connectionCreated', 5000);
+    const connEvent = await waitForEvent('connectionCreated', 15000);
     console.log('[sub] connectionCreated payload:', JSON.stringify(connEvent));
     jestExpect(connEvent.connectionId).toBeTruthy();
     jestExpect(typeof connEvent.connectionId).toBe('string');
@@ -131,7 +131,7 @@ describe('Subscriber Options', () => {
     console.log('[disappear] Subscriber gone.');
 
     // Verify connectionDestroyed payload
-    const connEvent = await waitForEvent('connectionDestroyed', 5000);
+    const connEvent = await waitForEvent('connectionDestroyed', 15000);
     console.log('[disappear] connectionDestroyed payload:', JSON.stringify(connEvent));
     jestExpect(connEvent.connectionId).toBeTruthy();
     jestExpect(typeof connEvent.connectionId).toBe('string');

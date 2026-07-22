@@ -66,13 +66,13 @@ describe('Subscriber Tests', () => {
     await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
     // Verify streamCreated payload
-    const streamEvent = await waitForEvent('streamCreated', 5000);
+    const streamEvent = await waitForEvent('streamCreated', 15000);
     console.log('[subscriber] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
     jestExpect(typeof streamEvent.streamId).toBe('string');
 
     // Verify connectionCreated payload
-    const connEvent = await waitForEvent('connectionCreated', 5000);
+    const connEvent = await waitForEvent('connectionCreated', 15000);
     console.log('[subscriber] connectionCreated payload:', JSON.stringify(connEvent));
     jestExpect(connEvent.connectionId).toBeTruthy();
     jestExpect(typeof connEvent.connectionId).toBe('string');

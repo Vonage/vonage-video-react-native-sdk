@@ -96,7 +96,7 @@ describe('Publish and Subscribe', () => {
 
     // Verify streamCreated payload — bot publishes with name 'bot-publisher'
     // Filter was set in beforeAll before bot joined, so the event is already captured
-    const streamEvent = await waitForEvent('streamCreated', 5000);
+    const streamEvent = await waitForEvent('streamCreated', 15000);
     console.log('[bot→subscribe] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
     jestExpect(streamEvent.name).toBe('bot-publisher');

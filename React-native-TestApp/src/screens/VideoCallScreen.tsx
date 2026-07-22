@@ -145,12 +145,12 @@ class VideoCallScreen extends Component<{}, State> {
     // Delay first request to ensure publisher is ready
     setTimeout(() => {
       this.publisherMethodGetRtcStatsReport();
-    }, 1000);
+    }, 2000);
     
-    // Poll for stats every second
+    // Poll for stats every 5 seconds (longer interval to avoid Detox idle detection issues)
     this.statsUpdateInterval = setInterval(() => {
       this.publisherMethodGetRtcStatsReport();
-    }, 1000);
+    }, 5000);
   };
 
   stopStatsPolling = () => {

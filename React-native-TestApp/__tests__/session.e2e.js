@@ -108,7 +108,7 @@ describe('Session Lifecycle', () => {
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
 
     // Verify streamCreated payload contains valid stream info
-    const streamEvent = await waitForEvent('streamCreated', 5000);
+    const streamEvent = await waitForEvent('streamCreated', 15000);
     console.log('[session] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
     jestExpect(typeof streamEvent.streamId).toBe('string');

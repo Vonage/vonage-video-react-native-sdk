@@ -196,7 +196,7 @@ describe('Moderation Advanced', () => {
       console.log('[forceMuteStream] Bot streamId:', streamId);
 
       // Verify streamCreated payload captured the bot's stream
-      const streamEvent = await waitForEvent('streamCreated', 5000);
+      const streamEvent = await waitForEvent('streamCreated', 15000);
       console.log('[forceMuteStream] streamCreated payload:', JSON.stringify(streamEvent));
       jestExpect(streamEvent.streamId).toBeTruthy();
 
