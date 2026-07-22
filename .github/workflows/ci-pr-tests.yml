@@ -266,12 +266,13 @@ jobs:
           kill $METRO_PID 2>/dev/null || true
           exit 1
 
+      # TODO: Use API level 37 when available (see https://github.com/ReactiveCircus/android-emulator-runner/issues/482).
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 37
+          api-level: 36
           arch: x86_64
-          avd-name: Pixel_8_API_37
+          avd-name: Pixel_8_API_36
           emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: sh ./scripts/run-android-e2e-in-emulator.sh
