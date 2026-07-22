@@ -14,7 +14,6 @@ import type {
   SignalEvent,
   Stream,
   StreamEvent,
-  StreamPropertyChangedEvent,
 } from './NativeOpentok';
 import type {
   ErrorEvent,
@@ -46,7 +45,6 @@ export type {
   SignalEvent,
   Stream,
   StreamEvent,
-  StreamPropertyChangedEvent,
   ErrorEvent,
   PublisherRTCStatsReportEvent,
   PublisherVideoNetworkStatsEvent,
@@ -81,6 +79,26 @@ export type ConnectionCreatedEvent = ConnectionEvent;
 export type ConnectionDestroyedEvent = ConnectionEvent;
 export type StreamCreatedEvent = Stream;
 export type StreamDestroyedEvent = Stream;
+
+/**
+ * The value of a stream property before/after a change. Polymorphic at runtime:
+ * a `{ width, height }` object for `videoDimensions` changes, a boolean for
+ * `hasAudio` / `hasVideo` / `hasCaptions`, or a string for `videoType`. Emitted
+ * on both iOS and Android; the raw value is delivered as-is through the native
+ * event bridge (which is why the codegen spec type in NativeOpentok.ts, that
+ * cannot express a non-homogenous union, does not constrain it).
+ */
+export type StreamPropertyChangedValue =
+  | { width?: number; height?: number }
+  | boolean
+  | string;
+
+export type StreamPropertyChangedEvent = {
+  changedProperty: string;
+  oldValue: StreamPropertyChangedValue;
+  newValue: StreamPropertyChangedValue;
+  stream: Stream;
+};
 
 export type PublisherAudioNetworkStats = {
   connectionId?: string;
@@ -210,8 +228,16 @@ export type OTSubscriberProperties = {
         width?: number;
         height?: number;
       };
+
+  /**
+   * Defaults to `true` when omitted.
+   */
   subscribeToAudio?: boolean;
   subscribeToCaptions?: boolean;
+  
+  /**
+   * Defaults to `true` when omitted.
+   */
   subscribeToVideo?: boolean;
   scaleBehavior?: VideoScaleType;
   style?: StyleProp<ViewStyle>;
@@ -225,10 +251,11 @@ export type OTSubscriberEventHandlers = {
     * @deprecated Legacy alias for subscriber connection events.
     * Use `OTSubscriberEventHandlers.subscriberConnected` instead.
    */
-  connected?: Callback;
-  disconnected?: Callback;
+  connected?: CallbackWithParam<SubscriberStreamEvent>;
+  disconnected?: CallbackWithParam<SubscriberStreamEvent>;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
   otrnError?: CallbackWithParam<unknown>;
+  reconnected?: CallbackWithParam<SubscriberStreamEvent>;
   rtcStatsReport?: CallbackWithParam<SubscriberRTCStatsReportEvent>;
   subscriberConnected?: CallbackWithParam<SubscriberStreamEvent>;
   videoDataReceived?: CallbackWithParam<SubscriberStreamEvent>;

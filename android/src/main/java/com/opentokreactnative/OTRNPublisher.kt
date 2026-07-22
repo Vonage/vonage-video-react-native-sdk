@@ -5,12 +5,12 @@ import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.uimanager.ReactStylesDiffMap
-
+import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
+import com.facebook.react.uimanager.common.UIManagerType
 import com.facebook.react.uimanager.events.Event
 import com.opentok.android.BaseVideoRenderer
 import com.opentok.android.OpentokError
@@ -76,10 +76,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
-        val reactContext = context as ReactContext
-        val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
-        val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(reactContext, id)
-        val event = OpenTokEvent(surfaceId, id, name, payload)
+        val reactContext = context as ThemedReactContext
+        val eventDispatcher = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)?.eventDispatcher
+        val event = OpenTokEvent(reactContext.surfaceId, id, name, payload)
         eventDispatcher?.dispatchEvent(event)
     }
 
@@ -334,11 +333,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
+        OTRN.sharedState.getPublisherStreams()[stream.streamId] = stream
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamCreated", payload)
     }
 
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
+        OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
     }

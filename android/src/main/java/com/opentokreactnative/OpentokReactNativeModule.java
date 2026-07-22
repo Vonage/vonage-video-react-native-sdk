@@ -18,6 +18,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.module.annotations.ReactModule;
 import com.opentok.android.Connection;
 import com.opentok.android.MuteForcedInfo;
 import com.opentok.android.OpentokError;
@@ -36,6 +37,7 @@ import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
 
+@ReactModule(name = OpentokReactNativeModule.NAME)
 public class OpentokReactNativeModule extends NativeOpentokSpec implements
         SessionListener,
         SignalListener,
@@ -146,6 +148,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void sendSignal(String sessionId, String type, String data, String to) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+        if (mSession == null) {
+            return;
+        }
         String connectionId = to;
         if (connectionId == null || connectionId.equals("")) {
             mSession.sendSignal(type, data);
@@ -234,7 +239,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void forceMuteAll(String sessionId, ReadableArray excludedStreamIds, Promise promise) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
-        ConcurrentHashMap<String, Stream> streams = sharedState.getSubscriberStreams();
+        ConcurrentHashMap<String, Stream> subscriberStreams = sharedState.getSubscriberStreams();
+        ConcurrentHashMap<String, Stream> publisherStreams = sharedState.getPublisherStreams();
         ArrayList<Stream> mExcludedStreams = new ArrayList<Stream>();
         if (mSession == null) {
             promise.reject("Session not found.");
@@ -242,15 +248,17 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         }
         for (int i = 0; i < excludedStreamIds.size(); i++) {
             String streamId = excludedStreamIds.getString(i);
-            Stream mStream = streams.get(streamId);
+            Stream mStream = subscriberStreams.get(streamId);
             if (mStream == null) {
-                promise.reject("Stream not found.");
+                mStream = publisherStreams.get(streamId);
+            }
+            if (mStream == null) {
                 continue;
             }
             mExcludedStreams.add(mStream);
         }
         mSession.forceMuteAll(mExcludedStreams);
-        promise.resolve(null);
+        promise.resolve(true);
     }
 
     @Override
@@ -463,6 +471,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasCaptions", !hasCaptions, hasCaptions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -470,6 +479,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -477,6 +487,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -494,6 +505,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override
@@ -503,6 +515,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
     @Override

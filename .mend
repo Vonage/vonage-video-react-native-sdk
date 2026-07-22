@@ -1,6 +1,11 @@
 {
+  "settingsInheritedFrom": "vonage/whitesource-config@main",
   "scanSettings": {
-    "configMode": "AUTO",
-    "exclusions": ["/e2e/**"]
+    "excludes": [
+      "/React-native-TestApp/**",
+      "/docs/**",
+      "/scripts/**",
+      "/patch/**"
+    ]
   }
 }

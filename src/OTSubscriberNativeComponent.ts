@@ -4,6 +4,7 @@ import type {
   Double,
   Float,
   Int32,
+  WithDefault,
 } from 'react-native/Libraries/Types/CodegenTypes';
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 
@@ -68,8 +69,8 @@ export interface VideoEnabledEvent extends StreamEvent {
 export interface NativeProps extends ViewProps {
   sessionId: string;
   streamId: string;
-  subscribeToAudio?: boolean;
-  subscribeToVideo?: boolean;
+  subscribeToAudio?: WithDefault<boolean, true>;
+  subscribeToVideo?: WithDefault<boolean, true>;
   scaleBehavior?: string;
 
   subscribeToCaptions?: boolean;
@@ -90,6 +91,7 @@ export interface NativeProps extends ViewProps {
   onVideoDisableWarningLifted?: BubblingEventHandler<StreamEvent> | null;
   onVideoEnabled?: BubblingEventHandler<VideoEnabledEvent> | null;
   onVideoNetworkStats?: BubblingEventHandler<SubscriberVideoNetworkStatsEvent> | null;
+  onReconnected?: BubblingEventHandler<StreamEvent> | null;
 }
 
 export default codegenNativeComponent<NativeProps>(

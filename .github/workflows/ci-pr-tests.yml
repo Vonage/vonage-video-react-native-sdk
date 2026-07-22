@@ -1,0 +1,291 @@
+name: PR CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: NODE_OPTIONS=--experimental-require-module npm test
+
+  e2e-ios-tests:
+    needs: unit-tests
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment: prod
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew trust wix/brew
+          brew install applesimutils
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: React-native-TestApp/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
+        run: npm install
+
+      - name: Install CocoaPods dependencies
+        working-directory: React-native-TestApp/ios
+        run: pod install
+
+      - name: Install OpenTok SDK for credential generation
+        run: npm install --no-save opentok
+
+      - name: Generate E2E session credentials
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+        run: node scripts/generate-e2e-credentials.js
+
+      - name: Inject E2E credentials
+        env:
+          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
+          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
+          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
+          API_URL: ${{ secrets.API_URL }}
+        run: node scripts/inject-e2e-credentials.js
+
+      - name: Detect available iOS simulator
+        id: detect-simulator
+        run: |
+          echo "Available simulators:"
+          applesimutils --list
+          
+          # Extract first available iPhone device name
+          DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
+          
+          if [ -z "$DEVICE_NAME" ]; then
+            echo "No iPhone simulators found, using default"
+            DEVICE_NAME="iPhone 15"
+          fi
+          
+          echo "Selected simulator: $DEVICE_NAME"
+          echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build iOS Detox app
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+        run: npm run test:e2e:ios:build
+
+      - name: Start Metro bundler
+        working-directory: React-native-TestApp
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          METRO_PID=$!
+          echo "Metro PID: $METRO_PID"
+          
+          for i in {1..120}; do
+            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+              echo "Metro is running on attempt $i"
+              exit 0
+            fi
+            if ! ps -p $METRO_PID > /dev/null 2>&1; then
+              echo "Metro process died"
+              tail -n 100 metro.log || true
+              exit 1
+            fi
+            sleep 3
+          done
+          
+          echo "Metro failed to start after 120 retries"
+          echo "=== Metro log output ==="
+          tail -n 150 metro.log || true
+          kill $METRO_PID 2>/dev/null || true
+          exit 1
+
+      - name: Run iOS Detox tests
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+        run: npm run test:e2e:ios
+
+  e2e-android-tests:
+    needs: unit-tests
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment: prod
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
+        run: npm install
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Linux runtime deps for emulator tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0
+
+      - name: Install OpenTok SDK for credential generation
+        run: npm install --no-save opentok
+
+      - name: Generate E2E session credentials
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+        run: node scripts/generate-e2e-credentials.js
+
+      - name: Inject E2E credentials
+        env:
+          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
+          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
+          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
+          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
+          API_URL: ${{ secrets.API_URL }}
+        run: node scripts/inject-e2e-credentials.js
+
+      - name: Verify Detox Android setup
+        run: |
+          echo "=== Node / npm versions ==="
+          node --version
+          npm --version
+          echo "=== Installed Detox npm version ==="
+          node -e "console.log(require('./node_modules/detox/package.json').version)"
+          echo "=== Java version ==="
+          java -version
+          echo "=== Gradle wrapper properties ==="
+          cat React-native-TestApp/android/gradle/wrapper/gradle-wrapper.properties
+          echo "=== Detox Android maven artifacts ==="
+          ls -la node_modules/detox/Detox-android/ || echo "Detox-android directory not found"
+          find node_modules/detox/Detox-android -name "*.pom" 2>/dev/null | head -20 || echo "No POM files found"
+
+      - name: Build Android Detox app
+        run: npm run test:e2e:android:build
+
+      - name: Enable KVM for hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Debug Android device profiles
+        run: |
+          echo "=== avdmanager version ==="
+          avdmanager --version || true
+          echo "=== available pixel device profiles ==="
+          avdmanager list device | grep -i pixel || true
+          echo "=== first 120 device definitions ==="
+          avdmanager list device | head -n 120 || true
+
+      - name: Start Metro bundler
+        working-directory: React-native-TestApp
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          METRO_PID=$!
+          echo "Metro PID: $METRO_PID"
+
+          for i in {1..120}; do
+            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+              echo "Metro is running on attempt $i"
+              exit 0
+            fi
+            if ! ps -p $METRO_PID > /dev/null 2>&1; then
+              echo "Metro process died"
+              tail -n 100 metro.log || true
+              exit 1
+            fi
+            sleep 3
+          done
+
+          echo "Metro failed to start after 120 retries"
+          echo "=== Metro log output ==="
+          tail -n 150 metro.log || true
+          kill $METRO_PID 2>/dev/null || true
+          exit 1
+
+      - name: Start Android emulator and run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          avd-name: Pixel_8_API_36
+          emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: sh ./scripts/run-android-e2e-in-emulator.sh
+
+      - name: Upload Android E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-diagnostics
+          path: |
+            metro.log
+            metro-android.log
+            android-logcat.txt
+            android-dumpsys-activities.txt
+            android-dumpsys-package.txt
+            artifacts/
+          if-no-files-found: ignore

@@ -3,6 +3,7 @@
 // Do not edit manually.
 
 export const OTRN_PACKAGE_INFO = {
-  "version": "2.33.0",
+  "name": "@vonage/client-sdk-video-react-native",
+  "version": "2.34.1",
   "repositoryUrl": "https://github.com/Vonage/vonage-video-react-native-sdk.git"
 };

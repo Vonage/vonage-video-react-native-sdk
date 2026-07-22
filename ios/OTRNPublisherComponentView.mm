@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <OpentokReactNative/ComponentDescriptors.h>
-#import <OpentokReactNative/EventEmitters.h>
-#import <OpentokReactNative/Props.h>
-#import <OpentokReactNative/RCTComponentViewHelpers.h>
-#import <OpentokReactNative/RNOpentokReactNativeSpec.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/ComponentDescriptors.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/EventEmitters.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/Props.h>
+#import <react/renderer/components/RNOpentokReactNativeSpec/RCTComponentViewHelpers.h>
+#import <RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h>
 #import <React/RCTConversions.h>
 #import <React/RCTViewComponentView.h>
 #if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
@@ -12,6 +12,13 @@
 #else
 #import <OpentokReactNative-Swift.h>
 #endif
+
+static inline std::string SafeStdStringFromValue(id value) {
+    if ([value isKindOfClass:[NSString class]]) {
+        return std::string([(NSString *)value UTF8String]);
+    }
+    return std::string("");
+}
 
 using namespace facebook::react;
 
@@ -158,7 +165,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnStreamCreated payload{
-            .streamId = std::string([eventData[@"streamId"] UTF8String])};
+            .streamId = SafeStdStringFromValue(eventData[@"streamId"])};
         eventEmitter->onStreamCreated(std::move(payload));
     }
 }
@@ -167,8 +174,8 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnError payload{
-            .code = std::string([eventData[@"code"] UTF8String]),
-            .message = std::string([eventData[@"message"] UTF8String])};
+            .code = SafeStdStringFromValue(eventData[@"code"]),
+            .message = SafeStdStringFromValue(eventData[@"message"])};
         eventEmitter->onError(std::move(payload));
     }
 }
@@ -177,7 +184,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnStreamDestroyed payload{
-            .streamId = std::string([eventData[@"streamId"] UTF8String])};
+            .streamId = SafeStdStringFromValue(eventData[@"streamId"])};
         eventEmitter->onStreamDestroyed(std::move(payload));
     }
 }
@@ -195,7 +202,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnAudioNetworkStats payload{
-            .jsonStats = std::string([jsonString UTF8String])};
+            .jsonStats = SafeStdStringFromValue(jsonString)};
         eventEmitter->onAudioNetworkStats(std::move(payload));
     }
 }
@@ -204,7 +211,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnVideoNetworkStats payload{
-            .jsonStats = std::string([jsonString UTF8String])};
+            .jsonStats = SafeStdStringFromValue(jsonString)};
         eventEmitter->onVideoNetworkStats(std::move(payload));
     }
 }
@@ -221,7 +228,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnRtcStatsReport payload{
-            .jsonStats = std::string([jsonString UTF8String])
+            .jsonStats = SafeStdStringFromValue(jsonString)
         };
         eventEmitter->onRtcStatsReport(std::move(payload));
     }
@@ -248,7 +255,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnVideoEnabled payload{
-            .reason = std::string([reason UTF8String])
+            .reason = SafeStdStringFromValue(reason)
         };
         eventEmitter->onVideoEnabled(std::move(payload));
     }
@@ -258,7 +265,7 @@ using namespace facebook::react;
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnVideoDisabled payload{
-            .reason = std::string([reason UTF8String])
+            .reason = SafeStdStringFromValue(reason)
         };
         eventEmitter->onVideoDisabled(std::move(payload));
     }
