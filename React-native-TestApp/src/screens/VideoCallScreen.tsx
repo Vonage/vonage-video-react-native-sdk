@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, ScrollView, ImageBackground, Alert } from 'react-native';
+import { View, Text, ScrollView, ImageBackground, Alert, TextInput } from 'react-native';
 import { OTSession, OTPublisher, OTSubscriber } from '@vonage/client-sdk-video-react-native';
 import { State, DegradationPreference, VideoStats, TabName } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
@@ -112,6 +112,9 @@ class VideoCallScreen extends Component<{}, State> {
     subscriberProperties: {},
     streams: [],
     publisherVideoStats: null,
+    captureFilter: [],
+    capturedEvents: {},
+    captureFilterInput: '',
   };
 
   componentDidMount() {
@@ -181,6 +184,17 @@ class VideoCallScreen extends Component<{}, State> {
     });
   };
 
+  captureEvent = (eventType: string, payload: any) => {
+    if (this.state.captureFilter.includes(eventType)) {
+      this.setState((prev) => ({
+        capturedEvents: {
+          ...prev.capturedEvents,
+          [eventType]: JSON.stringify(payload),
+        },
+      }));
+    }
+  };
+
   sessionMethodGetCapabilities = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.getCapabilities();
@@ -223,7 +237,8 @@ class VideoCallScreen extends Component<{}, State> {
     this.sessionMethodGetCapabilities,
     (show) => this.setState({ showRecIndicator: show }),
     this.handleStreamCreated,
-    this.handleStreamDestroyed
+    this.handleStreamDestroyed,
+    this.captureEvent
   );
 
   handlePublisherVideoStats = (event: any) => {
@@ -267,6 +282,7 @@ class VideoCallScreen extends Component<{}, State> {
       
       if (stats && (stats.width > 0 || stats.height > 0 || stats.frameRate > 0)) {
         this.setState({ publisherVideoStats: stats });
+        this.captureEvent('publisherRtcStatsReport', stats);
       }
     }
   };
@@ -275,7 +291,8 @@ class VideoCallScreen extends Component<{}, State> {
     ...createPublisherHandlers(
       this.updateEvent,
       (streamId) => (this.streamId = streamId),
-      this.state.publisherEvents
+      this.state.publisherEvents,
+      this.captureEvent
     ),
     rtcStatsReport: this.handlePublisherVideoStats,
   };
@@ -318,7 +335,8 @@ class VideoCallScreen extends Component<{}, State> {
   subscriberEventHandlers = createSubscriberHandlers(
     this.updateEvent,
     this.state.subscriberEvents,
-    this.logSubscriberVideoStatsOnce
+    this.logSubscriberVideoStatsOnce,
+    this.captureEvent
   );
 
   handleFetchMeetCredentials = async () => {
@@ -1083,6 +1101,53 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
+  renderCaptureControls() {
+    if (!this.state.connectedToSession) return null;
+
+    return (
+      <View style={{ padding: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+          <TextInput
+            testID="captureFilterInput"
+            style={{ flex: 1, height: 28, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, paddingHorizontal: 4, fontSize: 10 }}
+            value={this.state.captureFilterInput}
+            onChangeText={(text: string) => this.setState({ captureFilterInput: text })}
+            placeholder="signal,streamPropertyChanged,..."
+          />
+          <Text
+            testID="setCaptureFilter"
+            onPress={() => {
+              const types = this.state.captureFilterInput
+                .split(',')
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+              this.setState({ captureFilter: types });
+            }}
+            style={{ marginLeft: 4, fontSize: 10, color: '#007AFF', fontWeight: 'bold' }}
+          >
+            Set Filter
+          </Text>
+          <Text
+            testID="clearCapturedEvents"
+            onPress={() => this.setState({ capturedEvents: {} })}
+            style={{ marginLeft: 4, fontSize: 10, color: '#c00', fontWeight: 'bold' }}
+          >
+            Clear
+          </Text>
+        </View>
+        {Object.entries(this.state.capturedEvents).map(([type, json]) => (
+          <Text
+            key={type}
+            testID={`lastEvent-${type}`}
+            style={{ height: 0, opacity: 0, overflow: 'hidden' }}
+          >
+            {json}
+          </Text>
+        ))}
+      </View>
+    );
+  }
+
   render() {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
@@ -1090,6 +1155,7 @@ class VideoCallScreen extends Component<{}, State> {
           <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
             {this.renderConnectionInputs()}
             {this.renderVideoSection()}
+            {this.renderCaptureControls()}
             {this.renderEventIndicators()}
           </ScrollView>
 

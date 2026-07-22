@@ -146,4 +146,8 @@ export interface State {
   activeTab: TabName;
   subscribedStreams: string[];
   unsubscribedStreams: string[];
+  // Event capture system for E2E payload verification
+  captureFilter: string[];
+  capturedEvents: Record<string, string>;
+  captureFilterInput: string;
 }

@@ -1,16 +1,19 @@
 export const createPublisherHandlers = (
   updateEvent: (group: string, type: string, value: any) => void,
   setStreamId: (streamId: string) => void,
-  publisherEvents: any
+  publisherEvents: any,
+  captureEvent: (eventType: string, payload: any) => void
 ) => ({
   audioLevel: (event: any) => {
     updateEvent('publisherEvents', 'audioLevel', true);
   },
   audioNetworkStats: (event: any) => {
     updateEvent('publisherEvents', 'audioNetworkStats', true);
+    captureEvent('publisherAudioNetworkStats', event);
   },
   videoNetworkStats: (event: any) => {
     updateEvent('publisherEvents', 'videoNetworkStats', true);
+    captureEvent('publisherVideoNetworkStats', event);
   },
   streamCreated: (event: any) => {
     updateEvent('publisherEvents', 'streamCreated', true);
