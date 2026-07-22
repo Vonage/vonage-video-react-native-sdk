@@ -2,6 +2,8 @@
 
 const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
+const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
 
 /**
  * Session Lifecycle Tests
@@ -86,6 +88,9 @@ describe('Session Lifecycle', () => {
     console.log('[session] Connecting for subscribe test...');
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
 
+    // Set up capture for streamCreated payload verification
+    await setCaptureFilter(['streamCreated']);
+
     // Bot joins
     bot = new jsSDKTesterBot({ timeout: 30000 });
     await bot.launch();
@@ -99,8 +104,14 @@ describe('Session Lifecycle', () => {
     await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
     console.log('[session] Subscribing.');
 
-    // Verify session stream created event
+    // Verify session stream created event counter
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+
+    // Verify streamCreated payload contains valid stream info
+    const streamEvent = await waitForEvent('streamCreated', 5000);
+    console.log('[session] streamCreated payload:', JSON.stringify(streamEvent));
+    jestExpect(streamEvent.streamId).toBeTruthy();
+    jestExpect(typeof streamEvent.streamId).toBe('string');
 
     console.log('[session] Disconnecting...');
     await element(by.id('disconnectSession')).tap();
@@ -113,6 +124,9 @@ describe('Session Lifecycle', () => {
     await element(by.id('submitButton')).tap();
     console.log('[signal] Connecting...');
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+
+    // Set up capture for signal payload verification
+    await setCaptureFilter(['signal']);
 
     // Ensure bot is connected
     if (!bot) {
@@ -130,11 +144,17 @@ describe('Session Lifecycle', () => {
     // Bot sends signal
     console.log('[signal] Bot sending signal...');
     await bot.sendSignal('chat', 'hello-from-bot');
-    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    // Verify app received signal via new event indicator
+    // Verify app received signal with correct payload
+    const signal = await waitForEvent('signal', 10000);
+    console.log('[signal] Signal payload:', JSON.stringify(signal));
+
+    jestExpect(signal.data).toBe('hello-from-bot');
+    jestExpect(signal.type).toContain('chat');
+    console.log('[signal] Signal data and type verified!');
+
+    // Also confirm the counter incremented
     await waitFor(element(by.id('session-signalReceived'))).not.toHaveText('0').withTimeout(5000);
-
-    console.log('[signal] App received signal from bot!');
+    console.log('[signal] App received signal from bot with verified payload!');
   });
 });

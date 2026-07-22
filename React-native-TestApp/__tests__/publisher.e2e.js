@@ -2,6 +2,8 @@
 
 const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
 
 /**
  * Basic connectivity tests verifying publish/subscribe between
@@ -38,6 +40,9 @@ describe('Publish and Subscribe', () => {
     await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
     await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
     console.log('[setup] Session/publisher event indicators confirmed.');
+
+    // Set up capture before bot joins so streamCreated is captured
+    await setCaptureFilter(['streamCreated']);
 
     console.log('[setup] Launching bot...');
     bot = new jsSDKTesterBot({ timeout: 30000 });
@@ -88,5 +93,12 @@ describe('Publish and Subscribe', () => {
 
     // Verify session stream created event
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+
+    // Verify streamCreated payload — bot publishes with name 'bot-publisher'
+    // Filter was set in beforeAll before bot joined, so the event is already captured
+    const streamEvent = await waitForEvent('streamCreated', 5000);
+    console.log('[bot→subscribe] streamCreated payload:', JSON.stringify(streamEvent));
+    jestExpect(streamEvent.streamId).toBeTruthy();
+    jestExpect(streamEvent.name).toBe('bot-publisher');
   });
 });

@@ -2,6 +2,8 @@
 
 const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
+const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
 
 /**
  * Moderation Tests
@@ -50,6 +52,9 @@ describe('Moderation', () => {
   });
 
   it('forceMuteAll mutes the bot', async () => {
+    // Set up capture for muteForced payload verification
+    await setCaptureFilter(['muteForced']);
+
     console.log('[forceMute] Tapping muteAll...');
     await element(by.id('tabModeration')).tap();
     await element(by.id('muteAll')).tap();
@@ -70,6 +75,15 @@ describe('Moderation', () => {
     // Verify event indicators on the RN app side
     await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(5000);
     await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(5000);
+
+    // Verify muteForced payload
+    const muteEvent = await waitForEvent('muteForced', 5000);
+    console.log('[forceMute] muteForced payload:', JSON.stringify(muteEvent));
+    // forceMuteAll should report active: true (session-wide mute is active)
+    if (muteEvent.active !== undefined) {
+      jestExpect(muteEvent.active).toBe(true);
+    }
+    console.log('[forceMute] muteForced payload verified!');
   });
 
   it('force-disconnect bot via REST API', async () => {
@@ -177,6 +191,10 @@ describe('Moderation', () => {
       return;
     }
 
+    // Set up capture for streamDestroyed payload
+    await clearCapturedEvents();
+    await setCaptureFilter(['streamDestroyed']);
+
     // Ensure bot is connected and publishing
     let botState = await bot.getState();
     if (!botState.connected || !botState.publishing) {
@@ -211,9 +229,14 @@ describe('Moderation', () => {
     await forceUnpublish(apiKey, apiSecret, credentials.apiUrl, credentials.sessionId, streamId);
     console.log('[forceUnpublish] REST API called. Waiting for stream to disappear...');
 
-    // Wait for stream destroyed event on the app side
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(10000);
-    console.log('[forceUnpublish] Stream destroyed event received.');
+    // Verify streamDestroyed payload matches the bot's stream
+    const destroyedEvent = await waitForEvent('streamDestroyed', 10000);
+    console.log('[forceUnpublish] streamDestroyed payload:', JSON.stringify(destroyedEvent));
+    jestExpect(destroyedEvent.streamId).toBe(streamId);
+    console.log('[forceUnpublish] streamDestroyed streamId matches bot stream.');
+
+    // Also confirm counter incremented
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
 
     // Verify session stays connected
     await expect(element(by.id('disconnectSession'))).toBeVisible();

@@ -2,6 +2,8 @@
 
 const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
 const { getCredentials } = require('./helpers/credentials');
+const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
 
 /**
  * Subscriber Options Tests
@@ -40,6 +42,9 @@ describe('Subscriber Options', () => {
   });
 
   it('subscriber appears when first bot publishes', async () => {
+    // Set up capture for streamCreated and connectionCreated
+    await setCaptureFilter(['streamCreated', 'connectionCreated']);
+
     bot1 = new jsSDKTesterBot({ timeout: 30000 });
     await bot1.launch();
     console.log('[sub] Bot1 joining...');
@@ -63,6 +68,18 @@ describe('Subscriber Options', () => {
     // Verify event indicators
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
     await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
+
+    // Verify streamCreated payload
+    const streamEvent = await waitForEvent('streamCreated', 5000);
+    console.log('[sub] streamCreated payload:', JSON.stringify(streamEvent));
+    jestExpect(streamEvent.streamId).toBeTruthy();
+    jestExpect(typeof streamEvent.streamId).toBe('string');
+
+    // Verify connectionCreated payload
+    const connEvent = await waitForEvent('connectionCreated', 5000);
+    console.log('[sub] connectionCreated payload:', JSON.stringify(connEvent));
+    jestExpect(connEvent.connectionId).toBeTruthy();
+    jestExpect(typeof connEvent.connectionId).toBe('string');
   });
 
   it('multiple subscribers with two bots', async () => {
@@ -96,19 +113,28 @@ describe('Subscriber Options', () => {
   });
 
   it('subscriber disappears when last bot disconnects', async () => {
+    // Set up capture for streamDestroyed and connectionDestroyed
+    await clearCapturedEvents();
+    await setCaptureFilter(['streamDestroyed', 'connectionDestroyed']);
+
     console.log('[disappear] Disconnecting bot1...');
     await bot1.disconnect();
 
-    // Wait for stream destroyed event — more reliable than checking view visibility
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(30000);
-    console.log('[disappear] Stream destroyed event received.');
+    // Verify streamDestroyed payload
+    const destroyedEvent = await waitForEvent('streamDestroyed', 30000);
+    console.log('[disappear] streamDestroyed payload:', JSON.stringify(destroyedEvent));
+    jestExpect(destroyedEvent.streamId).toBeTruthy();
+    jestExpect(typeof destroyedEvent.streamId).toBe('string');
 
     // Give the UI time to unmount the subscriber view
     await new Promise((resolve) => setTimeout(resolve, 3000));
     console.log('[disappear] Subscriber gone.');
 
-    // Verify connection destroyed event
-    await waitFor(element(by.id('session-connectionDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    // Verify connectionDestroyed payload
+    const connEvent = await waitForEvent('connectionDestroyed', 5000);
+    console.log('[disappear] connectionDestroyed payload:', JSON.stringify(connEvent));
+    jestExpect(connEvent.connectionId).toBeTruthy();
+    jestExpect(typeof connEvent.connectionId).toBe('string');
   });
 
   it('toggle subscribeToVideo off and on', async () => {
