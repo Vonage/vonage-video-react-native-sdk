@@ -1,0 +1,41 @@
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_d47b7ff10ee53b::t_426f1c7a860137 195-197,232-239
+  s_d47b7ff10ee53b::t_ab07461dd70f50 79-86
+  s_d47b7ff10ee53b::t_acc98bca869e93 5-6
+  s_d47b7ff10ee53b::t_58058c50d486f3 55-57,78
+  s_d47b7ff10ee53b::t_614728e1f63a4d 194
+React-native-TestApp/__tests__/session.e2e.js
+  s_d47b7ff10ee53b::t_cb08e509a32518 5-6
+  s_d47b7ff10ee53b::t_bd75ee0a37f7f2 91-93,107,110-114
+  s_d47b7ff10ee53b::t_fe493d2d05044d 128-130,148-154,156-158
+  s_d47b7ff10ee53b::t_0df7137fb450a7 115
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_d47b7ff10ee53b::t_6cc576c8eb8893 46-48,67-78
+  s_d47b7ff10ee53b::t_b7a80504fe6305 84-87,105-113,118-128
+  s_d47b7ff10ee53b::t_7672d852c9a38e 5-6
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_d47b7ff10ee53b::t_06211453510027 96-97,99-102
+  s_d47b7ff10ee53b::t_a12f6bed7f3d7d 44-46
+  s_d47b7ff10ee53b::t_b4d281b35d7b9e 98
+  s_d47b7ff10ee53b::t_64e8a37e021f86 5-6
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d47b7ff10ee53b::t_de0a0453bb5445 5-6
+  s_d47b7ff10ee53b::t_2fab28684cbf55 116-119,123-127,133-137
+  s_d47b7ff10ee53b::t_2c6ec5ba34fc92 45-47,71-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "e56ee0782aba838070a0019dd12e1d234e3b072f",
+  "prompts": {},
+  "sessions": {
+    "s_d47b7ff10ee53b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_9ee328c4-a1af-4f4b-96ef-5e3761b45f5d",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

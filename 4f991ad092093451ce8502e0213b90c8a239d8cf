@@ -1,0 +1,109 @@
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_169f9eb109ffd7::t_219d7fda043ccf 1056,1063
+  s_169f9eb109ffd7::t_7b09a2530b75ea 577-583
+  s_169f9eb109ffd7::t_1eb12c224e1be5 1004-1009,1011-1017,1020-1024,1026-1031,1034-1048
+  s_169f9eb109ffd7::t_a933b3a27ec8b1 161-181,295,298,301,304,309,312,315,318
+  s_169f9eb109ffd7::t_f7ab46c707e2f1 383-384
+  s_169f9eb109ffd7::t_728c8243a9ca2b 57-70,73-84,87-101
+  s_169f9eb109ffd7::t_49e1dc834b0d6f 604,622-623,669-670,673,712-713,716,727-791
+  s_169f9eb109ffd7::t_95a79a42f0460b 305-306,319-320,1001-1003,1010,1018-1019,1025,1032-1033,1049-1052
+  s_169f9eb109ffd7::t_53084c24924326 1074-1082
+  s_169f9eb109ffd7::t_77f1b21324a534 459-460,463-468,470-529,1109
+  s_169f9eb109ffd7::t_58c890e228e48c 34
+  s_169f9eb109ffd7::t_2d2b5117c4b5e4 1057
+  s_169f9eb109ffd7::t_d1ab6396bd5954 1108
+  s_169f9eb109ffd7::t_4e9d8ec9808c2b 1067-1068
+  s_169f9eb109ffd7::t_4720ab8fa7b7c8 1058
+  s_169f9eb109ffd7::t_ad8dda4875ff57 1061,1065-1066
+  s_169f9eb109ffd7::t_03ff806c321d11 1059-1060,1062,1064,1069-1071,1083-1085
+  s_169f9eb109ffd7::t_638e6d9f4b222c 294
+  s_169f9eb109ffd7::t_9353a7c670698d 296-297
+  s_169f9eb109ffd7::t_f3028a3417ccb3 299-300
+  s_169f9eb109ffd7::t_5e3fb8a618f035 302-303
+  s_169f9eb109ffd7::t_ab14d78b18ff1c 307-308
+  s_169f9eb109ffd7::t_2365c7c751ebf5 310-311
+  s_169f9eb109ffd7::t_7a0ac7e8cad19d 313-314
+  s_169f9eb109ffd7::t_0a8afbb124176f 316-317
+  s_169f9eb109ffd7::t_dda979f5402570 321
+  s_169f9eb109ffd7::t_798e4e768d331c 603
+  s_169f9eb109ffd7::t_eaff4e7fc3c4f1 605-607,619-621
+  s_169f9eb109ffd7::t_d654edc1105dc3 624-625
+  s_169f9eb109ffd7::t_490e649ca78514 666-668
+  s_169f9eb109ffd7::t_a4de819d3b3bf6 671-672
+  s_169f9eb109ffd7::t_ebbde6bdf042c1 674-675
+  s_169f9eb109ffd7::t_bc42a6bc9593f6 709-711
+  s_169f9eb109ffd7::t_6d84a173905436 714-715
+  s_169f9eb109ffd7::t_fdc0b9f307d985 717-719
+  s_169f9eb109ffd7::t_ba1f943283cb7b 1105-1107
+React-native-TestApp/src/handlers/sessionHandlers.ts
+  s_169f9eb109ffd7::t_8a497f47c7ef4c 53-58,60
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_169f9eb109ffd7::t_986f9d06a784aa 54
+  s_169f9eb109ffd7::t_e47782140711c8 69-70
+  s_169f9eb109ffd7::t_63ff32e93e94c3 52-53
+  s_169f9eb109ffd7::t_88735e3698b35e 55
+  s_169f9eb109ffd7::t_fa8fcefd773248 66-68
+  s_169f9eb109ffd7::t_a144954b9ac00c 71
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  s_169f9eb109ffd7::t_7b55ad46966e91 45,47-48,51,62,64,76,103
+  s_169f9eb109ffd7::t_a840ef93dc83a6 49-50
+  s_169f9eb109ffd7::t_1a3c30eb1e5e10 57
+  s_169f9eb109ffd7::t_2cfebe4710b195 77
+  s_169f9eb109ffd7::t_a1b414f1fd6eb6 63
+  s_169f9eb109ffd7::t_68c8acfff192b8 78
+React-native-TestApp/src/handlers/publisherHandlers.ts
+  s_169f9eb109ffd7::t_0292469d223dc1 23,28-42
+React-native-TestApp/__tests__/app.e2e.js
+  s_169f9eb109ffd7::t_e07981d7051109 31,34
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_169f9eb109ffd7::t_e2a10e1c1ba519 38-39
+  s_169f9eb109ffd7::t_f25334293b7fe0 90-91
+  s_169f9eb109ffd7::t_5192806d63e7ed 80
+  s_169f9eb109ffd7::t_1546c3a8c7931d 33,37,40-41,78-79,85,88-89
+React-native-TestApp/src/handlers/subscriberHandlers.ts
+  s_169f9eb109ffd7::t_79823205862d9f 45-54
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_169f9eb109ffd7::t_ed75616c903c98 105
+  s_169f9eb109ffd7::t_1e5968a6900ef0 109-110
+  s_169f9eb109ffd7::t_9af5df785a6303 64-65
+  s_169f9eb109ffd7::t_639d4818294b42 146
+  s_169f9eb109ffd7::t_6ed1b4ba36fcad 32,59,62-63,85,107-108,121
+  s_169f9eb109ffd7::t_5cfdc378315172 125
+React-native-TestApp/__tests__/dtx.e2e.js
+  s_169f9eb109ffd7::t_e725013ec09283 71-72
+  s_169f9eb109ffd7::t_9d2f3aecdf613b 108-109
+  s_169f9eb109ffd7::t_32fc14fef92ebc 70
+  s_169f9eb109ffd7::t_05ddad9ead344b 73
+  s_169f9eb109ffd7::t_9f6713060ad90f 106-107
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_169f9eb109ffd7::t_6b6ea5e57002dd 41,54,58-59,80,93-94
+  s_169f9eb109ffd7::t_0d239c0029c9ef 60-61
+  s_169f9eb109ffd7::t_6bb1989d9deba2 95
+React-native-TestApp/__tests__/session.e2e.js
+  s_169f9eb109ffd7::t_28450775da7964 43
+  s_169f9eb109ffd7::t_fe327a01037298 39-40,42,44-45,47,61,75,79,87,99-100,102,104-105,107,115,135
+  s_169f9eb109ffd7::t_096d39ad2497b5 103
+  s_169f9eb109ffd7::t_ff6f431b0b88d7 136
+  s_169f9eb109ffd7::t_dad3d183b7fcdd 137
+React-native-TestApp/src/types/index.ts
+  s_169f9eb109ffd7::t_0587fbf0914dae 33-46,50-61,65-79
+  s_169f9eb109ffd7::t_8c00e80a1a3f23 124
+  s_169f9eb109ffd7::t_79c160a8b19581 128
+  s_169f9eb109ffd7::t_2c39aced29296e 125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4f991ad092093451ce8502e0213b90c8a239d8cf",
+  "prompts": {},
+  "sessions": {
+    "s_169f9eb109ffd7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_2a59cb58-3712-4f44-a9eb-16901c54111c",
+        "model": "auto"
+      },
+      "human_author": null
+    }
+  }
+}
