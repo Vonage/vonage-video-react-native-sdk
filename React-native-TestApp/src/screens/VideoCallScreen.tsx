@@ -119,6 +119,7 @@ class VideoCallScreen extends Component<{}, State> {
 
   componentDidMount() {
     this.applyCodecPreference();
+    this._flushTimer = setInterval(() => this._flushCounters(), 1000);
   }
 
   componentDidUpdate(prevProps: {}, prevState: State) {
@@ -135,6 +136,10 @@ class VideoCallScreen extends Component<{}, State> {
 
   componentWillUnmount() {
     this.stopStatsPolling();
+    if (this._flushTimer) {
+      clearInterval(this._flushTimer);
+      this._flushTimer = null;
+    }
   }
 
   startStatsPolling = () => {
@@ -160,28 +165,48 @@ class VideoCallScreen extends Component<{}, State> {
     }
   };
 
-  updateEvent = (eventGroup: string, eventType: string, eventValue: any) => {
+  // --- Batched event counter system ---
+  // Event handlers increment counters here (no setState).
+  // A timer flushes accumulated changes to state every 1s.
+  _pendingCounters: Record<string, Record<string, number>> = {};
+  _flushTimer: ReturnType<typeof setInterval> | null = null;
+
+  _flushCounters = () => {
+    const pending = this._pendingCounters;
+    if (Object.keys(pending).length === 0) return;
+
+    this._pendingCounters = {};
     this.setState((prevState) => {
-      // For event indicator groups, increment counter instead of setting boolean
-      if ((eventGroup === 'sessionEvents' || eventGroup === 'publisherEvents' || eventGroup === 'subscriberEvents') && eventValue === true) {
-        const currentVal = (prevState as any)[eventGroup][eventType];
-        const newVal = typeof currentVal === 'number' ? currentVal + 1 : 1;
-        return {
-          ...prevState,
-          [eventGroup]: {
-            ...(prevState as any)[eventGroup],
-            [eventType]: newVal,
-          },
-        };
+      const next: any = { ...prevState };
+      for (const [group, counters] of Object.entries(pending)) {
+        next[group] = { ...(prevState as any)[group] };
+        for (const [type, increment] of Object.entries(counters)) {
+          const current = next[group][type] || 0;
+          next[group][type] = current + increment;
+        }
       }
-      return {
-        ...prevState,
-        [eventGroup]: {
-          ...(prevState as any)[eventGroup],
-          [eventType]: eventValue,
-        },
-      };
+      return next;
     });
+  };
+
+  updateEvent = (eventGroup: string, eventType: string, eventValue: any) => {
+    // For counter increments, batch them (no immediate setState)
+    if ((eventGroup === 'sessionEvents' || eventGroup === 'publisherEvents' || eventGroup === 'subscriberEvents') && eventValue === true) {
+      if (!this._pendingCounters[eventGroup]) {
+        this._pendingCounters[eventGroup] = {};
+      }
+      this._pendingCounters[eventGroup][eventType] =
+        (this._pendingCounters[eventGroup][eventType] || 0) + 1;
+      return;
+    }
+    // Non-counter updates still go through setState immediately
+    this.setState((prevState) => ({
+      ...prevState,
+      [eventGroup]: {
+        ...(prevState as any)[eventGroup],
+        [eventType]: eventValue,
+      },
+    }));
   };
 
   captureEvent = (eventType: string, payload: any) => {

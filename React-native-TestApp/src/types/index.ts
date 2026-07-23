@@ -23,8 +23,9 @@ export interface Input {
   apiKey: string;
   sessionId: string;
   token: string;
+  apiUrl: string;
   encryptionSecret: string;
-  signal: Signal;
+  signal?: Signal;
   meetRoomName: string;
   userInitials: string;
 }
