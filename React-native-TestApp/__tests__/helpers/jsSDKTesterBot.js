@@ -127,6 +127,7 @@ class jsSDKTesterBot {
           const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
 
           session.on('streamCreated', (event) => {
+            if (!window.botState.connected) return;
             session.subscribe(event.stream, 'videos', { insertMode: 'append' });
             window.botState.subscriberCount++;
             window.botState.streamCreated = true;
@@ -227,15 +228,34 @@ class jsSDKTesterBot {
 
   /**
    * Disconnects the bot from the session without closing the browser.
+   * Unpublishes first to avoid "cannot publish" errors during teardown,
+   * then waits for sessionDisconnected to confirm disconnect is complete.
    * Can call joinSession() again after this.
    */
   async disconnect() {
     if (this.page) {
       await this.page.evaluate(() => {
+        // Unpublish first to stop the publisher cleanly
+        if (window.botPublisher && window.botSession) {
+          try {
+            window.botSession.unpublish(window.botPublisher);
+            window.botPublisher.destroy();
+          } catch (_) {}
+          window.botPublisher = null;
+        }
         if (window.botSession) {
           window.botSession.disconnect();
         }
       });
+      // Wait for disconnect to complete (sessionDisconnected sets connected=false)
+      try {
+        await this.page.waitForFunction(
+          () => !window.botState.connected,
+          { timeout: 5000 }
+        );
+      } catch (_) {
+        // Timeout is acceptable — bot may already be disconnected
+      }
     }
   }
 

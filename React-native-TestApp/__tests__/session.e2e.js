@@ -92,8 +92,7 @@ describe('Session Lifecycle', () => {
     console.log('[session] Connecting for subscribe test...');
     await session.connectApp();
 
-    // Clear any residual events and set up capture
-    await clearCapturedEvents();
+    // Set up capture for streamCreated payload verification
     await setCaptureFilter(['streamCreated']);
 
     // Add bot — addBot() waits for subscriber view
@@ -118,8 +117,7 @@ describe('Session Lifecycle', () => {
     console.log('[signal] Connecting...');
     await session.connectApp();
 
-    // Clear any residual events and set up capture
-    await clearCapturedEvents();
+    // Set up capture for signal payload verification
     await setCaptureFilter(['signal']);
 
     // Add bot (joinSession waits for connected && publishing)

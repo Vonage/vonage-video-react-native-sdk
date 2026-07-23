@@ -12,9 +12,11 @@
 
 /**
  * Configures which event types the app should capture.
+ * Always clears previously captured events first to avoid stale data.
  * @param {string[]} eventTypes - e.g. ['signal', 'streamPropertyChanged']
  */
 async function setCaptureFilter(eventTypes) {
+  await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
   await element(by.id('setCaptureFilter')).tap();
   await new Promise((resolve) => setTimeout(resolve, 500));

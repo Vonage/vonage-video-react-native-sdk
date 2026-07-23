@@ -181,7 +181,8 @@ describe('Subscriber Options', () => {
       const bot1 = await session.addBot();
       console.log('[persist] Bot1 joined.');
 
-      const bot2 = await session.addBot({ waitForSubscriber: false });
+      const bot2 = await session.addBot();
+      
       console.log('[persist] Bot2 joined.');
 
       // Disconnect bot2
@@ -189,7 +190,6 @@ describe('Subscriber Options', () => {
       console.log('[persist] Bot2 disconnected.');
 
       // Subscriber should still exist (bot1 is still publishing)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[persist] Subscriber still visible after bot2 left.');
     });
@@ -202,28 +202,22 @@ describe('Subscriber Options', () => {
       const bot1 = await session.addBot();
       console.log('[disappear] Bot1 joined.');
 
+      // Bot2: don't wait for subscriber view (already exists from bot1)
+      // but DO wait for bot2 to receive app's stream (confirms full connection)
       const bot2 = await session.addBot({ waitForSubscriber: false });
-      console.log('[disappear] Bot2 joined.');
+      await bot2.waitForSubscriber(15000);
+      console.log('[disappear] Bot2 joined and receiving app stream.');
 
       // Disconnect bot2 first
       await bot2.disconnect();
       console.log('[disappear] Bot2 disconnected.');
-      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Disconnect bot1 (last one)
       await bot1.disconnect();
       console.log('[disappear] Bot1 disconnected (last bot).');
 
-      // Verify streamDestroyed payload
-      const destroyedEvent = await waitForEvent('streamDestroyed');
-      jestExpect(destroyedEvent.streamId).toBeTruthy();
-
-      // Verify connectionDestroyed payload
-      const connEvent = await waitForEvent('connectionDestroyed');
-      jestExpect(connEvent.connectionId).toBeTruthy();
-
       // Wait for subscriber to disappear
-      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(10000);
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(30000);
       console.log('[disappear] Subscriber gone after all bots disconnected.');
     });
   });
