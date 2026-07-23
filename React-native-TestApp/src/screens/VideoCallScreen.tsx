@@ -48,6 +48,7 @@ class VideoCallScreen extends Component<{}, State> {
       apiKey: credentials.apiKey,
       sessionId: credentials.sessionId,
       token: credentials.token,
+      apiUrl: credentials.apiUrl,
       encryptionSecret: '',
       meetRoomName: 'test-room-name',
       userInitials: 'AB',
@@ -520,6 +521,12 @@ class VideoCallScreen extends Component<{}, State> {
                     onChangeText={(text: string) => this.updateEvent('input', 'token', text)}
                     value={this.state.input.token}
                   />
+                  <TextBoxComponent
+                    testID="apiUrlInput"
+                    placeholder="API URL (optional)"
+                    onChangeText={(text: string) => this.updateEvent('input', 'apiUrl', text)}
+                    value={this.state.input.apiUrl}
+                  />
                 </>
               ) : (
                 <>
@@ -572,7 +579,7 @@ class VideoCallScreen extends Component<{}, State> {
           token={this.state.input.token}
           encryptionSecret={this.state.input.encryptionSecret}
           signal={this.state.input.signal || {}}
-          options={{ apiUrl: credentials.apiUrl || undefined }}
+          options={{ apiUrl: this.state.input.apiUrl || credentials.apiUrl || undefined }}
           eventHandlers={this.sessionEventHandlers}
           ref={this.sessionRef}>
           <View style={styles.videoLayout}>

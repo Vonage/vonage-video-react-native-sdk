@@ -165,6 +165,9 @@ class TestSession {
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
     await element(by.id('sessionIdInput')).replaceText(this.credentials.sessionId);
     await element(by.id('tokenInput')).replaceText(this.credentials.tokenApp);
+    if (this.credentials.apiUrl) {
+      await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
+    }
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
