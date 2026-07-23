@@ -1,0 +1,36 @@
+React-native-TestApp/__tests__/dtx.e2e.js
+  8bfc0a6f240e7771 1-5
+React-native-TestApp/__tests__/helpers/testSession.js
+  8bfc0a6f240e7771 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "9b025305d20d75ee02b58a9fac3292606fc97443",
+  "prompts": {
+    "8bfc0a6f240e7771": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "b7051110-6c0a-4080-982f-48f62aea1c9d",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-07-23T09:57:53.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot-cli/gpt-4o).",
+          "timestamp": "2026-07-23T09:57:53.000Z"
+        }
+      ],
+      "total_additions": 11,
+      "total_deletions": 21,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
