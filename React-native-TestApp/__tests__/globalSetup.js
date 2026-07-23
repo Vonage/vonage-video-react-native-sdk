@@ -19,7 +19,8 @@
 
 const path = require('path');
 const fs = require('fs');
-const OpenTok = require('opentok');
+// Resolve opentok from TestApp's node_modules (it's a devDep of TestApp, not root)
+const OpenTok = require(require.resolve('opentok', { paths: [path.join(__dirname, '..')] }));
 
 const CREDENTIALS_PATH = path.join(__dirname, '.e2e-credentials.json');
 
