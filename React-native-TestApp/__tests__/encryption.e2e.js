@@ -1,7 +1,6 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 
 /**
  * Encryption Tests
@@ -13,12 +12,9 @@ const { getCredentials } = require('./helpers/credentials');
  * the app-side behavior (no crash, session stays connected, publisher active).
  */
 describe('Encryption', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -27,73 +23,59 @@ describe('Encryption', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
   });
 
   it('session connects with encryption secret set', async () => {
-    // Type encryption secret before connecting
-    await element(by.id('apiKeyInput')).replaceText(credentials.apiKey);
-    await element(by.id('sessionIdInput')).replaceText(credentials.sessionId);
-    await element(by.id('tokenInput')).replaceText(credentials.tokenApp);
-
-    // Connect
-    await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    // Connect app
+    await session.connectApp();
     console.log('[encryption] App connected with encryption secret.');
 
     // Verify publisher is active (no crash)
-    await waitFor(element(by.id('publisher'))).toBeVisible().withTimeout(10000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(10000);
     console.log('[encryption] Publisher visible — encryption did not prevent publishing.');
 
     // Verify session stays connected
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[encryption] Session remains stable with encryption.');
   });
 
   it('publish and subscribe work after encryption is configured', async () => {
-    // Bot joins (without encryption — it will see encrypted media but can still connect)
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
+    // Bot joins — addBot waits for subscriber
+    const bot = await session.addBot();
     console.log('[encryption] Bot connected and publishing.');
 
-    // Wait for subscriber to appear (bot's stream arrives)
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
+    // Verify subscriber appeared
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[encryption] Subscriber view appeared — stream received.');
 
-    // Verify bot sees the app's stream (even if encrypted, the stream object arrives)
+    // Verify bot sees the app's stream
     await bot.waitForSubscriber(15000);
     console.log('[encryption] Bot received app stream.');
 
     // Verify no errors on app side
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[encryption] No crashes — publish/subscribe works with encryption configured.');
   });
 
   it('disconnect and reconnect works after encryption was set', async () => {
     // Disconnect
-    await element(by.id('disconnectSession')).tap();
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(10000);
+    await session.disconnectApp();
     console.log('[encryption] Disconnected.');
 
     // Reconnect
-    await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    await session.connectApp();
     console.log('[encryption] Reconnected successfully after encryption session.');
 
     // Verify publisher still works
-    await waitFor(element(by.id('publisher'))).toBeVisible().withTimeout(10000);
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(10000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[encryption] Session stable on reconnect.');
   });
 });
