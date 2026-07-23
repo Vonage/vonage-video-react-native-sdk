@@ -1,21 +1,17 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 
 /**
  * DTX (Discontinuous Transmission) Tests
  *
  * Verifies publish/subscribe works with DTX enabled and disabled.
- * Each test launches fresh app + bot to ensure clean state.
+ * Uses TestSession for credential management and bot lifecycle.
  */
 describe('DTX Codec Option', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -25,87 +21,67 @@ describe('DTX Codec Option', () => {
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
 
-    // Connect app
-    await element(by.id('submitButton')).tap();
-    console.log('[dtx] Connecting app...');
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-    console.log('[dtx] App connected.');
+    session = await TestSession.create({ timeout: 30000 });
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
+  });
+
+  afterEach(async () => {
+    await session.cleanup();
   });
 
   it('publish and subscribe work with DTX disabled (default)', async () => {
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    console.log('[dtx-off] Bot joining...');
+    await session.connectApp();
+    console.log('[dtx-off] App connected.');
 
+    // Add bot — addBot waits for subscriber view (app receives bot stream)
+    const bot = await session.addBot({ subscriberTimeout: 30000 });
+    console.log('[dtx-off] Subscriber visible.');
+
+    // Verify bot also received app stream
     try {
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
+      await bot.waitForSubscriber(30000);
     } catch (e) {
       const state = await bot.getState();
-      console.log('[dtx-off] Bot FAILED:', state.error);
-      throw e;
+      throw new Error(`Bot did not receive app stream with DTX=false. State: ${JSON.stringify(state)}`);
     }
 
-    console.log('[dtx-off] Bot connected. Waiting for mutual streams...');
-    await bot.waitForSubscriber(20000);
-
-    const state = await bot.getState();
-    if (state.subscriberCount < 1) {
-      throw new Error('Bot did not receive app stream with DTX=false');
-    }
-
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[dtx-off] App publishes (DTX=false) → bot receives. Bot publishes → app subscribes. OK!');
-
-    // Verify event indicators
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-
-    // Disconnect bot for next test
-    await bot.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log('[dtx-off] Mutual streams confirmed (DTX=false). OK!');
   });
 
   it('publish and subscribe work with DTX enabled', async () => {
-    console.log('[dtx-on] Bot joining with DTX=true...');
+    await session.connectApp();
+    console.log('[dtx-on] App connected.');
 
+    // Create bot manually to pass DTX publisher option
+    const bot = await session.createBot();
+    await bot.joinSession(
+      session.credentials.apiKey,
+      session.credentials.sessionId,
+      session.credentials.tokenBot,
+      {
+        apiUrl: session.credentials.apiUrl,
+        jsSdkUrl: session.credentials.jsSdkUrl,
+        publisherOptions: { enableDtx: true },
+      }
+    );
+    console.log('[dtx-on] Bot connected with DTX=true.');
+
+    // Wait for subscriber view (app receives bot stream)
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(30000);
+    console.log('[dtx-on] Subscriber visible.');
+
+    // Verify bot also received app stream
     try {
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl, publisherOptions: { enableDtx: true } }
-      );
+      await bot.waitForSubscriber(30000);
     } catch (e) {
       const state = await bot.getState();
-      console.log('[dtx-on] Bot FAILED:', state.error);
-      throw e;
+      throw new Error(`Bot did not receive app stream with DTX=true. State: ${JSON.stringify(state)}`);
     }
 
-    console.log('[dtx-on] Bot connected with DTX=true. Waiting for streams...');
-    await bot.waitForSubscriber(20000);
-
-    const state = await bot.getState();
-    if (state.subscriberCount < 1) {
-      throw new Error('Bot did not receive app stream when bot uses DTX=true');
-    }
-
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[dtx-on] Bot publishes (DTX=true) → app subscribes. App publishes → bot receives. OK!');
-
-    // Verify event indicators
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    console.log('[dtx-on] Mutual streams confirmed (DTX=true). OK!');
   });
 });

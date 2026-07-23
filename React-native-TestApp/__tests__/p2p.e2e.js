@@ -1,7 +1,6 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getRelayedCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 
 /**
  * P2P (Relayed) Session Tests
@@ -9,19 +8,12 @@ const { getRelayedCredentials } = require('./helpers/credentials');
  * Verifies publish/subscribe behavior in relayed (peer-to-peer) sessions.
  * Relayed sessions route media directly between participants (no server relay).
  *
- * Uses separate relayed session credentials from sdk-config.json.
  */
 describe('P2P (Relayed) Session', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getRelayedCredentials();
-
-    if (!credentials.tokenBot) {
-      console.warn('No tokenBot for relayed session — P2P tests will be limited.');
-    }
-
+    console.log('[setup] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -30,46 +22,31 @@ describe('P2P (Relayed) Session', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[setup] App ready.');
 
-    // Connect app with relayed session credentials
-    // Need to input relayed credentials — tap the apiKey field and clear/type
-    // The inputs are visible at app start (connection settings only collapse when connected)
-    // Override the default credentials with relayed session credentials
-    await element(by.id('apiKeyInput')).replaceText(credentials.apiKey);
-    await element(by.id('sessionIdInput')).replaceText(credentials.sessionId);
-    await element(by.id('tokenInput')).replaceText(credentials.tokenApp);
-
-    // Connect
-    await element(by.id('submitButton')).tap();
-    console.log('[p2p] Connecting to relayed session...');
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-    console.log('[p2p] Connected to relayed session.');
-
-    // Launch bot
-    bot = new jsSDKTesterBot({ timeout: 45000 });
-    await bot.launch();
+    session = await TestSession.createRelayed({ timeout: 45000 });
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
+  });
+
+  afterEach(async () => {
+    await session.cleanup();
   });
 
   it('app publishes in P2P — bot receives stream', async () => {
-    console.log('[p2p-pub] Bot joining relayed session...');
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
+    await session.connectApp();
+    console.log('[p2p-pub] Connected.');
 
-    console.log('[p2p-pub] Waiting for bot to receive app stream (45s)...');
+    // addBot waits for subscriber; then verify bot received app stream
+    const bot = await session.addBot({ subscriberTimeout: 45000 });
+
     try {
       await bot.waitForSubscriber(45000);
     } catch (e) {
       const state = await bot.getState();
-      console.log('[p2p-pub] Bot state at timeout:', JSON.stringify(state));
       throw new Error(`P2P: Bot did not receive app stream. State: ${JSON.stringify(state)}`);
     }
 
@@ -82,18 +59,28 @@ describe('P2P (Relayed) Session', () => {
   });
 
   it('bot publishes in P2P — app shows subscriber', async () => {
-    console.log('[p2p-sub] Waiting for subscriber view (20s)...');
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
+    await session.connectApp();
+    console.log('[p2p-sub] Connected.');
+
+    // addBot waits for subscriber view
+    await session.addBot({ subscriberTimeout: 30000 });
+
+    await expect(element(by.id('subscriber'))).toExist();
     console.log('[p2p-sub] Subscriber visible in P2P session!');
   });
 
   it('unpublish and republish in P2P session', async () => {
+    await session.connectApp();
+    console.log('[p2p-unpub] Connected.');
+
+    await session.addBot({ subscriberTimeout: 30000 });
+
+    // Unpublish
     await element(by.id('tabSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 500));
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Unpublished.');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
 
+    // Republish
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Republished.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
@@ -101,28 +88,42 @@ describe('P2P (Relayed) Session', () => {
   });
 
   it('audio-only publishing in P2P', async () => {
+    await session.connectApp();
+    console.log('[p2p-audio] Connected.');
+
+    await session.addBot({ subscriberTimeout: 30000 });
+
+    // Disable video (audio-only)
     await element(by.id('tabPublisher')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 500));
     await element(by.id('hasVideo')).tap();
     console.log('[p2p-audio] Video off.');
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Verify publisher still exists
     await expect(element(by.id('publisher'))).toExist();
 
-    // Restore
+    // Restore video
     await element(by.id('hasVideo')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await expect(element(by.id('publisher'))).toExist();
     console.log('[p2p-audio] Audio-only publish OK in P2P.');
   });
 
   it('video-only publishing in P2P', async () => {
+    await session.connectApp();
+    console.log('[p2p-video] Connected.');
+
+    await session.addBot({ subscriberTimeout: 30000 });
+
+    // Disable audio (video-only)
+    await element(by.id('tabPublisher')).tap();
     await element(by.id('hasAudio')).tap();
     console.log('[p2p-video] Audio off.');
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Verify publisher still exists
     await expect(element(by.id('publisher'))).toExist();
 
-    // Restore
+    // Restore audio
     await element(by.id('hasAudio')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await expect(element(by.id('publisher'))).toExist();
     console.log('[p2p-video] Video-only publish OK in P2P.');
   });
 });

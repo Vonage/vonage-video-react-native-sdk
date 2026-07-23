@@ -1,21 +1,14 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 describe('Subscriber Tests', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-    if (!credentials.tokenBot) {
-      console.warn('No tokenBot — subscriber tests will be skipped.');
-      return;
-    }
-
+    console.log('[setup] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -24,41 +17,31 @@ describe('Subscriber Tests', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[setup] App ready.');
+
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) {
-      await bot.close();
-    }
+  });
+
+  afterEach(async () => {
+    await session.cleanup();
   });
 
   it('subscriber appears when bot publishes', async () => {
-    if (!credentials.tokenBot) return;
+    // Connect app
+    console.log('[subscriber] Connecting app...');
+    await session.connectApp();
 
-    // App connects
-    await expect(element(by.id('submitButton'))).toBeVisible();
-    await element(by.id('submitButton')).tap();
-    console.log('[subscriber] Waiting for connection (30s)...');
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-    console.log('[subscriber] App connected.');
-
-    // Set up capture for streamCreated and connectionCreated payloads
+    // Set up event capture BEFORE bot joins
     await setCaptureFilter(['streamCreated', 'connectionCreated']);
 
-    // Bot joins and publishes
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    console.log('[subscriber] Bot publishing. Waiting for subscriber (20s)...');
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
-
-    await expect(element(by.id('subscriber'))).toExist();
+    // Add bot — addBot() waits for subscriber internally
+    console.log('[subscriber] Adding bot...');
+    const bot = await session.addBot();
     console.log('[subscriber] Subscriber visible!');
 
     // Verify event indicators
@@ -79,28 +62,16 @@ describe('Subscriber Tests', () => {
   });
 
   it('subscriber disappears when bot disconnects', async () => {
-    if (!credentials.tokenBot) return;
+    // Connect app
+    console.log('[subscriber] Connecting app...');
+    await session.connectApp();
 
-    // Set up capture for streamDestroyed payload
-    await clearCapturedEvents();
+    // Set up event capture for streamDestroyed
     await setCaptureFilter(['streamDestroyed']);
 
-    // Ensure bot is connected and subscriber is visible before testing its disappearance
-    if (!bot) {
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-    }
-    const botState = await bot.getState();
-    if (!botState.connected) {
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(20000);
-    }
-    await expect(element(by.id('subscriber'))).toExist();
+    // Add a fresh bot for this test — addBot() waits for subscriber
+    console.log('[subscriber] Adding bot...');
+    const bot = await session.addBot();
 
     // Get bot's streamId before disconnect for later verification
     const botStreamId = await bot.page.evaluate(() => {
@@ -111,7 +82,8 @@ describe('Subscriber Tests', () => {
     });
     console.log('[subscriber] Bot streamId before disconnect:', botStreamId);
 
-    // Bot disconnects
+    // Bot disconnects — we explicitly disconnect rather than relying on cleanup
+    // so we can verify the streamDestroyed event
     console.log('[subscriber] Bot disconnecting...');
     await bot.disconnect();
 
@@ -123,12 +95,12 @@ describe('Subscriber Tests', () => {
       jestExpect(destroyedEvent.streamId).toBe(botStreamId);
     }
 
-    // Also confirm the counter incremented
+    // Confirm the counter incremented
     await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
     console.log('[subscriber] Stream destroyed event verified with correct streamId.');
 
     // Give the UI time to unmount the subscriber view
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(10000);
     console.log('[subscriber] Subscriber gone after bot disconnect.');
   });
 });

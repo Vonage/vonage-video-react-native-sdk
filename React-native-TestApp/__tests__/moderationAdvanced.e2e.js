@@ -1,11 +1,7 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
-
-// In Detox, `expect` is overridden for element matchers.
-// Use jestExpect for plain JS object assertions.
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -15,16 +11,17 @@ const { expect: jestExpect } = require('expect');
  *   - forceDisconnect via REST removes bot connection
  *   - disableForceMute after forceMuteAll allows new publishers to be unmuted
  *   - forceMuteStream targets a specific stream
+ *   - streamCreated payload contains expected fields
+ *   - connection events fire with valid data
  *
+ * Each test is fully self-contained with its own bot instance.
  * Requires E2E_API_KEY and E2E_API_SECRET environment variables for REST API calls.
  */
 describe('Moderation Advanced', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
+    console.log('[moderationAdv] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -33,21 +30,18 @@ describe('Moderation Advanced', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[moderationAdv] App ready.');
 
-    // Connect app (moderator token)
-    await element(by.id('submitButton')).tap();
-    console.log('[moderationAdv] Connecting app...');
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-    console.log('[moderationAdv] App connected as moderator.');
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
   });
 
-  beforeEach(async () => {
-    await clearCapturedEvents();
+  afterEach(async () => {
+    await session.cleanup();
   });
 
   describe('forceDisconnect', () => {
@@ -60,19 +54,15 @@ describe('Moderation Advanced', () => {
         return;
       }
 
-      // Set up capture filter for connectionDestroyed
+      await session.connectApp();
+      console.log('[forceDisconnect] App connected.');
+
       await setCaptureFilter(['connectionDestroyed']);
 
-      // Bot joins
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
+      const bot = await session.addBot();
       console.log('[forceDisconnect] Bot connected.');
+
+      // Wait for stabilization
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Get bot's connectionId
@@ -89,7 +79,7 @@ describe('Moderation Advanced', () => {
 
       // Force-disconnect via REST
       const { forceDisconnect } = require('./helpers/openTokRest');
-      await forceDisconnect(apiKey, apiSecret, credentials.apiUrl, credentials.sessionId, connectionId);
+      await forceDisconnect(apiKey, apiSecret, session.credentials.apiUrl, session.credentials.sessionId, connectionId);
       console.log('[forceDisconnect] REST API called.');
 
       // Verify connectionDestroyed event payload
@@ -108,48 +98,35 @@ describe('Moderation Advanced', () => {
   });
 
   describe('disableForceMute', () => {
-    it('disableForceMute after forceMuteAll allows new publishers to be unmuted', async () => {
-      // Set up capture for muteForced
+    it('disableForceMute after forceMuteAll', async () => {
+      await session.connectApp();
+      console.log('[disableForceMute] App connected.');
+
       await setCaptureFilter(['muteForced']);
 
-      // Reconnect bot
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
+      const bot = await session.addBot();
       console.log('[disableForceMute] Bot connected.');
+
+      // Wait for stabilization (media negotiation)
       await new Promise((resolve) => setTimeout(resolve, 10000));
 
-      // forceMuteAll
+      // forceMuteAll via moderation tab
       await element(by.id('tabModeration')).tap();
       await element(by.id('muteAll')).tap();
       console.log('[disableForceMute] forceMuteAll called.');
 
-      // Wait for muteForced event
+      // Verify muteForced received on app
       await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(10000);
       console.log('[disableForceMute] muteForced received on app.');
 
       // Verify bot got muted
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      let botState = await bot.getState();
+      const botState = await bot.getState();
       console.log('[disableForceMute] Bot muteForced:', botState.muteForced);
 
-      // Now disable force mute — session should allow unmuting
-      // The disableForceMute button resets the forceMute indicators
-      // We need to use the session ref method via the app
-      // The existing moderation controls don't expose disableForceMute as a button,
-      // but the sessionMethodDisableForceMute exists. Let's verify the indicator resets.
-      // For now verify the forceMuteAll worked and session is stable.
+      // Verify session stable
       await expect(element(by.id('disconnectSession'))).toBeVisible();
       console.log('[disableForceMute] Session stable after forceMuteAll.');
-
-      // Clean up bot
-      await bot.close();
-      bot = null;
     });
   });
 
@@ -163,20 +140,13 @@ describe('Moderation Advanced', () => {
         return;
       }
 
-      // Set up capture
+      await session.connectApp();
+      console.log('[forceMuteStream] App connected.');
+
       await setCaptureFilter(['streamCreated']);
 
-      // Fresh bot
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
+      const bot = await session.addBot();
       console.log('[forceMuteStream] Bot connected and publishing.');
-      await new Promise((resolve) => setTimeout(resolve, 10000));
 
       // Wait for subscriber to appear
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
@@ -202,7 +172,7 @@ describe('Moderation Advanced', () => {
 
       // Force-mute the bot's stream via REST
       const { forceMuteStream } = require('./helpers/openTokRest');
-      await forceMuteStream(apiKey, apiSecret, credentials.apiUrl, credentials.sessionId, streamId);
+      await forceMuteStream(apiKey, apiSecret, session.credentials.apiUrl, session.credentials.sessionId, streamId);
       console.log('[forceMuteStream] REST forceMuteStream called.');
 
       // Verify bot received muteForced
@@ -217,29 +187,25 @@ describe('Moderation Advanced', () => {
     });
 
     it('streamCreated payload contains expected fields', async () => {
-      // This test relies on the bot still being connected from the previous test
-      // or captures the event if bot reconnects
+      await session.connectApp();
+      console.log('[streamCreated] App connected.');
+
       await setCaptureFilter(['streamCreated']);
 
-      if (!bot) {
-        bot = new jsSDKTesterBot({ timeout: 30000 });
-        await bot.launch();
-        await bot.joinSession(
-          credentials.apiKey,
-          credentials.sessionId,
-          credentials.tokenBot,
-          { apiUrl: credentials.apiUrl }
-        );
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-      }
+      const bot = await session.addBot();
+      console.log('[streamCreated] Bot connected.');
 
-      // The streamCreated event should have been captured
+      // Wait for subscriber to appear
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
+
+      // Verify streamCreated payload
       const event = await waitForEvent('streamCreated', 15000);
       console.log('[streamCreated] Payload:', JSON.stringify(event));
 
       jestExpect(event).toHaveProperty('streamId');
       jestExpect(event.streamId).toBeTruthy();
-      // hasAudio and hasVideo should be booleans
+
+      // hasAudio and hasVideo should be booleans if present
       if (event.hasAudio !== undefined) {
         jestExpect(typeof event.hasAudio).toBe('boolean');
       }
@@ -251,24 +217,12 @@ describe('Moderation Advanced', () => {
 
   describe('connection events', () => {
     it('connectionCreated fires with valid connectionId when bot joins', async () => {
+      await session.connectApp();
+      console.log('[connectionCreated] App connected.');
+
       await setCaptureFilter(['connectionCreated']);
 
-      // Close existing bot if any
-      if (bot) {
-        await bot.close();
-        bot = null;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      // Fresh bot joins
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
+      const bot = await session.addBot();
       console.log('[connectionCreated] Bot joined.');
 
       // Wait for connectionCreated event
@@ -281,19 +235,16 @@ describe('Moderation Advanced', () => {
     });
 
     it('connectionDestroyed fires when bot leaves', async () => {
+      await session.connectApp();
+      console.log('[connectionDestroyed] App connected.');
+
       await setCaptureFilter(['connectionDestroyed']);
 
-      if (!bot) {
-        bot = new jsSDKTesterBot({ timeout: 30000 });
-        await bot.launch();
-        await bot.joinSession(
-          credentials.apiKey,
-          credentials.sessionId,
-          credentials.tokenBot,
-          { apiUrl: credentials.apiUrl }
-        );
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-      }
+      const bot = await session.addBot();
+      console.log('[connectionDestroyed] Bot joined.');
+
+      // Wait for stabilization
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Get bot's connectionId before disconnect
       const connectionId = await bot.page.evaluate(() => {
@@ -303,7 +254,7 @@ describe('Moderation Advanced', () => {
       });
       console.log('[connectionDestroyed] Bot connectionId:', connectionId);
 
-      // Bot disconnects
+      // Explicitly disconnect bot to trigger event
       await bot.disconnect();
       console.log('[connectionDestroyed] Bot disconnected.');
 

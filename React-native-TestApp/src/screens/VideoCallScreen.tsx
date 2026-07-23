@@ -51,7 +51,6 @@ class VideoCallScreen extends Component<{}, State> {
       encryptionSecret: '',
       meetRoomName: 'test-room-name',
       userInitials: 'AB',
-      signal: { data: 'hi' },
     },
     sessionEvents: {
       archiveStart: 0,
@@ -150,7 +149,7 @@ class VideoCallScreen extends Component<{}, State> {
     // Poll for stats every 5 seconds (longer interval to avoid Detox idle detection issues)
     this.statsUpdateInterval = setInterval(() => {
       this.publisherMethodGetRtcStatsReport();
-    }, 5000);
+    }, 10000);
   };
 
   stopStatsPolling = () => {
@@ -572,7 +571,7 @@ class VideoCallScreen extends Component<{}, State> {
           sessionId={this.state.input.sessionId}
           token={this.state.input.token}
           encryptionSecret={this.state.input.encryptionSecret}
-          signal={this.state.input.signal}
+          signal={this.state.input.signal || {}}
           options={{ apiUrl: credentials.apiUrl || undefined }}
           eventHandlers={this.sessionEventHandlers}
           ref={this.sessionRef}>
@@ -1139,9 +1138,9 @@ class VideoCallScreen extends Component<{}, State> {
           <Text
             key={type}
             testID={`lastEvent-${type}`}
-            style={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            style={{ fontSize: 9, color: '#333', marginVertical: 1 }}
           >
-            {json}
+            {`${type}: ${json}`}
           </Text>
         ))}
       </View>

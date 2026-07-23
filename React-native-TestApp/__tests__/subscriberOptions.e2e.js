@@ -1,24 +1,25 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
  * Subscriber Options Tests
  *
- * Tests subscriber behavior with multiple bots and various configurations.
- * Verifies multi-subscriber scenarios.
+ * Tests subscriber behavior with various configurations and multi-bot scenarios.
+ * Organized into two groups by topology:
+ *   - Single bot (relayed): toggle video/audio, unsubscribe/resubscribe, volume
+ *   - Multi bot (routed): multiple subscribers, disconnect behavior
+ *
+ * NOTE: All assertions use waitFor().withTimeout() instead of bare expect()
+ * because Detox sync is disabled (WebRTC timers keep the app permanently "busy").
  */
 describe('Subscriber Options', () => {
-  let credentials;
-  let bot1;
-  let bot2;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
+    console.log('[subscriberOptions] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -27,214 +28,203 @@ describe('Subscriber Options', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[subscriberOptions] App ready.');
 
-    // Connect app to session
-    await element(by.id('submitButton')).tap();
-    console.log('[subscriberOptions] Connecting...');
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-    console.log('[subscriberOptions] App connected.');
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot1) await bot1.close();
-    if (bot2) await bot2.close();
   });
 
-  it('subscriber appears when first bot publishes', async () => {
-    // Set up capture for streamCreated and connectionCreated
-    await setCaptureFilter(['streamCreated', 'connectionCreated']);
-
-    bot1 = new jsSDKTesterBot({ timeout: 30000 });
-    await bot1.launch();
-    console.log('[sub] Bot1 joining...');
-    try {
-      await bot1.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
-    } catch (e) {
-      const state = await bot1.getState();
-      console.log('[sub] Bot1 FAILED:', state.error);
-      throw e;
-    }
-    console.log('[sub] Bot1 publishing. Waiting for subscriber...');
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[sub] Subscriber visible for bot1.');
-
-    // Verify event indicators
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
-
-    // Verify streamCreated payload
-    const streamEvent = await waitForEvent('streamCreated', 15000);
-    console.log('[sub] streamCreated payload:', JSON.stringify(streamEvent));
-    jestExpect(streamEvent.streamId).toBeTruthy();
-    jestExpect(typeof streamEvent.streamId).toBe('string');
-
-    // Verify connectionCreated payload
-    const connEvent = await waitForEvent('connectionCreated', 15000);
-    console.log('[sub] connectionCreated payload:', JSON.stringify(connEvent));
-    jestExpect(connEvent.connectionId).toBeTruthy();
-    jestExpect(typeof connEvent.connectionId).toBe('string');
+  afterEach(async () => {
+    await session.cleanup();
   });
 
-  it('multiple subscribers with two bots', async () => {
-    bot2 = new jsSDKTesterBot({ timeout: 30000 });
-    await bot2.launch();
-    console.log('[multi] Bot2 joining...');
-    try {
-      await bot2.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot2 || credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
-    } catch (e) {
-      const state = await bot2.getState();
-      console.log('[multi] Bot2 FAILED:', state.error);
-      throw e;
-    }
-    console.log('[multi] Bot2 publishing. Waiting...');
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[multi] Subscriber still visible with 2 bots.');
+  describe('single bot scenarios (relayed)', () => {
+    it('subscriber appears when bot publishes', async () => {
+      await session.connectApp();
+
+      await setCaptureFilter(['streamCreated', 'connectionCreated']);
+
+      // addBot() waits for subscriber to appear
+      await session.addBot();
+      console.log('[sub] Subscriber visible.');
+
+      // Verify event indicators
+      await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+      await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
+
+      // Verify streamCreated payload
+      const streamEvent = await waitForEvent('streamCreated');
+      jestExpect(streamEvent.streamId).toBeTruthy();
+      jestExpect(typeof streamEvent.streamId).toBe('string');
+
+      // Verify connectionCreated payload
+      const connEvent = await waitForEvent('connectionCreated');
+      jestExpect(connEvent.connectionId).toBeTruthy();
+      jestExpect(typeof connEvent.connectionId).toBe('string');
+    });
+
+    it('toggle subscribeToVideo off and on', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Toggle video off
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('toggleSubscribeVideo')).tap();
+      console.log('[subVideo] Toggled subscribeToVideo off.');
+
+      // Subscriber should still exist (audio-only now)
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+
+      // Toggle video back on
+      await element(by.id('toggleSubscribeVideo')).tap();
+      console.log('[subVideo] Toggled subscribeToVideo on.');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[subVideo] Subscribe video toggle works.');
+    });
+
+    it('toggle subscribeToAudio off and on', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Toggle audio off
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('toggleSubscribeAudio')).tap();
+      console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+
+      // Toggle audio back on
+      await element(by.id('toggleSubscribeAudio')).tap();
+      console.log('[subAudio] Toggled subscribeToAudio on.');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[subAudio] Subscribe audio toggle works.');
+    });
+
+    it('unsubscribe removes subscriber view', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Unsubscribe
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('unsubscribe')).tap();
+      console.log('[unsubscribe] Tapped unsubscribe.');
+
+      // Wait for subscriber to disappear
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
+      console.log('[unsubscribe] Subscriber view removed.');
+    });
+
+    it('resubscribe restores subscriber view', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Unsubscribe first
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('unsubscribe')).tap();
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
+
+      // Resubscribe
+      await element(by.id('resubscribe')).tap();
+      console.log('[resubscribe] Tapped resubscribe.');
+
+      // Subscriber view should reappear
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[resubscribe] Subscriber view restored.');
+    });
+
+    it('set volume to 0 does not crash', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Set volume to 0
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('setVolume0')).tap();
+      console.log('[volume0] Set volume to 0.');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[volume0] Subscriber still exists after volume 0.');
+    });
+
+    it('set volume to 50 does not crash', async () => {
+      await session.connectApp();
+      await session.addBot();
+
+      // Set volume to 50
+      await element(by.id('tabSubscriber')).tap();
+      await element(by.id('setVolume50')).tap();
+      console.log('[volume50] Set volume to 50.');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[volume50] Subscriber still exists after volume 50.');
+    });
   });
 
-  it('subscriber persists after one bot disconnects', async () => {
-    console.log('[persist] Disconnecting bot2...');
-    await bot2.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[persist] Subscriber still visible after bot2 left.');
-  });
+  describe('multi-bot scenarios (routed)', () => {
+    it('multiple subscribers with two bots', async () => {
+      await session.connectApp();
 
-  it('subscriber disappears when last bot disconnects', async () => {
-    // Set up capture for streamDestroyed and connectionDestroyed
-    await clearCapturedEvents();
-    await setCaptureFilter(['streamDestroyed', 'connectionDestroyed']);
+      await session.addBot();
+      console.log('[multi] Bot1 joined.');
 
-    console.log('[disappear] Disconnecting bot1...');
-    await bot1.disconnect();
+      // Bot2: subscriber already exists from bot1, don't re-wait
+      await session.addBot({ waitForSubscriber: false });
+      console.log('[multi] Bot2 joined.');
 
-    // Verify streamDestroyed payload
-    const destroyedEvent = await waitForEvent('streamDestroyed', 30000);
-    console.log('[disappear] streamDestroyed payload:', JSON.stringify(destroyedEvent));
-    jestExpect(destroyedEvent.streamId).toBeTruthy();
-    jestExpect(typeof destroyedEvent.streamId).toBe('string');
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[multi] Subscriber visible with 2 bots.');
+    });
 
-    // Give the UI time to unmount the subscriber view
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    console.log('[disappear] Subscriber gone.');
+    it('subscriber persists after one bot disconnects', async () => {
+      await session.connectApp();
 
-    // Verify connectionDestroyed payload
-    const connEvent = await waitForEvent('connectionDestroyed', 15000);
-    console.log('[disappear] connectionDestroyed payload:', JSON.stringify(connEvent));
-    jestExpect(connEvent.connectionId).toBeTruthy();
-    jestExpect(typeof connEvent.connectionId).toBe('string');
-  });
+      const bot1 = await session.addBot();
+      console.log('[persist] Bot1 joined.');
 
-  it('toggle subscribeToVideo off and on', async () => {
-    // Reconnect bot1 for this test
-    await bot1.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
-    await expect(element(by.id('subscriber'))).toExist();
+      const bot2 = await session.addBot({ waitForSubscriber: false });
+      console.log('[persist] Bot2 joined.');
 
-    // Toggle subscribeToVideo off (action bar — always visible)
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('toggleSubscribeVideo')).tap();
-    console.log('[subVideo] Toggled subscribeToVideo off.');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Disconnect bot2
+      await bot2.disconnect();
+      console.log('[persist] Bot2 disconnected.');
 
-    // Subscriber should still exist (audio-only now)
-    await expect(element(by.id('subscriber'))).toExist();
+      // Subscriber should still exist (bot1 is still publishing)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      console.log('[persist] Subscriber still visible after bot2 left.');
+    });
 
-    // Toggle back on
-    await element(by.id('toggleSubscribeVideo')).tap();
-    console.log('[subVideo] Toggled subscribeToVideo on.');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[subVideo] Subscribe video toggle works.');
-  });
+    it('subscriber disappears when last bot disconnects', async () => {
+      await session.connectApp();
 
-  it('toggle subscribeToAudio off and on (video-only subscribe)', async () => {
-    // Bot1 should still be connected
-    await expect(element(by.id('subscriber'))).toExist();
+      await setCaptureFilter(['streamDestroyed', 'connectionDestroyed']);
 
-    // Toggle subscribeToAudio off
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('toggleSubscribeAudio')).tap();
-    console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    await expect(element(by.id('subscriber'))).toExist();
+      const bot1 = await session.addBot();
+      console.log('[disappear] Bot1 joined.');
 
-    // Toggle back on
-    await element(by.id('toggleSubscribeAudio')).tap();
-    console.log('[subAudio] Toggled subscribeToAudio on.');
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[subAudio] Subscribe audio toggle works.');
-  });
+      const bot2 = await session.addBot({ waitForSubscriber: false });
+      console.log('[disappear] Bot2 joined.');
 
-  it('unsubscribe removes subscriber view', async () => {
-    // Ensure bot1 is connected and subscriber visible
-    const botState = await bot1.getState();
-    if (!botState.connected) {
-      await bot1.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
-    }
-    await expect(element(by.id('subscriber'))).toExist();
+      // Disconnect bot2 first
+      await bot2.disconnect();
+      console.log('[disappear] Bot2 disconnected.');
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Navigate to Subscriber tab and tap unsubscribe
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('unsubscribe')).tap();
-    console.log('[unsubscribe] Tapped unsubscribe.');
+      // Disconnect bot1 (last one)
+      await bot1.disconnect();
+      console.log('[disappear] Bot1 disconnected (last bot).');
 
-    // Wait for subscriber to disappear
-    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
-    console.log('[unsubscribe] Subscriber view removed.');
-  });
+      // Verify streamDestroyed payload
+      const destroyedEvent = await waitForEvent('streamDestroyed');
+      jestExpect(destroyedEvent.streamId).toBeTruthy();
 
-  it('resubscribe restores subscriber view', async () => {
-    // Bot should still be publishing — subscriber was just unsubscribed
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('resubscribe')).tap();
-    console.log('[resubscribe] Tapped resubscribe.');
+      // Verify connectionDestroyed payload
+      const connEvent = await waitForEvent('connectionDestroyed');
+      jestExpect(connEvent.connectionId).toBeTruthy();
 
-    // Subscriber view should reappear
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-    console.log('[resubscribe] Subscriber view restored.');
-  });
-
-  it('set volume to 0 does not crash', async () => {
-    await expect(element(by.id('subscriber'))).toExist();
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('setVolume0')).tap();
-    console.log('[volume] Set volume to 0.');
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[volume] Subscriber still exists after volume 0.');
-  });
-
-  it('set volume to 50 does not crash', async () => {
-    await element(by.id('tabSubscriber')).tap();
-    await element(by.id('setVolume50')).tap();
-    console.log('[volume] Set volume to 50.');
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[volume] Subscriber still exists after volume 50.');
+      // Wait for subscriber to disappear
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(10000);
+      console.log('[disappear] Subscriber gone after all bots disconnected.');
+    });
   });
 });

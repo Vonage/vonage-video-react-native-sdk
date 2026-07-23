@@ -65,7 +65,7 @@ if (!VALID_MEDIA_MODES.includes(mediaMode)) {
   process.exit(1);
 }
 
-const ot = new OpenTok(API_KEY, API_SECRET, API_URL);
+const ot = new OpenTok(API_KEY, API_SECRET, { apiUrl: API_URL });
 
 const createSession = (options) =>
   new Promise((resolve, reject) => {

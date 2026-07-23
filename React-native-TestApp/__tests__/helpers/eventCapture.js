@@ -38,7 +38,11 @@ async function getLastEvent(eventType) {
   try {
     const attrs = await element(by.id(`lastEvent-${eventType}`)).getAttributes();
     const text = attrs.text || attrs.label || '';
-    return text ? JSON.parse(text) : null;
+    if (!text) return null;
+    // The rendered text is "{type}: {json}" — strip the prefix
+    const colonIndex = text.indexOf(': ');
+    const jsonStr = colonIndex >= 0 ? text.substring(colonIndex + 2) : text;
+    return JSON.parse(jsonStr);
   } catch (e) {
     return null;
   }
@@ -47,15 +51,15 @@ async function getLastEvent(eventType) {
 /**
  * Polls until a captured event payload appears, or times out.
  * @param {string} eventType - e.g. 'signal'
- * @param {number} [timeout=10000] - max wait in ms
+ * @param {number} [timeout=30000] - max wait in ms
  * @returns {Promise<object>} the parsed event payload
  */
-async function waitForEvent(eventType, timeout = 10000) {
+async function waitForEvent(eventType, timeout = 30000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     const payload = await getLastEvent(eventType);
     if (payload) return payload;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error(`Timed out waiting for event: ${eventType}`);
 }

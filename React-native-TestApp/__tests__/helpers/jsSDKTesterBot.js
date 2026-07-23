@@ -78,6 +78,7 @@ class jsSDKTesterBot {
    * @param {string} token - Authentication token for the bot
    * @param {object} [options] - Optional configuration
    * @param {string} [options.apiUrl] - API URL (for non-production environments)
+   * @param {string} [options.jsSdkUrl] - JS SDK URL (overrides env var and default CDN)
    * @param {object} [options.publisherOptions] - OT.initPublisher options
    */
   async joinSession(apiKey, sessionId, token, options = {}) {
@@ -88,7 +89,7 @@ class jsSDKTesterBot {
     // Navigate to fresh page to clear any previous session state
     await this.page.goto('https://localhost/bot');
 
-    const { apiUrl, publisherOptions = {} } = options;
+    const { apiUrl, jsSdkUrl, publisherOptions = {} } = options;
 
     const pubOpts = JSON.stringify({
       videoSource: true,
@@ -99,27 +100,10 @@ class jsSDKTesterBot {
       ...publisherOptions,
     });
 
-    // JS SDK URL resolution order:
-    // 1. E2E_JS_SDK_URL env var (highest priority)
-    // 2. jsSdkUrl from sdk-config.json (set during credential generation)
-    // 3. Production CDN (default fallback)
-    let sdkUrl = process.env.E2E_JS_SDK_URL;
-    if (!sdkUrl) {
-      try {
-        const sdkConfig = JSON.parse(
-          require('fs').readFileSync(
-            require('path').join(__dirname, '../../sdk-config.json'),
-            'utf8'
-          )
-        );
-        sdkUrl = sdkConfig?.credentials?.video?.jsSdkUrl;
-      } catch (e) {
-        // Ignore read errors — fall through to default
-      }
-    }
-    if (!sdkUrl) {
-      sdkUrl = 'https://static.opentok.com/v2/js/opentok.min.js';
-    }
+    // JS SDK URL resolution: options.jsSdkUrl → env var → default
+    const sdkUrl = jsSdkUrl
+      || process.env.E2E_JS_SDK_URL
+      || 'https://static.opentok.com/v2/js/opentok.min.js';
 
     await this.page.setContent(`
       <!DOCTYPE html>
