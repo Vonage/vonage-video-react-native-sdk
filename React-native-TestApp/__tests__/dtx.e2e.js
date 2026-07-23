@@ -37,11 +37,9 @@ describe('DTX Codec Option', () => {
     await session.connectApp();
     console.log('[dtx-off] App connected.');
 
-    // Add bot — addBot waits for subscriber view (app receives bot stream)
     const bot = await session.addBot({ subscriberTimeout: 30000 });
     console.log('[dtx-off] Subscriber visible.');
 
-    // Verify bot also received app stream
     try {
       await bot.waitForSubscriber(30000);
     } catch (e) {
@@ -56,25 +54,12 @@ describe('DTX Codec Option', () => {
     await session.connectApp();
     console.log('[dtx-on] App connected.');
 
-    // Create bot manually to pass DTX publisher option
-    const bot = await session.createBot();
-    await bot.joinSession(
-      session.credentials.apiKey,
-      session.credentials.sessionId,
-      session.credentials.tokenBot,
-      {
-        apiUrl: session.credentials.apiUrl,
-        jsSdkUrl: session.credentials.jsSdkUrl,
-        publisherOptions: { enableDtx: true },
-      }
-    );
-    console.log('[dtx-on] Bot connected with DTX=true.');
+    const bot = await session.addBot({
+      subscriberTimeout: 30000,
+      publisherOptions: { enableDtx: true },
+    });
+    console.log('[dtx-on] Subscriber visible (DTX=true).');
 
-    // Wait for subscriber view (app receives bot stream)
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(30000);
-    console.log('[dtx-on] Subscriber visible.');
-
-    // Verify bot also received app stream
     try {
       await bot.waitForSubscriber(30000);
     } catch (e) {

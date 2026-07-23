@@ -100,6 +100,7 @@ class TestSession {
    * @param {object} [options]
    * @param {string} [options.token] - Override token (defaults to auto-assigned from credentials)
    * @param {string} [options.sessionId] - Override session ID
+   * @param {object} [options.publisherOptions] - Override publisher options (e.g. { enableDtx: true })
    */
   async joinBot(bot, options = {}) {
     const botIndex = this.activeBots.indexOf(bot);
@@ -109,7 +110,11 @@ class TestSession {
       this.credentials.apiKey,
       sessionId,
       token,
-      { apiUrl: this.credentials.apiUrl, jsSdkUrl: this.credentials.jsSdkUrl }
+      {
+        apiUrl: this.credentials.apiUrl,
+        jsSdkUrl: this.credentials.jsSdkUrl,
+        ...(options.publisherOptions && { publisherOptions: options.publisherOptions }),
+      }
     );
   }
 
