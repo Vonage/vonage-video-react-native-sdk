@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent, clearCapturedEvents, getLastEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -92,7 +92,8 @@ describe('Session Lifecycle', () => {
     console.log('[session] Connecting for subscribe test...');
     await session.connectApp();
 
-    // Set up capture for streamCreated payload verification
+    // Clear any residual events and set up capture
+    await clearCapturedEvents();
     await setCaptureFilter(['streamCreated']);
 
     // Add bot — addBot() waits for subscriber view
@@ -101,7 +102,7 @@ describe('Session Lifecycle', () => {
     console.log('[session] Subscribing.');
 
     // Verify streamCreated payload contains valid stream info
-    const streamEvent = await waitForEvent('streamCreated', 15000);
+    const streamEvent = await waitForEvent('streamCreated');
     console.log('[session] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
 
@@ -117,23 +118,37 @@ describe('Session Lifecycle', () => {
     console.log('[signal] Connecting...');
     await session.connectApp();
 
-    // Set up capture for signal payload verification
+    // Clear any residual events and set up capture
+    await clearCapturedEvents();
     await setCaptureFilter(['signal']);
 
     // Add bot (joinSession waits for connected && publishing)
     console.log('[signal] Adding bot...');
     const bot = await session.addBot();
 
-    // Bot sends signal
+    // Bot sends signal with unique type to avoid stray signals
     console.log('[signal] Bot sending signal...');
-    await bot.sendSignal('chat', 'hello-from-bot');
+    await bot.sendSignal('e2e-test-signal', 'hello-from-bot');
 
-    // Verify app received signal with correct payload
-    const signal = await waitForEvent('signal', 10000);
+    // Poll for the specific signal (ignore stray signals)
+    let signal = null;
+    const start = Date.now();
+    while (Date.now() - start < 15000) {
+      const payload = await getLastEvent('signal');
+      if (payload && payload.type && payload.type.includes('e2e-test-signal')) {
+        signal = payload;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    if (!signal) {
+      throw new Error('Did not receive e2e-test-signal within 15s');
+    }
+
     console.log('[signal] Signal payload:', JSON.stringify(signal));
-
     jestExpect(signal.data).toBe('hello-from-bot');
-    jestExpect(signal.type).toContain('chat');
+    jestExpect(signal.type).toContain('e2e-test-signal');
     console.log('[signal] Signal data and type verified!');
 
     // Confirm the counter incremented
