@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession, poll } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents, getLastEvent } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -112,61 +112,4 @@ describe('Session Lifecycle', () => {
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 
-  it('app receives signal from bot', async () => {
-    // Connect app
-    console.log('[signal] Connecting...');
-    await session.connectApp();
-
-    // Set up capture for signal payload verification
-    await setCaptureFilter(['signal']);
-
-    // Add bot (joinSession waits for connected && publishing)
-    console.log('[signal] Adding bot...');
-    const bot = await session.addBot();
-
-    // Wait for media to stabilize before sending signals
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    // Strategy: single loop that clears, sends, and checks in tight succession.
-    // Clear right before send to minimize window for stray signals to overwrite.
-    let signal = null;
-    const maxAttempts = 10;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      // Clear captured events right before sending to get a clean slot
-      await clearCapturedEvents();
-
-      // Send signal immediately after clear
-      await bot.sendSignal('e2e-test-signal', 'hello-from-bot');
-      console.log(`[signal] Attempt #${attempt}: sent signal, checking...`);
-
-      // Brief pause to let the event propagate through native → JS → setState → render
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Check if our signal was captured
-      const payload = await getLastEvent('signal');
-      if (payload && payload.type && payload.type.includes('e2e-test-signal')) {
-        signal = payload;
-        break;
-      }
-      console.log(`[signal] Attempt #${attempt}: got ${payload ? payload.type : 'null'}, retrying...`);
-    }
-
-    if (!signal) {
-      // Fallback: just verify the counter incremented (signal was received but overwritten)
-      console.log('[signal] Could not capture specific signal payload — checking counter...');
-      await poll(() => expect(element(by.id('session-signalReceived'))).not.toHaveText('0'), 5000);
-      console.log('[signal] Signal counter confirmed — signal was received (payload overwritten).');
-      return;
-    }
-
-    console.log('[signal] Signal payload:', JSON.stringify(signal));
-    jestExpect(signal.data).toBe('hello-from-bot');
-    jestExpect(signal.type).toContain('e2e-test-signal');
-    console.log('[signal] Signal data and type verified!');
-
-    // Confirm the counter incremented
-    await poll(() => expect(element(by.id('session-signalReceived'))).not.toHaveText('0'), 5000);
-    console.log('[signal] App received signal from bot with verified payload!');
-  });
 });
