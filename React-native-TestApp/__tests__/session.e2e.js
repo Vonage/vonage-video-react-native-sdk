@@ -124,24 +124,33 @@ describe('Session Lifecycle', () => {
     console.log('[signal] Adding bot...');
     const bot = await session.addBot();
 
-    // Bot sends signal with unique type to avoid stray signals
-    console.log('[signal] Bot sending signal...');
-    await bot.sendSignal('e2e-test-signal', 'hello-from-bot');
-
-    // Poll for the specific signal (ignore stray signals)
+    // Poll: send the signal repeatedly and check if the app captured it.
+    // The capture system only stores the LAST event of each type, so if a
+    // stray signal overwrites ours we need to re-send and re-check.
     let signal = null;
     const start = Date.now();
-    while (Date.now() - start < 15000) {
+    const timeout = 30000;
+    let sendCount = 0;
+
+    while (Date.now() - start < timeout) {
+      // Send signal every 3 seconds
+      if (sendCount === 0 || (Date.now() - start) > sendCount * 3000) {
+        sendCount++;
+        console.log(`[signal] Sending signal attempt #${sendCount}...`);
+        await bot.sendSignal('e2e-test-signal', 'hello-from-bot');
+      }
+
+      // Check if our signal was captured
       const payload = await getLastEvent('signal');
       if (payload && payload.type && payload.type.includes('e2e-test-signal')) {
         signal = payload;
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (!signal) {
-      throw new Error('Did not receive e2e-test-signal within 15s');
+      throw new Error(`Did not receive e2e-test-signal within ${timeout / 1000}s (sent ${sendCount} times)`);
     }
 
     console.log('[signal] Signal payload:', JSON.stringify(signal));
