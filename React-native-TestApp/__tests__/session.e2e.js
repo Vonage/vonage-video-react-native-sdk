@@ -117,6 +117,9 @@ describe('Session Lifecycle', () => {
     console.log('[signal] Connecting...');
     await session.connectApp();
 
+    // Set up capture for signal payload verification
+    await setCaptureFilter(['signal']);
+
     // Add bot (joinSession waits for connected && publishing)
     console.log('[signal] Adding bot...');
     const bot = await session.addBot();
@@ -124,36 +127,29 @@ describe('Session Lifecycle', () => {
     // Wait for media to stabilize before sending signals
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // Strategy: clear captured events, set filter, send signal, read immediately.
-    // Repeat until captured, because other events can overwrite the "signal" slot.
+    // Strategy: single loop that clears, sends, and checks in tight succession.
+    // Clear right before send to minimize window for stray signals to overwrite.
     let signal = null;
-    const maxAttempts = 5;
+    const maxAttempts = 10;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      console.log(`[signal] Attempt #${attempt}: clearing + sending...`);
-
-      // Clear and re-set the filter fresh each attempt
+      // Clear captured events right before sending to get a clean slot
       await clearCapturedEvents();
-      await setCaptureFilter(['signal']);
 
-      // Small pause to ensure filter is active
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Send signal
+      // Send signal immediately after clear
       await bot.sendSignal('e2e-test-signal', 'hello-from-bot');
+      console.log(`[signal] Attempt #${attempt}: sent signal, checking...`);
 
-      // Poll quickly for our specific signal (short window before overwrite)
-      const pollStart = Date.now();
-      while (Date.now() - pollStart < 5000) {
-        const payload = await getLastEvent('signal');
-        if (payload && payload.type && payload.type.includes('e2e-test-signal')) {
-          signal = payload;
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 300));
+      // Brief pause to let the event propagate through native → JS → setState → render
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Check if our signal was captured
+      const payload = await getLastEvent('signal');
+      if (payload && payload.type && payload.type.includes('e2e-test-signal')) {
+        signal = payload;
+        break;
       }
-
-      if (signal) break;
+      console.log(`[signal] Attempt #${attempt}: got ${payload ? payload.type : 'null'}, retrying...`);
     }
 
     if (!signal) {
