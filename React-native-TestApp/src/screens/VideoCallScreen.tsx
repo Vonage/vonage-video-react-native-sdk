@@ -401,7 +401,62 @@ class VideoCallScreen extends Component<{}, State> {
       if (this.state.connectionMode === 'meet') {
         this.handleFetchMeetCredentials();
       } else {
-        this.setState({ connectedToSession: true });
+        // Full reset of counters and stream state on each new connection to ensure
+        // a clean slate (important for E2E tests that reuse the same component).
+        this._pendingCounters = {};
+        this.setState({
+          connectedToSession: true,
+          streams: [],
+          subscribedStreams: [],
+          unsubscribedStreams: [],
+          sessionEvents: {
+            archiveStart: 0,
+            archiveStop: 0,
+            connectionCreated: 0,
+            connectionDestroyed: 0,
+            error: 0,
+            forceMute: 0,
+            sessionConnected: 0,
+            sessionDisconnected: 0,
+            sessionReconnecting: 0,
+            sessionReconnected: 0,
+            signalReceived: 0,
+            streamCreated: 0,
+            streamDestroyed: 0,
+            streamPropertyChanged: 0,
+          },
+          publisherEvents: {
+            audioLevel: 0,
+            audioNetworkStats: 0,
+            error: 0,
+            forceMute: 0,
+            rtcStatsReport: 0,
+            streamCreated: 0,
+            streamDestroyed: 0,
+            videoDisabled: 0,
+            videoDisableWarning: 0,
+            videoDisableWarningLifted: 0,
+            videoEnabled: 0,
+            videoNetworkStats: 0,
+          },
+          subscriberEvents: {
+            audioLevel: 0,
+            audioNetworkStats: 0,
+            captionReceived: 0,
+            connected: 0,
+            disconnected: 0,
+            error: 0,
+            reconnected: 0,
+            subscriberConnected: 0,
+            rtcStatsReport: 0,
+            videoDataReceived: 0,
+            videoDisabled: 0,
+            videoDisableWarning: 0,
+            videoDisableWarningLifted: 0,
+            videoEnabled: 0,
+            videoNetworkStats: 0,
+          },
+        });
       }
     } else {
       this.setState({ connectedToSession: false });

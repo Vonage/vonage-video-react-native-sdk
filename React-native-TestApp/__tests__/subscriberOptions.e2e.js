@@ -167,8 +167,7 @@ describe('Subscriber Options', () => {
       await session.addBot();
       console.log('[multi] Bot1 joined.');
 
-      // Bot2: subscriber already exists from bot1, don't re-wait
-      await session.addBot({ waitForSubscriber: false });
+      await session.addBot();
       console.log('[multi] Bot2 joined.');
 
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -182,7 +181,6 @@ describe('Subscriber Options', () => {
       console.log('[persist] Bot1 joined.');
 
       const bot2 = await session.addBot();
-      
       console.log('[persist] Bot2 joined.');
 
       // Disconnect bot2
@@ -202,10 +200,7 @@ describe('Subscriber Options', () => {
       const bot1 = await session.addBot();
       console.log('[disappear] Bot1 joined.');
 
-      // Bot2: don't wait for subscriber view (already exists from bot1)
-      // but DO wait for bot2 to receive app's stream (confirms full connection)
-      const bot2 = await session.addBot({ waitForSubscriber: false });
-      await bot2.waitForSubscriber(15000);
+      const bot2 = await session.addBot();
       console.log('[disappear] Bot2 joined and receiving app stream.');
 
       // Disconnect bot2 first
@@ -216,9 +211,14 @@ describe('Subscriber Options', () => {
       await bot1.disconnect();
       console.log('[disappear] Bot1 disconnected (last bot).');
 
-      // Wait for subscriber to disappear
-      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(30000);
-      console.log('[disappear] Subscriber gone after all bots disconnected.');
+      const streamDestroyedEvent = await waitForEvent('streamDestroyed', 15000);
+      jestExpect(streamDestroyedEvent.streamId).toBeTruthy();
+      console.log('[disappear] streamDestroyed event received:', streamDestroyedEvent.streamId);
+
+      // Confirm both streams were destroyed (counter >= 2)
+      await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(10000);
+      await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('1').withTimeout(5000);
+      console.log('[disappear] Both streamDestroyed events confirmed.');
     });
   });
 });
