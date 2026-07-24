@@ -17,7 +17,6 @@ import { OTRN_PACKAGE_INFO } from './generated/packageInfo';
 
 export default class OTSession extends Component {
   eventHandlers = {};
-  _eventSubscriptions = [];
 
   constructor(props) {
     super(props);
@@ -68,18 +67,16 @@ export default class OTSession extends Component {
     } else {
       handleError('Please check your credentials.');
     }
-    this._eventSubscriptions.push(
-      OT.onSessionConnected((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.connectionId = event.connectionId;
-        setIsConnected(sessionId, true);
-        this.eventHandlers?.sessionConnected?.(event);
-        dispatchEvent(sessionId, 'sessionConnected', event);
-        if (Object.keys(this.props.signal).length > 0) {
-          this.signal(this.props.signal);
-        }
-      })
-    );
+    OT.onSessionConnected((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.connectionId = event.connectionId;
+      setIsConnected(sessionId, true);
+      this.eventHandlers?.sessionConnected?.(event);
+      dispatchEvent(sessionId, 'sessionConnected', event);
+      if (Object.keys(this.props.signal).length > 0) {
+        this.signal(this.props.signal);
+      }
+    });
     OT.initSession(
       apiKey,
       sessionId,
@@ -88,95 +85,65 @@ export default class OTSession extends Component {
     if (this.props.encryptionSecret) {
       this.setEncryptionSecret(this.props.encryptionSecret);
     }
-    this._eventSubscriptions.push(
-      OT.onStreamCreated((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.streamCreated?.(event);
-        if (event.connectionId !== this.connectionId) {
-          addStream(sessionId, event.streamId);
-        }
-        dispatchEvent(sessionId, 'streamCreated', event);
-      })
-    );
+    OT.onStreamCreated((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.streamCreated?.(event);
+      if (event.connectionId !== this.connectionId) {
+        addStream(sessionId, event.streamId);
+      }
+      dispatchEvent(sessionId, 'streamCreated', event);
+    });
 
-    this._eventSubscriptions.push(
-      OT.onStreamDestroyed((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.streamDestroyed?.(event);
-        removeStream(sessionId, event.streamId);
-        dispatchEvent(sessionId, 'streamDestroyed', event);
-      })
-    );
+    OT.onStreamDestroyed((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.streamDestroyed?.(event);
+      removeStream(sessionId, event.streamId);
+      dispatchEvent(sessionId, 'streamDestroyed', event);
+    });
 
-    this._eventSubscriptions.push(
-      OT.onSignalReceived((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.signal?.(event);
-      })
-    );
+    OT.onSignalReceived((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.signal?.(event);
+    });
 
-    this._eventSubscriptions.push(
-      OT.onSessionError((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.error?.(event);
-      })
-    );
+    OT.onSessionError((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.error?.(event);
+    });
 
-    this._eventSubscriptions.push(
-      OT.onConnectionCreated((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.connectionCreated?.(event);
-      })
-    );
+    OT.onConnectionCreated((event) => {
+      if (event.sessionId !== sessionId) return;
 
-    this._eventSubscriptions.push(
-      OT.onConnectionDestroyed((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.connectionDestroyed?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onArchiveStarted((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.archiveStarted?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onArchiveStopped((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.archiveStopped?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onMuteForced((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.muteForced?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onSessionReconnecting((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.sessionReconnecting?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onSessionReconnected((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.sessionReconnected?.(event);
-      })
-    );
-
-    this._eventSubscriptions.push(
-      OT.onStreamPropertyChanged((event) => {
-        if (event.sessionId !== sessionId) return;
-        this.eventHandlers?.streamPropertyChanged?.(event);
-      })
-    );
+      this.eventHandlers?.connectionCreated?.(event);
+    });
+    OT.onConnectionDestroyed((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.connectionDestroyed?.(event);
+    });
+    OT.onArchiveStarted((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.archiveStarted?.(event);
+    });
+    OT.onArchiveStopped((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.archiveStopped?.(event);
+    });
+    OT.onMuteForced((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.muteForced?.(event);
+    });
+    OT.onSessionReconnecting((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.sessionReconnecting?.(event);
+    });
+    OT.onSessionReconnected((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.sessionReconnected?.(event);
+    });
+    OT.onStreamPropertyChanged((event) => {
+      if (event.sessionId !== sessionId) return;
+      this.eventHandlers?.streamPropertyChanged?.(event);
+    });
 
     OT.connect(sessionId, token);
   }
@@ -254,14 +221,6 @@ export default class OTSession extends Component {
   }
 
   componentWillUnmount() {
-    // Remove all EventEmitter subscriptions to prevent listener accumulation
-    for (const subscription of this._eventSubscriptions) {
-      if (subscription && typeof subscription.remove === 'function') {
-        subscription.remove();
-      }
-    }
-    this._eventSubscriptions = [];
-
     this.disconnectSession(this.props.sessionId);
     clearStreams(this.props.sessionId);
   }
