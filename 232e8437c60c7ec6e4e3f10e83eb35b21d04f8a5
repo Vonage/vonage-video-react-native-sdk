@@ -1,0 +1,34 @@
+detox.config.js
+  df7cb20140e0ab97 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "232e8437c60c7ec6e4e3f10e83eb35b21d04f8a5",
+  "prompts": {
+    "df7cb20140e0ab97": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "f508af41-185c-4361-9ff5-2c0be673f4dc",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-07-24T12:33:52.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot-cli/gpt-4o).",
+          "timestamp": "2026-07-24T12:33:52.000Z"
+        }
+      ],
+      "total_additions": 9,
+      "total_deletions": 0,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
