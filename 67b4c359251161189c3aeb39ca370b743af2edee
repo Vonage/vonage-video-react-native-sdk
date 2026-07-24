@@ -1,0 +1,36 @@
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  b59a2ae541cd8269 1-10
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  b59a2ae541cd8269 1-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "67b4c359251161189c3aeb39ca370b743af2edee",
+  "prompts": {
+    "b59a2ae541cd8269": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "92d340d2-235a-40c1-928b-78ac0c311d91",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-07-24T06:41:40.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot-cli/gpt-4o).",
+          "timestamp": "2026-07-24T06:41:40.000Z"
+        }
+      ],
+      "total_additions": 66,
+      "total_deletions": 11,
+      "accepted_lines": 66,
+      "overriden_lines": 0
+    }
+  }
+}
