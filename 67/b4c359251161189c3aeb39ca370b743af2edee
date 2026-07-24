@@ -1,0 +1,22 @@
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_d34cb1a085c9a7::t_13d1e0cef1082e 405-411,459
+  s_d34cb1a085c9a7::t_deab2530d95859 404,412-458
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d34cb1a085c9a7::t_b615f598b5d6d4 214-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "67b4c359251161189c3aeb39ca370b743af2edee",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
