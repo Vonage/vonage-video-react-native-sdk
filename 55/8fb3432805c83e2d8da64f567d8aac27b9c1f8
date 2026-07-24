@@ -1,0 +1,19 @@
+React-native-TestApp/__tests__/session.e2e.js
+  s_d34cb1a085c9a7::t_506f08ddbb6005 120-122,130-131,133,136,139,141,143-144,146-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "558fb3432805c83e2d8da64f567d8aac27b9c1f8",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
