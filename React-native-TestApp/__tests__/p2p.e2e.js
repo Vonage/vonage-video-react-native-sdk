@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession } = require('./helpers/testSession');
+const { TestSession, poll } = require('./helpers/testSession');
 
 /**
  * P2P (Relayed) Session Tests
@@ -83,7 +83,7 @@ describe('P2P (Relayed) Session', () => {
     // Republish
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Republished.');
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
+    await poll(() => expect(element(by.id('publisher'))).toExist(), 15000);
     console.log('[p2p-unpub] Publisher restored in P2P.');
   });
 

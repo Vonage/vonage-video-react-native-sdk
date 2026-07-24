@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession } = require('./helpers/testSession');
+const { TestSession, poll } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 const { forceDisconnect, forceMuteStream, forceUnpublish } = require('./helpers/openTokRest');
@@ -70,8 +70,8 @@ describe('Moderation', () => {
     console.log('[forceMute] Bot was force-muted!');
 
     // Verify event indicators on the RN app side
-    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(5000);
+    await poll(() => expect(element(by.id('session-forceMute'))).not.toHaveText('0'), 5000);
+    await poll(() => expect(element(by.id('publisher-forceMute'))).not.toHaveText('0'), 5000);
 
     // Verify muteForced payload (moderator may not always receive this callback)
     try {
@@ -217,7 +217,7 @@ describe('Moderation', () => {
     jestExpect(destroyedEvent.streamId).toBe(streamId);
     console.log('[forceUnpublish] streamDestroyed streamId matches.');
 
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    await poll(() => expect(element(by.id('session-streamDestroyed'))).not.toHaveText('0'), 5000);
     await expect(element(by.id('disconnectSession'))).toBeVisible();
     console.log('[forceUnpublish] Force-unpublish completed.');
   });

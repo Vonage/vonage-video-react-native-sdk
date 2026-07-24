@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession } = require('./helpers/testSession');
+const { TestSession, poll } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
@@ -39,12 +39,12 @@ describe('Publish and Subscribe', () => {
     // Connect app and start publishing
     console.log('[publish→bot] Connecting app...');
     await session.connectApp();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(30000);
+    await poll(() => expect(element(by.id('publisher'))).toExist(), 30000);
     console.log('[publish→bot] App connected and publishing.');
 
     // Verify session and publisher events fired
-    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await poll(() => expect(element(by.id('session-sessionConnected'))).not.toHaveText('0'), 5000);
+    await poll(() => expect(element(by.id('publisher-streamCreated'))).not.toHaveText('0'), 5000);
     console.log('[publish→bot] Session/publisher event indicators confirmed.');
 
     // Add bot — 2 participants = relayed
@@ -68,7 +68,7 @@ describe('Publish and Subscribe', () => {
     jestExpect(state.subscriberCount).toBeGreaterThanOrEqual(1);
 
     // Verify publisher stream created event indicator
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await poll(() => expect(element(by.id('publisher-streamCreated'))).not.toHaveText('0'), 5000);
   });
 
   it('Bot publishes → RN app shows subscriber', async () => {
@@ -85,11 +85,11 @@ describe('Publish and Subscribe', () => {
 
     // Wait for subscriber view to appear
     console.log('[bot→subscribe] Waiting for app subscriber (15s)...');
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
+    await poll(() => expect(element(by.id('subscriber'))).toExist(), 15000);
     console.log('[bot→subscribe] Subscriber visible in app!');
 
     // Verify session stream created event indicator
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await poll(() => expect(element(by.id('session-streamCreated'))).not.toHaveText('0'), 5000);
 
     // Verify streamCreated payload — bot publishes with name 'bot-publisher'
     const streamEvent = await waitForEvent('streamCreated', 15000);

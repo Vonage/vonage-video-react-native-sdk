@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession } = require('./helpers/testSession');
+const { TestSession, poll } = require('./helpers/testSession');
 
 /**
  * Encryption Tests
@@ -38,11 +38,11 @@ describe('Encryption', () => {
     console.log('[encryption] App connected with encryption secret.');
 
     // Verify publisher is active (no crash)
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(10000);
+    await poll(() => expect(element(by.id('publisher'))).toExist(), 10000);
     console.log('[encryption] Publisher visible — encryption did not prevent publishing.');
 
     // Verify session stays connected
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 5000);
     console.log('[encryption] Session remains stable with encryption.');
   });
 
@@ -52,7 +52,7 @@ describe('Encryption', () => {
     console.log('[encryption] Bot connected and publishing.');
 
     // Verify subscriber appeared
-    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+    await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
     console.log('[encryption] Subscriber view appeared — stream received.');
 
     // Verify bot sees the app's stream
@@ -60,7 +60,7 @@ describe('Encryption', () => {
     console.log('[encryption] Bot received app stream.');
 
     // Verify no errors on app side
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 5000);
     console.log('[encryption] No crashes — publish/subscribe works with encryption configured.');
   });
 
@@ -74,8 +74,8 @@ describe('Encryption', () => {
     console.log('[encryption] Reconnected successfully after encryption session.');
 
     // Verify publisher still works
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(10000);
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await poll(() => expect(element(by.id('publisher'))).toExist(), 10000);
+    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 5000);
     console.log('[encryption] Session stable on reconnect.');
   });
 });
