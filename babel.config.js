@@ -1,3 +1,14 @@
-module.exports = {
-  presets: ['module:react-native-builder-bob/babel-preset'],
+// The builder-bob preset compiles the published library; it does not strip the TS-style spec
+// syntax (`interface … { readonly … }`) that React Native 0.87 ships in its own source (e.g.
+// specs_DEPRECATED/*). Under jest, transform React Native's sources with @react-native/babel-preset
+// instead, which understands that syntax. Builds are unaffected.
+module.exports = (api) => {
+  const isTest = api.env('test');
+  return {
+    presets: [
+      isTest
+        ? 'module:@react-native/babel-preset'
+        : 'module:react-native-builder-bob/babel-preset',
+    ],
+  };
 };
