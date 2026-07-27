@@ -92,10 +92,36 @@ jobs:
           echo "Selected simulator: $DEVICE_NAME"
           echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
 
-      - name: Build iOS Detox app (Release)
+      - name: Build iOS Detox app
         env:
           DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
-        run: npm run test:e2e:ios:build:release
+        run: npm run test:e2e:ios:build
+
+      - name: Start Metro bundler
+        working-directory: React-native-TestApp
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          METRO_PID=$!
+          echo "Metro PID: $METRO_PID"
+          
+          for i in {1..120}; do
+            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+              echo "Metro is running on attempt $i"
+              exit 0
+            fi
+            if ! ps -p $METRO_PID > /dev/null 2>&1; then
+              echo "Metro process died"
+              tail -n 100 metro.log || true
+              exit 1
+            fi
+            sleep 3
+          done
+          
+          echo "Metro failed to start after 120 retries"
+          echo "=== Metro log output ==="
+          tail -n 150 metro.log || true
+          kill $METRO_PID 2>/dev/null || true
+          exit 1
 
       - name: Run iOS Detox tests
         env:
@@ -103,7 +129,7 @@ jobs:
           VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
           API_URL: ${{ secrets.API_URL }}
-        run: npm run test:e2e:ios:release
+        run: npm run test:e2e:ios
 
   e2e-android-tests:
     needs: unit-tests
