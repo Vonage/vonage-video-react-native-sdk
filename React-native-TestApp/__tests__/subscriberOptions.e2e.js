@@ -11,10 +11,6 @@ const { expect: jestExpect } = require('expect');
  * Organized into two groups by topology:
  *   - Single bot (relayed): toggle video/audio, unsubscribe/resubscribe, volume
  *   - Multi bot (routed): multiple subscribers, disconnect behavior
- *
- * NOTE: All assertions use poll() instead of Detox's waitFor().withTimeout()
- * because the aggressive polling (~100ms) saturates the main thread when
- * WebRTC callbacks are active. poll() checks every 2s instead.
  */
 describe('Subscriber Options', () => {
   let session;
@@ -54,8 +50,8 @@ describe('Subscriber Options', () => {
       console.log('[sub] Subscriber visible.');
 
       // Verify event indicators
-      await poll(() => expect(element(by.id('session-streamCreated'))).not.toHaveText('0'), 5000);
-      await poll(() => expect(element(by.id('session-connectionCreated'))).not.toHaveText('0'), 5000);
+      await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+      await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
       // Verify streamCreated payload
       const streamEvent = await waitForEvent('streamCreated');
@@ -78,12 +74,12 @@ describe('Subscriber Options', () => {
       console.log('[subVideo] Toggled subscribeToVideo off.');
 
       // Subscriber should still exist (audio-only now)
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
 
       // Toggle video back on
       await element(by.id('toggleSubscribeVideo')).tap();
       console.log('[subVideo] Toggled subscribeToVideo on.');
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[subVideo] Subscribe video toggle works.');
     });
 
@@ -95,12 +91,12 @@ describe('Subscriber Options', () => {
       await element(by.id('tabSubscriber')).tap();
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
 
       // Toggle audio back on
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio on.');
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[subAudio] Subscribe audio toggle works.');
     });
 
@@ -114,7 +110,7 @@ describe('Subscriber Options', () => {
       console.log('[unsubscribe] Tapped unsubscribe.');
 
       // Wait for subscriber to disappear
-      await poll(() => expect(element(by.id('subscriber'))).not.toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
       console.log('[unsubscribe] Subscriber view removed.');
     });
 
@@ -125,14 +121,14 @@ describe('Subscriber Options', () => {
       // Unsubscribe first
       await element(by.id('tabSubscriber')).tap();
       await element(by.id('unsubscribe')).tap();
-      await poll(() => expect(element(by.id('subscriber'))).not.toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
 
       // Resubscribe
       await element(by.id('resubscribe')).tap();
       console.log('[resubscribe] Tapped resubscribe.');
 
       // Subscriber view should reappear
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[resubscribe] Subscriber view restored.');
     });
 
@@ -144,7 +140,7 @@ describe('Subscriber Options', () => {
       await element(by.id('tabSubscriber')).tap();
       await element(by.id('setVolume0')).tap();
       console.log('[volume0] Set volume to 0.');
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[volume0] Subscriber still exists after volume 0.');
     });
 
@@ -156,7 +152,7 @@ describe('Subscriber Options', () => {
       await element(by.id('tabSubscriber')).tap();
       await element(by.id('setVolume50')).tap();
       console.log('[volume50] Set volume to 50.');
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[volume50] Subscriber still exists after volume 50.');
     });
   });
@@ -171,7 +167,7 @@ describe('Subscriber Options', () => {
       await session.addBot();
       console.log('[multi] Bot2 joined.');
 
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[multi] Subscriber visible with 2 bots.');
     });
 
@@ -189,7 +185,7 @@ describe('Subscriber Options', () => {
       console.log('[persist] Bot2 disconnected.');
 
       // Subscriber should still exist (bot1 is still publishing)
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 5000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[persist] Subscriber still visible after bot2 left.');
     });
 

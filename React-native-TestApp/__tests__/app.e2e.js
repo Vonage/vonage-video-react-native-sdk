@@ -1,7 +1,5 @@
 'use strict';
 
-const { poll } = require('./helpers/testSession');
-
 describe('App Launch Test', () => {
   beforeAll(async () => {
     await device.launchApp({
@@ -32,7 +30,7 @@ describe('App Launch Test', () => {
     
     try {
       // Poll until the app has loaded — give it up to 4 minutes on slow CI runners
-      await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 240000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(240000);
       console.log('App launched successfully — "submitButton" is visible');
     } catch (error) {
       // Print the full error so the view hierarchy (verbose mode) appears in the log
@@ -56,11 +54,12 @@ describe('App Launch Test', () => {
     
     // Check that API key input has value (credentials loaded)
     console.log('Waiting for apiKeyInput to be visible...');
-    await poll(() => expect(element(by.id('apiKeyInput'))).toBeVisible(), 60000);
+    const apiKeyInput = element(by.id('apiKeyInput'));
+    await waitFor(apiKeyInput).toBeVisible().withTimeout(60000);
     console.log('apiKeyInput is visible');
     
     // Check for submit button
-    await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 30000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(30000);
     
     console.log('About to tap submit button');
 

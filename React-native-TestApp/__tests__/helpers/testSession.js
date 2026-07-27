@@ -107,7 +107,7 @@ class TestSession {
     await this.joinBot(bot, joinOptions);
 
     if (shouldWait) {
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), subscriberTimeout);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(subscriberTimeout);
     }
 
     return bot;
@@ -118,7 +118,7 @@ class TestSession {
   async connectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     } catch (_) {}
 
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
@@ -128,26 +128,26 @@ class TestSession {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
     await element(by.id('submitButton')).tap();
-    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 30000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
 
   async connectAppWithCredentials(apiKey, sessionId, token) {
     try {
       await element(by.id('disconnectSession')).tap();
-      await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     } catch (_) {}
 
     await element(by.id('apiKeyInput')).replaceText(apiKey);
     await element(by.id('sessionIdInput')).replaceText(sessionId);
     await element(by.id('tokenInput')).replaceText(token);
     await element(by.id('submitButton')).tap();
-    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 30000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
 
   async disconnectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     } catch (_) {}
   }
 
@@ -189,15 +189,14 @@ class TestSession {
 /**
  * General-purpose polling wrapper for Detox assertions.
  *
- * Replaces waitFor().withTimeout() with controlled polling at a longer interval
- * (default 2s vs Detox's ~100ms). This prevents main thread saturation when
- * WebRTC teardown or high-frequency native SDK callbacks are in progress.
+ * Use this ONLY for assertions that are known to saturate the main thread
+ * when using Detox's built-in waitFor() (e.g. not.toExist() during WebRTC
+ * teardown with multiple subscribers). For normal assertions, prefer
+ * Detox's native waitFor().withTimeout() which respects disableSynchronization().
  *
- * Usage:
- *   await poll(() => expect(element(by.id('X'))).toExist());
- *   await poll(() => expect(element(by.id('X'))).not.toExist());
- *   await poll(() => expect(element(by.id('X'))).toBeVisible());
- *   await poll(() => expect(element(by.id('X'))).not.toHaveText('0'));
+ * The key difference: Detox's expect() waits for EarlGrey/Espresso idle sync
+ * before evaluating, which can hang on CI. This helper catches and retries
+ * without waiting for idle.
  *
  * @param {() => Promise<void>} assertion - Detox assertion to poll
  * @param {number} [timeout=15000] - Maximum time to wait in ms

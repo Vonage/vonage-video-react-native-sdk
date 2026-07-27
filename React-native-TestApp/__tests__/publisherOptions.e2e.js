@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession, poll } = require('./helpers/testSession');
+const { TestSession } = require('./helpers/testSession');
 
 /**
  * Publisher Options Tests
@@ -29,7 +29,7 @@ describe('Publisher Options', () => {
     console.log('[publisherOptions] Connected.');
 
     // Wait for publisher to be active
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 15000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[publisherOptions] Publisher active.');
   });
 
@@ -43,11 +43,11 @@ describe('Publisher Options', () => {
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Muted.');
 
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Unmuted.');
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
 
   it('toggle video off then on (camera off/on)', async () => {
@@ -55,46 +55,46 @@ describe('Publisher Options', () => {
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera off.');
 
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera on.');
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
 
   it('unpublish then republish', async () => {
     await element(by.id('tabSession')).tap();
-    await poll(() => expect(element(by.id('stopPublishing'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
     await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Unpublished.');
 
-    await poll(() => expect(element(by.id('stopPublishing'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
     await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Republished.');
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 15000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[unpublish] Publisher exists again.');
   });
 
   it('publish audio-only (video off)', async () => {
     await element(by.id('tabPublisher')).tap();
-    await poll(() => expect(element(by.id('hasVideo'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasVideo')).tap();
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[audio-only] Publishing audio only.');
 
     // Restore
     await element(by.id('hasVideo')).tap();
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
 
   it('publish video-only (audio off)', async () => {
     await element(by.id('tabPublisher')).tap();
     await element(by.id('hasAudio')).tap();
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[video-only] Publishing video only.');
 
     // Restore
     await element(by.id('hasAudio')).tap();
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession, poll } = require('./helpers/testSession');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
@@ -116,7 +116,7 @@ describe('Moderation Advanced', () => {
       console.log('[disableForceMute] forceMuteAll called.');
 
       // Verify muteForced received on app
-      await poll(() => expect(element(by.id('session-forceMute'))).not.toHaveText('0'), 10000);
+      await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(10000);
       console.log('[disableForceMute] muteForced received on app.');
 
       // Verify bot got muted
@@ -149,7 +149,7 @@ describe('Moderation Advanced', () => {
       console.log('[forceMuteStream] Bot connected and publishing.');
 
       // Wait for subscriber to appear
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 15000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
 
       // Get the bot's streamId
       const streamId = await bot.page.evaluate(() => {
@@ -196,7 +196,7 @@ describe('Moderation Advanced', () => {
       console.log('[streamCreated] Bot connected.');
 
       // Wait for subscriber to appear
-      await poll(() => expect(element(by.id('subscriber'))).toExist(), 15000);
+      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
 
       // Verify streamCreated payload
       const event = await waitForEvent('streamCreated', 15000);

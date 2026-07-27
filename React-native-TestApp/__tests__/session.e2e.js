@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession, poll } = require('./helpers/testSession');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
@@ -44,12 +44,12 @@ describe('Session Lifecycle', () => {
     console.log('[session] Connected.');
 
     // Verify session connected event indicator
-    await poll(() => expect(element(by.id('session-sessionConnected'))).not.toHaveText('0'), 5000);
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
 
     // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected cleanly.');
   });
 
@@ -62,13 +62,13 @@ describe('Session Lifecycle', () => {
     // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected.');
 
     // Reconnect
     console.log('[session] Reconnecting...');
     await session.connectApp();
-    await poll(() => expect(element(by.id('disconnectSession'))).toBeVisible(), 30000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[session] Reconnected successfully.');
   });
 
@@ -78,12 +78,12 @@ describe('Session Lifecycle', () => {
     await session.connectApp();
 
     // Wait for publisher to appear (confirms we are actively publishing)
-    await poll(() => expect(element(by.id('publisher'))).toExist(), 30000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(30000);
     console.log('[session] Publishing. Disconnecting...');
 
     // Disconnect while publishing
     await session.disconnectApp();
-    await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while publishing — no crash.');
   });
 
@@ -108,7 +108,7 @@ describe('Session Lifecycle', () => {
     // Disconnect while subscribing
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await poll(() => expect(element(by.id('submitButton'))).toBeVisible(), 5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 

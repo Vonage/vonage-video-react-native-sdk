@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession, poll } = require('./helpers/testSession');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
@@ -45,8 +45,8 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Subscriber visible!');
 
     // Verify event indicators
-    await poll(() => expect(element(by.id('session-streamCreated'))).not.toHaveText('0'), 5000);
-    await poll(() => expect(element(by.id('session-connectionCreated'))).not.toHaveText('0'), 5000);
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
     // Verify streamCreated payload
     const streamEvent = await waitForEvent('streamCreated', 15000);
@@ -96,11 +96,11 @@ describe('Subscriber Tests', () => {
     }
 
     // Confirm the counter incremented
-    await poll(() => expect(element(by.id('session-streamDestroyed'))).not.toHaveText('0'), 5000);
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
     console.log('[subscriber] Stream destroyed event verified with correct streamId.');
 
     // Give the UI time to unmount the subscriber view
-    await poll(() => expect(element(by.id('subscriber'))).not.toExist(), 10000);
+    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(10000);
     console.log('[subscriber] Subscriber gone after bot disconnect.');
   });
 });
