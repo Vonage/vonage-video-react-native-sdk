@@ -1,0 +1,19 @@
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_d34cb1a085c9a7::t_7e01859e84e17a 62,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "90df07ce29b18b2b5aa6bf790bd424a7e5e2af5c",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
