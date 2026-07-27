@@ -1,0 +1,43 @@
+React-native-TestApp/__tests__/p2p.e2e.js
+  s_d34cb1a085c9a7::t_ad966d1de18c96 3,86
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  s_d34cb1a085c9a7::t_a976c2d8b94309 3,32,46,50,58,62,67,71,74,80,82,87,93,98
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_d34cb1a085c9a7::t_ffb32486df4dda 137,144
+  s_d34cb1a085c9a7::t_63d18825d31ebc 121,131
+  s_d34cb1a085c9a7::t_78abbf7a4ab1e6 192-195,197-199
+  s_d34cb1a085c9a7::t_138ec2bd1030de 150
+  s_d34cb1a085c9a7::t_cdc25b9fde3000 110
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_d34cb1a085c9a7::t_1ceb5e0e08ec5b 3,48-49,99,103
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_d34cb1a085c9a7::t_db12e920b7e967 3,42,46-47,71,88,92
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d34cb1a085c9a7::t_203abb4d8fcda1 53-54,77,82,94,99,113,124,131,143,155,170,188
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_d34cb1a085c9a7::t_b8fec6329ccad8 3,119,152,199
+React-native-TestApp/__tests__/session.e2e.js
+  s_d34cb1a085c9a7::t_0a7f7417bfa9ea 3,47,52,65,71,81,86,111
+React-native-TestApp/__tests__/app.e2e.js
+  s_d34cb1a085c9a7::t_9467762bef8f7a 33,57-58,62
+React-native-TestApp/__tests__/encryption.e2e.js
+  s_d34cb1a085c9a7::t_66f0ed292fb799 3,41,45,55,63,77-78
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_d34cb1a085c9a7::t_f152fec10671c1 3,73-74,220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "97088797512d3b43b22698c3bb45dfe12c768637",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
