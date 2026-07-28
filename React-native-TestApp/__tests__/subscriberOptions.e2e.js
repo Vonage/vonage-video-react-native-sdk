@@ -70,6 +70,7 @@ describe('Subscriber Options', () => {
 
       // Toggle video off
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('toggleSubscribeVideo'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeVideo')).tap();
       console.log('[subVideo] Toggled subscribeToVideo off.');
 
@@ -89,6 +90,7 @@ describe('Subscriber Options', () => {
 
       // Toggle audio off
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('toggleSubscribeAudio'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -106,6 +108,7 @@ describe('Subscriber Options', () => {
 
       // Unsubscribe
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('unsubscribe'))).toBeVisible().withTimeout(5000);
       await element(by.id('unsubscribe')).tap();
       console.log('[unsubscribe] Tapped unsubscribe.');
 
@@ -138,6 +141,7 @@ describe('Subscriber Options', () => {
 
       // Set volume to 0
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('setVolume0'))).toBeVisible().withTimeout(5000);
       await element(by.id('setVolume0')).tap();
       console.log('[volume0] Set volume to 0.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -150,6 +154,7 @@ describe('Subscriber Options', () => {
 
       // Set volume to 50
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('setVolume50'))).toBeVisible().withTimeout(5000);
       await element(by.id('setVolume50')).tap();
       console.log('[volume50] Set volume to 50.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
