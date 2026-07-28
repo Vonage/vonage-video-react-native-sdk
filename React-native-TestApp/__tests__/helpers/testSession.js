@@ -127,6 +127,9 @@ class TestSession {
     if (this.credentials.apiUrl) {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
+    // Dismiss keyboard before tapping Connect — on iOS, replaceText leaves
+    // the keyboard open which can intercept the tap on the submit button.
+    await element(by.id('apiUrlInput')).tapReturnKey();
     await device.takeScreenshot('connectApp-before-tap');
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
