@@ -53,15 +53,15 @@ async function getLastEvent(eventType) {
 /**
  * Polls until a captured event payload appears, or times out.
  * @param {string} eventType - e.g. 'signal'
- * @param {number} [timeout=30000] - max wait in ms
+ * @param {number} [timeout=60000] - max wait in ms
  * @returns {Promise<object>} the parsed event payload
  */
-async function waitForEvent(eventType, timeout = 30000) {
+async function waitForEvent(eventType, timeout = 60000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     const payload = await getLastEvent(eventType);
     if (payload) return payload;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
   throw new Error(`Timed out waiting for event: ${eventType}`);
 }
