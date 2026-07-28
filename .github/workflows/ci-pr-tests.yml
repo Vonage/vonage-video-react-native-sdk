@@ -131,6 +131,16 @@ jobs:
           API_URL: ${{ secrets.API_URL }}
         run: npm run test:e2e:ios
 
+      - name: Upload iOS E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-e2e-diagnostics
+          path: |
+            artifacts/
+            React-native-TestApp/metro.log
+          if-no-files-found: ignore
+
   e2e-android-tests:
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository

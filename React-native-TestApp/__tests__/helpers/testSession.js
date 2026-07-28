@@ -127,6 +127,7 @@ class TestSession {
     if (this.credentials.apiUrl) {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
+    await device.takeScreenshot('connectApp-before-tap');
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
