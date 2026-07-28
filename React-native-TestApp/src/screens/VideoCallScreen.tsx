@@ -119,6 +119,7 @@ class VideoCallScreen extends Component<{}, State> {
 
   componentDidMount() {
     this.applyCodecPreference();
+    this._flushTimer = setInterval(() => this._flushCounters(), 1000);
   }
 
   componentDidUpdate(prevProps: {}, prevState: State) {
@@ -136,57 +137,39 @@ class VideoCallScreen extends Component<{}, State> {
   componentWillUnmount() {
     this.stopStatsPolling();
     if (this._flushTimer) {
-      clearTimeout(this._flushTimer);
+      clearInterval(this._flushTimer);
       this._flushTimer = null;
     }
   }
 
   startStatsPolling = () => {
-    this.stopStatsPolling();
+    if (this.statsUpdateInterval) {
+      clearInterval(this.statsUpdateInterval);
+    }
     
-    // Use chained setTimeout instead of setInterval to avoid keeping
-    // a permanent timer on the main run loop (which blocks Detox/EarlGrey idle detection).
-    const scheduleNext = () => {
-      this.statsUpdateInterval = setTimeout(() => {
-        this.statsUpdateInterval = null;
-        this.publisherMethodGetRtcStatsReport();
-        // Re-schedule only if still connected
-        if (this.state.connectedToSession && !this.state.forceDisconnect) {
-          scheduleNext();
-        }
-      }, 10000);
-    };
-
     // Delay first request to ensure publisher is ready
-    this.statsUpdateInterval = setTimeout(() => {
-      this.statsUpdateInterval = null;
+    setTimeout(() => {
       this.publisherMethodGetRtcStatsReport();
-      scheduleNext();
     }, 2000);
+    
+    // Poll for stats every 5 seconds (longer interval to avoid Detox idle detection issues)
+    this.statsUpdateInterval = setInterval(() => {
+      this.publisherMethodGetRtcStatsReport();
+    }, 10000);
   };
 
   stopStatsPolling = () => {
     if (this.statsUpdateInterval) {
-      clearTimeout(this.statsUpdateInterval);
+      clearInterval(this.statsUpdateInterval);
       this.statsUpdateInterval = null;
     }
   };
 
   // --- Batched event counter system ---
   // Event handlers increment counters here (no setState).
-  // A flush timer starts on-demand when counters accumulate, and stops
-  // once flushed — this keeps the main thread idle when no events are firing,
-  // which is critical for Detox/EarlGrey idle detection in E2E tests.
+  // A timer flushes accumulated changes to state every 1s.
   _pendingCounters: Record<string, Record<string, number>> = {};
-  _flushTimer: ReturnType<typeof setTimeout> | null = null;
-
-  _scheduleFlush = () => {
-    if (this._flushTimer) return; // Already scheduled
-    this._flushTimer = setTimeout(() => {
-      this._flushTimer = null;
-      this._flushCounters();
-    }, 1000);
-  };
+  _flushTimer: ReturnType<typeof setInterval> | null = null;
 
   _flushCounters = () => {
     const pending = this._pendingCounters;
@@ -214,7 +197,6 @@ class VideoCallScreen extends Component<{}, State> {
       }
       this._pendingCounters[eventGroup][eventType] =
         (this._pendingCounters[eventGroup][eventType] || 0) + 1;
-      this._scheduleFlush();
       return;
     }
     // Non-counter updates still go through setState immediately
