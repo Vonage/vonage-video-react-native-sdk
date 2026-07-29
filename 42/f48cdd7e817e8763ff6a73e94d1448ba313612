@@ -1,0 +1,32 @@
+React-native-TestApp/__tests__/helpers/waitForApp.js
+  s_d34cb1a085c9a7::t_c4c6ee3ed803ac 9,11,18
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d34cb1a085c9a7::t_7fdd75f00e67ff 214-215
+  s_d34cb1a085c9a7::t_b55cb93eb28ee1 3
+React-native-TestApp/__tests__/p2p.e2e.js
+  s_d34cb1a085c9a7::t_682eb43cc59d2a 68
+  s_d34cb1a085c9a7::t_10f7a57503ce4b 102,106
+  s_d34cb1a085c9a7::t_e444b725193c4d 122,126
+.github/workflows/ci-pr-tests.yml
+  s_d34cb1a085c9a7::t_1af93afd6f744c 32
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_d34cb1a085c9a7::t_f89d2ed8abe0f3 194
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  s_d34cb1a085c9a7::t_b428fd21aa34e8 62,65,70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "42f48cdd7e817e8763ff6a73e94d1448ba313612",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
