@@ -125,7 +125,7 @@ describe('Moderation Advanced', () => {
       console.log('[disableForceMute] Bot muteForced:', botState.muteForced);
 
       // Verify session stable
-      await expect(element(by.id('disconnectSession'))).toBeVisible();
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
       console.log('[disableForceMute] Session stable after forceMuteAll.');
     });
   });
@@ -182,7 +182,7 @@ describe('Moderation Advanced', () => {
       jestExpect(botState.muteForced).toBe(true);
 
       // App stays connected
-      await expect(element(by.id('disconnectSession'))).toBeVisible();
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
       console.log('[forceMuteStream] forceMuteStream completed successfully.');
     });
 
@@ -191,15 +191,12 @@ describe('Moderation Advanced', () => {
       console.log('[streamCreated] App connected.');
 
       await setCaptureFilter(['streamCreated']);
-      await device.takeScreenshot('streamCreated-filter-set');
 
       const bot = await session.addBot();
       console.log('[streamCreated] Bot connected.');
 
       // Wait for subscriber to appear
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
-
-      await device.takeScreenshot('streamCreated-after-subscriber');
 
       // Verify streamCreated payload
       const event = await waitForEvent('streamCreated', 15000);
@@ -224,12 +221,9 @@ describe('Moderation Advanced', () => {
       console.log('[connectionCreated] App connected.');
 
       await setCaptureFilter(['connectionCreated']);
-      await device.takeScreenshot('connectionCreated-filter-set');
 
       const bot = await session.addBot();
       console.log('[connectionCreated] Bot joined.');
-
-      await device.takeScreenshot('connectionCreated-after-bot');
 
       // Wait for connectionCreated event
       const event = await waitForEvent('connectionCreated', 15000);

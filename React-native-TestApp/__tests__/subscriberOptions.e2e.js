@@ -1,6 +1,6 @@
 'use strict';
 
-const { TestSession, poll } = require('./helpers/testSession');
+const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
@@ -211,10 +211,8 @@ describe('Subscriber Options', () => {
       await bot1.disconnect();
       console.log('[disappear] Bot1 disconnected (last bot).');
 
-      // Use controlled polling (2s interval) instead of Detox's aggressive
-      // waitFor().not.toExist() (~100ms) to avoid main thread saturation
-      // during WebRTC teardown
-      await poll(() => expect(element(by.id('subscriber'))).not.toExist(), 30000);
+      // Wait for subscriber to disappear after all bots disconnected
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(30000);
       console.log('[disappear] Subscriber gone after all bots disconnected.');
     });
   });

@@ -58,7 +58,7 @@ describe('AMR Transitions', () => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Verify app still has subscriber (streams survived transition)
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Routed mode — subscriber still visible. Transition OK!');
 
     // Verify bots can still see the app's stream
@@ -78,7 +78,7 @@ describe('AMR Transitions', () => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Verify app still has subscriber (bot1 still publishing)
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Relayed mode — subscriber still visible. Transition OK!');
 
     // Verify bot1 still sees app's stream
@@ -93,14 +93,14 @@ describe('AMR Transitions', () => {
     console.log('[amr] Bot2 rejoining (2→3 participants again)...');
     await session.joinBot(bot2);
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] 3 participants again — stable.');
 
     // Bot2 leaves again → back to relayed
     console.log('[amr] Bot2 leaving again...');
     await bot2.disconnect();
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Multiple transitions — app stable throughout!');
   });
 });

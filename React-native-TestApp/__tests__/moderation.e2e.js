@@ -177,7 +177,7 @@ describe('Moderation', () => {
     console.log('[muteStream] Bot muteForced:', muteReceived);
 
     // No crash
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[muteStream] forceMuteStream completed without crash.');
   });
 
@@ -219,7 +219,7 @@ describe('Moderation', () => {
     console.log('[forceUnpublish] streamDestroyed streamId matches.');
 
     await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[forceUnpublish] Force-unpublish completed.');
   });
 

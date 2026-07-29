@@ -132,7 +132,6 @@ class TestSession {
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
-    await device.takeScreenshot('connectApp-before-tap');
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
@@ -192,37 +191,4 @@ class TestSession {
   }
 }
 
-/**
- * General-purpose polling wrapper for Detox assertions.
- *
- * Use this ONLY for assertions that are known to saturate the main thread
- * when using Detox's built-in waitFor() (e.g. not.toExist() during WebRTC
- * teardown with multiple subscribers). For normal assertions, prefer
- * Detox's native waitFor().withTimeout() which respects disableSynchronization().
- *
- * The key difference: Detox's expect() waits for EarlGrey/Espresso idle sync
- * before evaluating, which can hang on CI. This helper catches and retries
- * without waiting for idle.
- *
- * @param {() => Promise<void>} assertion - Detox assertion to poll
- * @param {number} [timeout=15000] - Maximum time to wait in ms
- * @param {number} [interval=2000] - Time between polls in ms
- */
-async function poll(assertion, timeout = 15000, interval = 2000) {
-  const start = Date.now();
-  while (Date.now() - start < timeout) {
-    try {
-      await assertion();
-      return; // Assertion passed
-    } catch (_) {
-      // Not yet — wait before next check
-      const remaining = timeout - (Date.now() - start);
-      if (remaining <= 0) break;
-      await new Promise((resolve) => setTimeout(resolve, Math.min(interval, remaining)));
-    }
-  }
-  // Final attempt — let it throw with a proper Detox error message
-  await assertion();
-}
-
-module.exports = { TestSession, poll };
+module.exports = { TestSession };
