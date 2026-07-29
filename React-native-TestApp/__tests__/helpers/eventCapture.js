@@ -19,6 +19,11 @@
 async function setCaptureFilter(eventTypes) {
   await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
+  // Dismiss keyboard before tapping Set Filter — on iOS, replaceText leaves
+  // the keyboard open which can intercept the tap on Set Filter button.
+  try {
+    await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
+  } catch (_) {}
   await element(by.id('setCaptureFilter')).tap();
   await new Promise((resolve) => setTimeout(resolve, 2000));
 }
