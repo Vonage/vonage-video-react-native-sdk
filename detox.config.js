@@ -19,6 +19,11 @@ module.exports = {
       binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app`,
       build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
     },
+    'ios.release': {
+      type: 'ios.app',
+      binaryPath: `${iosAppRoot}/build/Build/Products/Release-iphonesimulator/ReactNativeTesApp.app`,
+      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Release -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+    },
     'android.debug': {
       type: 'android.apk',
       binaryPath: `${androidAppRoot}/app/build/outputs/apk/debug/app-debug.apk`,
@@ -44,6 +49,10 @@ module.exports = {
     'ios.sim.debug': {
       device: 'simulator',
       app: 'ios.debug',
+    },
+    'ios.sim.release': {
+      device: 'simulator',
+      app: 'ios.release',
     },
     'android.emu.debug': {
       device: 'emulator',

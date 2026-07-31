@@ -8,7 +8,9 @@ const crypto = require('crypto');
  * Uses the REST API directly (no opentok npm dependency).
  *
  * Supports:
- *   - forceDisconnect(sessionId, connectionId)
+ *   - forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionId)
+ *   - forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId)
+ *   - forceUnpublish(apiKey, apiSecret, apiUrl, sessionId, streamId)
  */
 
 function generateJwt(apiKey, apiSecret) {
@@ -78,4 +80,19 @@ async function forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId) {
   }
 }
 
-module.exports = { forceDisconnect, forceMuteStream };
+/**
+ * Force-unpublishes a stream from a session via REST API.
+ */
+async function forceUnpublish(apiKey, apiSecret, apiUrl, sessionId, streamId) {
+  const jwt = generateJwt(apiKey, apiSecret);
+  const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/stream/${streamId}`;
+  const res = await httpRequest('DELETE', url, {
+    'X-OPENTOK-AUTH': jwt,
+    'Content-Type': 'application/json',
+  });
+  if (res.status !== 204 && res.status !== 200) {
+    throw new Error(`forceUnpublish failed: HTTP ${res.status} — ${res.body}`);
+  }
+}
+
+module.exports = { forceDisconnect, forceMuteStream, forceUnpublish };
