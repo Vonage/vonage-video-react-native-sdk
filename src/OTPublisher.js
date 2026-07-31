@@ -135,6 +135,24 @@ export default class OTPublisher extends React.Component {
     );
   }
 
+  setVideoTransformers(transformers = []) {
+    //NOSONAR - this method is exposed externally
+    OT.setVideoTransformers(
+      this.context.sessionId,
+      this.state.publisherId,
+      transformers
+    );
+  }
+
+  setAudioTransformers(transformers = []) {
+    //NOSONAR - this method is exposed externally
+    OT.setAudioTransformers(
+      this.context.sessionId,
+      this.state.publisherId,
+      transformers
+    );
+  }
+
   componentWillUnmount() {
     OT.unpublish(this.context.sessionId, this.state.publisherId);
     const publisherStreamId = getPublisherStream(this.context.sessionId);
