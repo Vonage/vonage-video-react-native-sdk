@@ -324,6 +324,8 @@ export type OTSessionInstance = React.Component<OTSessionProps> & {
 
 export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   getRtcStatsReport: () => void;
+  setVideoTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
+  setAudioTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {
