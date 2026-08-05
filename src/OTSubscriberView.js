@@ -72,7 +72,19 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioLevel?.(event.nativeEvent);
         }}
         onAudioNetworkStats={(event) => {
-          eventHandlers.audioNetworkStats?.(event.nativeEvent);
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" }.
+          // Parse the structured stats but keep the wrapper's other fields (e.g.
+          // stream), and guard the parse so malformed JSON can't crash the JS thread.
+          const { jsonStats, ...rest } = event.nativeEvent;
+          let eventData = event.nativeEvent;
+          if (jsonStats) {
+            try {
+              eventData = { ...rest, ...JSON.parse(jsonStats) };
+            } catch (e) {
+              eventData = rest;
+            }
+          }
+          eventHandlers.audioNetworkStats?.(eventData);
         }}
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
@@ -109,7 +121,19 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
         onVideoNetworkStats={(event) => {
-          eventHandlers.videoNetworkStats?.(event.nativeEvent);
+          // iOS ships these stats wrapped as { stream, jsonStats: "<string>" }.
+          // Parse the structured stats but keep the wrapper's other fields (e.g.
+          // stream), and guard the parse so malformed JSON can't crash the JS thread.
+          const { jsonStats, ...rest } = event.nativeEvent;
+          let eventData = event.nativeEvent;
+          if (jsonStats) {
+            try {
+              eventData = { ...rest, ...JSON.parse(jsonStats) };
+            } catch (e) {
+              eventData = rest;
+            }
+          }
+          eventHandlers.videoNetworkStats?.(eventData);
         }}
         style={style}
       />
