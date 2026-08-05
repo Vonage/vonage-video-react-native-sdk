@@ -370,6 +370,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     @Override
     public void onConnected(Session session) {
         Connection connection = session.getConnection();
+        if (connection == null) {
+          return;
+        }
         sharedState.getConnections().put(connection.getConnectionId(), connection);
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionConnected(payload);

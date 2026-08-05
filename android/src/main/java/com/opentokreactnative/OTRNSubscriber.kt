@@ -60,13 +60,14 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private fun refreshStreamCache(subscriber: SubscriberKit) {
         val stream = subscriber.stream ?: return
         val session = subscriber.session ?: return
+        val sessionId = session.sessionId ?: return
         streamCache = StreamCache(
             streamId = stream.streamId,
             height = stream.videoHeight,
             width = stream.videoWidth,
             creationTime = EventUtils.formatIso8601(stream.creationTime),
             connectionId = stream.connection.connectionId,
-            sessionId = session.sessionId,
+            sessionId = sessionId,
             connectionCreationTime = EventUtils.formatIso8601(stream.connection.creationTime),
             connectionData = stream.connection.data,
             name = stream.name,

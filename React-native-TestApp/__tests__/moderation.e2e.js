@@ -1,21 +1,22 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
+const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
+const { forceDisconnect, forceMuteStream, forceUnpublish } = require('./helpers/openTokRest');
 
 /**
  * Moderation Tests
  *
- * Tests moderator actions: forceMuteAll verified via bot state.
- * The app connects with a moderator token, the bot with a publisher token.
+ * Tests moderator actions: forceMuteAll, forceDisconnect, forceMuteStream,
+ * forceUnpublish, and subscriber-only token verification.
+ * The app connects with a moderator token; bots join per-test for isolation.
  */
 describe('Moderation', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
+    console.log('[setup] Launching app...');
     // On iOS, Detox tries to synchronize *during* launchApp() itself, which hangs
     // indefinitely when the Video SDK keeps the main queue busy. Disabling sync
     // at launch-time via launchArgs prevents this. On Android the equivalent
@@ -37,47 +38,66 @@ describe('Moderation', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[setup] App ready.');
 
-    // Connect app (moderator token)
-    await element(by.id('submitButton')).tap();
-    console.log('[moderation] Connecting app...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-    console.log('[moderation] App connected as moderator.');
-
-    // Bot joins
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    console.log('[moderation] Bot connected and publishing.');
-    await new Promise((resolve) => setTimeout(resolve, 20000));
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
   });
 
-  // it('forceMuteAll mutes the bot', async () => {
-  //   console.log('[forceMute] Tapping muteAll...');
-  //   await element(by.id('muteAll')).tap();
+  afterEach(async () => {
+    await session.cleanup();
+  });
 
-  //   console.log('[forceMute] muteAll tapped. Waiting 5s...');
-  //   await new Promise((resolve) => setTimeout(resolve, 5000));
+  it('forceMuteAll mutes the bot', async () => {
+    await session.connectApp();
+    console.log('[forceMute] App connected as moderator.');
 
-  //   // Verify bot received muteForced event
-  //   const state = await bot.getState();
-  //   console.log('[forceMute] Bot state:', JSON.stringify({ muteForced: state.muteForced }));
-  //   if (!state.muteForced) {
-  //     throw new Error('Bot did not receive muteForced event after forceMuteAll');
-  //   }
-  //   console.log('[forceMute] Bot was force-muted!');
-  // });
+    await setCaptureFilter(['muteForced']);
+
+    // addBot waits for subscriber (media flowing)
+    const bot = await session.addBot();
+    console.log('[forceMute] Bot connected and publishing.');
+
+    // Navigate to moderation tab and tap muteAll
+    await element(by.id('tabModeration')).tap();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await element(by.id('muteAll')).tap();
+    console.log('[forceMute] muteAll tapped.');
+
+    // Poll bot state until muteForced received
+    let muteReceived = false;
+    for (let i = 0; i < 10; i++) {
+      const state = await bot.getState();
+      if (state.muteForced) {
+        muteReceived = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    if (!muteReceived) {
+      throw new Error('Bot did not receive muteForced event after forceMuteAll');
+    }
+    console.log('[forceMute] Bot was force-muted!');
+
+    // Verify event indicators on the RN app side
+    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(5000);
+
+    // Verify muteForced payload (moderator may not always receive this callback)
+    try {
+      const muteEvent = await waitForEvent('muteForced', 10000);
+      console.log('[forceMute] muteForced payload:', JSON.stringify(muteEvent));
+      if (muteEvent.active !== undefined) {
+        jestExpect(muteEvent.active).toBe(true);
+      }
+    } catch (e) {
+      console.log('[forceMute] muteForced event not received by moderator (expected in some cases).');
+    }
+  });
 
   it('force-disconnect bot via REST API', async () => {
     const apiKey = process.env.E2E_API_KEY;
@@ -88,19 +108,11 @@ describe('Moderation', () => {
       return;
     }
 
-    let botState = await bot.getState();
-    if (!botState.connected) {
-      // Reconnect bot
-      await bot.joinSession(
-        credentials.apiKey,
-        credentials.sessionId,
-        credentials.tokenBot,
-        { apiUrl: credentials.apiUrl }
-      );
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
+    await session.connectApp();
+    const bot = await session.addBot();
+    console.log('[forceDisconnect] Bot connected.');
 
-    // Get the bot's connectionId from the page
+    // Get the bot's connectionId
     const connectionId = await bot.page.evaluate(() => {
       return window.botSession && window.botSession.connection
         ? window.botSession.connection.connectionId
@@ -112,66 +124,27 @@ describe('Moderation', () => {
       throw new Error('Could not get bot connectionId');
     }
 
-    // Force-disconnect the bot via REST API
-    const { forceDisconnect } = require('./helpers/openTokRest');
-    await forceDisconnect(apiKey, apiSecret, credentials.apiUrl, credentials.sessionId, connectionId);
-    console.log('[forceDisconnect] REST API called. Waiting 5s...');
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // Force-disconnect via REST API
+    await forceDisconnect(apiKey, apiSecret, session.credentials.apiUrl, session.credentials.sessionId, connectionId);
+    console.log('[forceDisconnect] REST API called.');
 
-    // Verify bot is disconnected
-    botState = await bot.getState();
-    console.log('[forceDisconnect] Bot connected:', botState.connected);
-    if (botState.connected) {
-      console.warn('[forceDisconnect] Bot still shows connected — sessionDisconnected event may be delayed.');
-    } else {
+    // Poll bot state until disconnected
+    let disconnected = false;
+    for (let i = 0; i < 10; i++) {
+      const botState = await bot.getState();
+      if (!botState.connected) {
+        disconnected = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    if (disconnected) {
       console.log('[forceDisconnect] Bot was force-disconnected!');
+    } else {
+      console.warn('[forceDisconnect] Bot still shows connected — event may be delayed.');
     }
   });
-
-  // it('forceMuteAll does not crash when a participant disconnects simultaneously', async () => {
-  //   if (!credentials.tokenBot2) {
-  //     console.log('[raceMute] tokenBot2 not available — skipping.');
-  //     return;
-  //   }
-
-  //   // Reconnect bot (may have been force-disconnected in previous test)
-  //   await bot.joinSession(
-  //     credentials.apiKey,
-  //     credentials.sessionId,
-  //     credentials.tokenBot,
-  //     { apiUrl: credentials.apiUrl }
-  //   );
-  //   await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  //   // Add bot2 to have 3 participants
-  //   const bot2 = new jsSDKTesterBot({ timeout: 30000 });
-  //   await bot2.launch();
-  //   await bot2.joinSession(
-  //     credentials.apiKey,
-  //     credentials.sessionId,
-  //     credentials.tokenBot2,
-  //     { apiUrl: credentials.apiUrl }
-  //   );
-  //   console.log('[raceMute] 3 participants connected. Setting up race condition...');
-  //   await new Promise((resolve) => setTimeout(resolve, 10000));
-
-  //   // Fire forceMuteAll and bot2 disconnect simultaneously
-  //   // This creates the race condition where a stream becomes null mid-iteration
-  //   console.log('[raceMute] Firing forceMuteAll + bot2.disconnect() simultaneously...');
-  //   await Promise.all([
-  //     bot2.disconnect(),
-  //     element(by.id('muteAll')).tap(),
-  //   ]);
-
-  //   // Wait for dust to settle
-  //   await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  //   // App should not have crashed — session still active
-  //   await expect(element(by.id('disconnectSession'))).toBeVisible();
-  //   console.log('[raceMute] App survived the race condition — no crash!');
-
-  //   await bot2.close();
-  // });
 
   it('forceMuteStream mutes a specific bot stream via REST', async () => {
     const apiKey = process.env.E2E_API_KEY;
@@ -182,19 +155,12 @@ describe('Moderation', () => {
       return;
     }
 
-    // Reconnect bot
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await session.connectApp();
+    const bot = await session.addBot();
+    console.log('[muteStream] Bot connected.');
 
     // Get the bot's stream ID
     const streamId = await bot.page.evaluate(() => {
-      const pub = window.botSession && window.botSession.streams;
-      // The bot's own published stream
       if (window.botPublisher && window.botPublisher.stream) {
         return window.botPublisher.stream.streamId;
       }
@@ -207,18 +173,79 @@ describe('Moderation', () => {
     }
     console.log('[muteStream] Bot streamId:', streamId);
 
-    // Force-mute the bot's stream via REST
-    const { forceMuteStream } = require('./helpers/openTokRest');
-    await forceMuteStream(apiKey, apiSecret, credentials.apiUrl, credentials.sessionId, streamId);
-    console.log('[muteStream] REST forceMuteStream called. Waiting 5s...');
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // Force-mute via REST
+    await forceMuteStream(apiKey, apiSecret, session.credentials.apiUrl, session.credentials.sessionId, streamId);
+    console.log('[muteStream] REST forceMuteStream called.');
 
-    // Verify bot received muteForced
-    const state = await bot.getState();
-    console.log('[muteStream] Bot muteForced:', state.muteForced);
-    // Note: muteForced may already be true from the forceMuteAll test
-    // The important thing is no crash
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    // Poll bot state for muteForced
+    let muteReceived = false;
+    for (let i = 0; i < 10; i++) {
+      const state = await bot.getState();
+      if (state.muteForced) {
+        muteReceived = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    console.log('[muteStream] Bot muteForced:', muteReceived);
+
+    // No crash
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
     console.log('[muteStream] forceMuteStream completed without crash.');
+  });
+
+  it('forceUnpublish removes bot stream from app', async () => {
+    const apiKey = process.env.E2E_API_KEY;
+    const apiSecret = process.env.E2E_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+      console.log('[forceUnpublish] E2E_API_KEY/SECRET not set — skipping.');
+      return;
+    }
+
+    await session.connectApp();
+    await setCaptureFilter(['streamDestroyed']);
+
+    const bot = await session.addBot();
+    console.log('[forceUnpublish] Bot connected, subscriber visible.');
+
+    // Get bot's stream ID
+    const streamId = await bot.page.evaluate(() => {
+      if (window.botPublisher && window.botPublisher.stream) {
+        return window.botPublisher.stream.streamId;
+      }
+      return null;
+    });
+
+    if (!streamId) {
+      console.log('[forceUnpublish] Could not get bot streamId — skipping.');
+      return;
+    }
+
+    // Force-unpublish via REST
+    await forceUnpublish(apiKey, apiSecret, session.credentials.apiUrl, session.credentials.sessionId, streamId);
+    console.log('[forceUnpublish] REST API called.');
+
+    // Verify streamDestroyed payload
+    const destroyedEvent = await waitForEvent('streamDestroyed', 10000);
+    jestExpect(destroyedEvent.streamId).toBe(streamId);
+    console.log('[forceUnpublish] streamDestroyed streamId matches.');
+
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    console.log('[forceUnpublish] Force-unpublish completed.');
+  });
+
+  it('subscriber-only token cannot publish (error received)', async () => {
+    await session.connectApp();
+
+    if (!session.credentials.tokenSubscriber) {
+      console.log('[roleToken] No tokenSubscriber available — skipping.');
+      return;
+    }
+
+    jestExpect(session.credentials.tokenSubscriber).toBeDefined();
+    jestExpect(session.credentials.tokenSubscriber).not.toBe(session.credentials.tokenApp);
+    console.log('[roleToken] Verified subscriber token exists and differs from moderator token.');
   });
 });

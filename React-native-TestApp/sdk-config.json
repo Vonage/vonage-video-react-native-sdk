@@ -2,22 +2,22 @@
   "profiles": {
     "vonage": {
       "packageName": "@vonage/client-sdk-video-react-native",
-      "packageSource": "2.33.2-alpha",
+      "packageSource": "2.34.0",
       "importPath": "@vonage/client-sdk-video-react-native"
     },
     "opentok": {
       "packageName": "opentok-react-native",
-      "packageSource": "2.33.2-alpha",
+      "packageSource": "2.34.0",
       "importPath": "opentok-react-native"
     },
     "vonage-github": {
       "packageName": "@vonage/client-sdk-video-react-native",
-      "packageSource": "2.33.2-alpha",
+      "packageSource": "2.34.0",
       "importPath": "@vonage/client-sdk-video-react-native"
     },
     "opentok-github": {
       "packageName": "@opentok/opentok-react-native",
-      "packageSource": "2.33.2-alpha",
+      "packageSource": "2.34.0",
       "importPath": "@opentok/opentok-react-native"
     },
     "local": {

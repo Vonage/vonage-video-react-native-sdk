@@ -4,5 +4,6 @@ module.exports = {
   testMatch: ["**/*.e2e.js"],
   testEnvironment: "detox/runners/jest/testEnvironment",
   verbose: true,
-  forceExit: true
+  forceExit: true,
+  globalSetup: "./globalSetup.js"
 };
