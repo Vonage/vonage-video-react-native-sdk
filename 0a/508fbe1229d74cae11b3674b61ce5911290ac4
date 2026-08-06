@@ -1,0 +1,21 @@
+src/__tests__/OTPublisherHelper.test.js
+  s_30a08209d6ed08::t_290f00fcd26e3a 40-43
+React-native-TestApp/__tests__/screenShare.e2e.js
+  s_30a08209d6ed08::t_3f4a423436e313 4,11,38,41,43,51-52,54,77,81,84,88-92,100-107,117-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "0a508fbe1229d74cae11b3674b61ce5911290ac4",
+  "prompts": {},
+  "sessions": {
+    "s_30a08209d6ed08": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_08f6da35-52e0-42d9-802b-faf604270a61",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
