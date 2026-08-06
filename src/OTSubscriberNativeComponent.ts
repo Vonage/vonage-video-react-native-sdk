@@ -13,7 +13,7 @@ export interface StreamEvent {
     name: string;
     streamId: string;
     hasAudio: boolean;
-    hasCaptions: boolean;
+    hasCaptions?: boolean;
     hasVideo: boolean;
     sessionId: string;
     width: Double;

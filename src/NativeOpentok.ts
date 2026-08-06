@@ -69,7 +69,7 @@ export type Stream = {
   name: string;
   streamId: string;
   hasAudio: boolean;
-  hasCaptions: boolean;
+  hasCaptions?: boolean;
   hasVideo: boolean;
   sessionId: string;
   width: number;
