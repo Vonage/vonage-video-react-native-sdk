@@ -37,6 +37,10 @@ describe('sanitizeProperties', () => {
     it('treats any non-camera value as screen', () => {
       const result = sanitizeProperties({ videoSource: 'something-else' });
       expect(result.videoSource).toBe('screen');
+      // NOTE: audioFallback is computed from the raw videoSource before sanitization,
+      // so 'something-else' !== 'screen' means fallback stays enabled despite
+      // the output videoSource being 'screen'. This is pre-existing behavior.
+      expect(result.subscriberAudioFallback).toBe(true);
     });
 
     it('disables subscriber audio fallback by default when videoSource is screen', () => {
