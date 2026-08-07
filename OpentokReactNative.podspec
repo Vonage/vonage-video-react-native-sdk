@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   ]
 
   # Add VonageClientSDKVideo dependency
-  s.dependency 'VonageClientSDKVideo', '2.34.1'
+  s.dependency 'VonageClientSDKVideo', '2.35.0'
   
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
