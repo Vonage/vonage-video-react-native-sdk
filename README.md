@@ -54,6 +54,34 @@ The packages are functionally identical. The only difference is their session pr
 </OTSession>
 ```
 
+### Camera Preview / Waiting Room
+
+Use the `previewOnly` prop on `OTPublisher` to render the local camera
+without publishing into the session — the building block for a
+waiting-room / lobby experience. Set it to `false` when the user joins: the
+same publisher is published without restarting the camera.
+
+```jsx
+<OTSession applicationId="your-application-id" sessionId="your-session-id" token="your-session-token">
+  <OTPublisher previewOnly={!hasJoined} style={{ width: 100, height: 100 }}/>
+</OTSession>
+```
+
+An `OTPublisher` with `previewOnly` also works outside of an `OTSession`, for
+a pre-call preview before any session or credentials exist:
+
+```jsx
+<OTPublisher previewOnly style={{ width: 100, height: 100 }}/>
+```
+
+Keep `publishVideo: true` while previewing — setting it to `false` stops the
+camera capturer (that is the "camera off" toggle in a lobby UI). The native
+SDKs only start audio capture when publishing begins, so `audioLevel` events
+are not emitted during preview; they start once the publisher is published.
+See `React-native-TestApp/src/screens/WaitingRoomScreen.tsx` for a complete
+example. Switching a published publisher back to `previewOnly` is not
+supported.
+
 ---
 
 ## Important: React Native New Architecture Support

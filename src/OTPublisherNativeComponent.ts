@@ -40,6 +40,7 @@ export type PublisherRTCStatsReportEvent = {
 export interface NativeProps extends ViewProps {
   sessionId: string;
   publisherId: string;
+  previewOnly?: boolean;
   degradationPreference?: Int32;
   publishAudio?: boolean;
   publishVideo?: boolean;
