@@ -67,7 +67,24 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        publishStream(/*session ?: return*/)
+        if (publisher != null) return
+        publishStream()
+    }
+
+    override fun onDetachedFromWindow() {
+        // Clean up publisher resources when the view is detached (Fabric recycle or unmount).
+        // Without this, the old Publisher retains its camera/encoder/network resources
+        // and is never released, causing resource exhaustion during prolonged calls.
+        publisher?.setPublisherListener(null)
+        publisher?.setAudioLevelListener(null)
+        publisher?.setAudioStatsListener(null)
+        publisher?.setMuteListener(null)
+        publisher?.setVideoListener(null)
+        publisher?.setVideoStatsListener(null)
+        publisher?.setRtcStatsReportListener(null)
+        publisher?.view?.let { this.removeView(it) }
+        publisher = null
+        super.onDetachedFromWindow()
     }
 
     private fun configureComponent() {

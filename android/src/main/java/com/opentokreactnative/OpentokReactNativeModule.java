@@ -199,7 +199,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
             mSession.unpublish(publisher);
-            publishers.remove(publisher);
+            // Fix: remove by String key, not by Publisher object reference.
+            // ConcurrentHashMap is keyed by publisherId (String), so passing the
+            // Publisher object was a no-op that caused publishers to never be freed.
+            publishers.remove(publisherId);
         }
     }
 
@@ -217,8 +220,14 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 Subscriber subscriber = subscribers.get(streamId);
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    // Fix: remove by String key (streamId), not by Subscriber object.
+                    // The map is keyed by streamId, so passing the Subscriber object
+                    // was a no-op that caused subscribers to never be freed.
+                    subscribers.remove(streamId);
                 }
+                // Also remove the stream reference so it doesn't accumulate
+                // across join/leave cycles during prolonged calls.
+                sharedState.getSubscriberStreams().remove(streamId);
             };
         });
     }
@@ -382,8 +391,48 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+
+        String sessionId = session.getSessionId();
+        ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
+        ConcurrentHashMap<String, Stream> mSubscriberStreams = sharedState.getSubscriberStreams();
+        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
+        ConcurrentHashMap<String, Connection> mConnections = sharedState.getConnections();
+
+        // Remove subscribers and streams belonging to this session
+        for (String streamId : new ArrayList<>(mSubscriberStreams.keySet())) {
+            Stream stream = mSubscriberStreams.get(streamId);
+            if (stream != null && stream.getSession() != null
+                    && sessionId.equals(stream.getSession().getSessionId())) {
+                mSubscriberStreams.remove(streamId);
+                mSubscribers.remove(streamId);
+            }
+        }
+
+        // Remove publishers belonging to this session
+        for (String publisherId : new ArrayList<>(mPublishers.keySet())) {
+            Publisher publisher = mPublishers.get(publisherId);
+            if (publisher != null && publisher.getSession() != null
+                    && sessionId.equals(publisher.getSession().getSessionId())) {
+                mPublishers.remove(publisherId);
+            }
+        }
+
+        // Remove connections belonging to this session
+        for (String connId : new ArrayList<>(mConnections.keySet())) {
+            Connection conn = mConnections.get(connId);
+            if (conn != null) {
+                // Connection doesn't expose sessionId directly, so we clear all
+                // connections. In a multi-session scenario this is overly broad,
+                // but connections are lightweight and re-populated on reconnect.
+                mConnections.remove(connId);
+            }
+        }
+
+        sharedState.getAndroidOnTopMap().remove(sessionId);
+        sharedState.getAndroidZOrderMap().remove(sessionId);
+
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
     }
 
     @Override
@@ -395,6 +444,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void onStreamDropped(Session session, Stream stream) {
+        // Fix: remove the stream from subscriberStreams to prevent stale references
+        // from accumulating during prolonged calls. Without this, every stream that
+        // joins and leaves keeps its native Stream object alive indefinitely.
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
     }
