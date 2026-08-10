@@ -19,7 +19,7 @@ The SDK uses exclusively the React Native **New Architecture** (TurboModules + F
 - **Release tooling:** release-it, conventional-changelog
 - **Linting:** ESLint with `@react-native` config, Prettier
 - **Native SDK dependency:** VonageClientSDKVideo v2.34.0 (iOS CocoaPod, Android Maven)
-- **Node version:** v20.11.0 (see `.nvmrc`)
+- **Node version:** v22.11.0 (see `.nvmrc`)
 
 ## Architecture
 
