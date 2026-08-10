@@ -241,6 +241,7 @@ jobs:
           kill $METRO_PID 2>/dev/null || true
           exit 1
 
+      # TODO: Use API level 37 when available (see https://github.com/ReactiveCircus/android-emulator-runner/issues/482).
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
         env:
