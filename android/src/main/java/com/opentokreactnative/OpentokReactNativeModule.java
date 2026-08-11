@@ -1,17 +1,11 @@
 package com.opentokreactnative;
 
-import android.app.Activity;
-import android.app.Application;
-import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -47,8 +41,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Session.MuteListener,
         Session.StreamPropertiesListener,
         Session.StreamCaptionsPropertiesListener,
-        // Revisit this
-        Application.ActivityLifecycleCallbacks {
+        LifecycleEventListener {
     public static final String NAME = "OpentokReactNative";
 
     private ReactApplicationContext context = null;
@@ -62,6 +55,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public OpentokReactNativeModule(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
+        reactContext.addLifecycleEventListener(this);
     }
 
     @Override
@@ -574,38 +568,35 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
-    @Override
-    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
+    // --- Lifecycle management for OpenTok video rendering ---
+    // The OpenTok SDK uses GLSurfaceView for video rendering, which requires
+    // onPause()/onResume() to be forwarded from the Activity lifecycle.
+    // Without these calls, the GL context and video pipeline degrade over time
+    // as unmanaged lifecycle transitions accumulate (notifications, screen off, etc.).
+    // This was present in v2.30.2 and was lost during the new architecture rewrite.
 
+    @Override
+    public void onHostResume() {
+        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+        for (Publisher publisher : publishers.values()) {
+            publisher.onResume();
+        }
+        // TODO: Consider adding subscriber.onResume() for subscriber GLSurfaceViews.
+        // The old v2.30.2 code only managed publisher lifecycle. Adding subscriber
+        // lifecycle would be more correct but deviates from proven behavior.
     }
 
     @Override
-    public void onActivityStarted(@NonNull Activity activity) {
-
+    public void onHostPause() {
+        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+        for (Publisher publisher : publishers.values()) {
+            publisher.onPause();
+        }
+        // TODO: Consider adding subscriber.onPause() for subscriber GLSurfaceViews.
+        // See onHostResume() comment above.
     }
 
     @Override
-    public void onActivityResumed(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivityPaused(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivityStopped(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-
-    }
-
-    @Override
-    public void onActivityDestroyed(@NonNull Activity activity) {
-
+    public void onHostDestroy() {
     }
 }
