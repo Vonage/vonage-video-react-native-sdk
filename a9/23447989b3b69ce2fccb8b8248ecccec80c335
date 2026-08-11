@@ -1,0 +1,14 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  h_b9583e878a641a 8,44,58,571-576,579-586,590-596,600
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a923447989b3b69ce2fccb8b8248ecccec80c335",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}

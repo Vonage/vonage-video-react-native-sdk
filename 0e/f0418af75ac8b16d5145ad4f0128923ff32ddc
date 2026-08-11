@@ -1,0 +1,44 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  82b77e3b789bc97f 1-18
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  82b77e3b789bc97f 1-19
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  82b77e3b789bc97f 1-56
+src/OTSession.js
+  82b77e3b789bc97f 1-99
+src/OTSubscriber.js
+  82b77e3b789bc97f 1-5
+src/helpers/OTSessionHelper.js
+  82b77e3b789bc97f 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "0ef0418af75ac8b16d5145ad4f0128923ff32ddc",
+  "prompts": {
+    "82b77e3b789bc97f": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "f6895d31-4ab0-46f9-9de9-6831754adc2e",
+        "model": "gpt-4o"
+      },
+      "human_author": "igorperunovicvonage <igor.perunovic@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-08-10T12:23:24.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-08-10T12:23:24.000Z"
+        }
+      ],
+      "total_additions": 206,
+      "total_deletions": 76,
+      "accepted_lines": 206,
+      "overriden_lines": 0
+    }
+  }
+}
