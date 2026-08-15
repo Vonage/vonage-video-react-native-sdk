@@ -12,7 +12,7 @@
     "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "customConditions": ["react-native-legacy-deep-imports"],
+    "customConditions": ["react-native"],
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
