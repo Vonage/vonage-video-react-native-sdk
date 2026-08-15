@@ -42,7 +42,7 @@ android {
     }
   }
 
-  compileSdkVersion(rootProject.ext.has("compileSdkVersion") ? rootProject.ext.get("compileSdkVersion") : (project.properties["OpentokReactNative_compileSdkVersion"]).toInteger())
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
