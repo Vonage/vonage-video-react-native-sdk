@@ -133,6 +133,15 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
         if (mSession != null) {
+            // Explicitly unpublish all active publishers before disconnecting.
+            // Skipping this step causes a NullPointerException in
+            // Camera2VideoCapturer.destroy() inside the native SDK when the
+            // session teardown triggers capturer cleanup while the ImageReader
+            // is still in an intermediate state.
+            ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+            for (Publisher publisher : new ArrayList<>(publishers.values())) {
+                mSession.unpublish(publisher);
+            }
             mSession.disconnect();
             promise.resolve(null);
         }
