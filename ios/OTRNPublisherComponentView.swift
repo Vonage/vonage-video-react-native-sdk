@@ -1,6 +1,7 @@
 import Foundation
 import OpenTok
 import React
+import UIKit
 
 @objc public class OTRNPublisherImpl: NSObject {
     private var currentSession: OTSession?
@@ -45,6 +46,8 @@ import React
     @objc public func createPublisher(_ properties: NSDictionary) {
 
         let settings = OTPublisherSettings()
+        let isScreenSharePublisher =
+            (properties["videoSource"] as? String) == "screen"
 
         settings.videoTrack = Utils.sanitizeBooleanProperty(
             properties["videoTrack"] as Any
@@ -93,6 +96,9 @@ import React
                 settings.videoCodecPreference = Utils.convertPreferredVideoCodecs(videoCodecPreference)
             }
         }
+        if isScreenSharePublisher {
+            settings.videoType = .screen
+        }
 
         self.publisherId = Utils.sanitizeStringProperty(
             properties["publisherId"] as Any
@@ -126,10 +132,8 @@ import React
 
         OTRN.sharedState.publishers.updateValue(publisher, forKey: publisherId)
 
-        if let videoSource = properties["videoSource"] as? String,
-            videoSource == "screen"
-        {
-            guard let screenView = RCTPresentedViewController()?.view else {
+        if isScreenSharePublisher {
+            guard let screenView = resolveScreenShareView() else {
                 strictUIViewContainer?.handleError([
                     "code": OTPublisherError,
                     "message":
@@ -182,6 +186,39 @@ import React
         }
 
     }
+
+    private func resolveScreenShareView() -> UIView? {
+        if let presentedView = RCTPresentedViewController()?.view,
+            !presentedView.bounds.isEmpty
+        {
+            return presentedView
+        }
+
+        if let keyWindow = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)
+        {
+            if let rootView = keyWindow.rootViewController?.view,
+                !rootView.bounds.isEmpty
+            {
+                return rootView
+            }
+
+            if !keyWindow.bounds.isEmpty {
+                return keyWindow
+            }
+        }
+
+        if let windowView = strictUIViewContainer?.window,
+            !windowView.bounds.isEmpty
+        {
+            return windowView
+        }
+
+        return nil
+    }
+
     @objc public func setSessionId(_ sessionId: String) {
         self.sessionId = sessionId
     }
