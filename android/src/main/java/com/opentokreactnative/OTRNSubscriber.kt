@@ -196,6 +196,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber?.setStreamListener(null)
         subscriber?.setAudioLevelListener(null)
         subscriber?.view?.let { this.removeView(it) }
+        // Remove from shared state so the TurboModule layer can't reach a dead subscriber.
+        // On normal unmount, OT.removeSubscriber() already does this — this handles
+        // Fabric-only recycles where componentWillUnmount doesn't fire.
+        streamId?.let { sharedState.getSubscribers().remove(it) }
         subscriber = null
         super.onDetachedFromWindow()
     }

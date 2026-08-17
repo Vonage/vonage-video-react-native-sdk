@@ -83,6 +83,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setVideoStatsListener(null)
         publisher?.setRtcStatsReportListener(null)
         publisher?.view?.let { this.removeView(it) }
+        // Remove from shared state so the TurboModule layer can't reach a dead publisher.
+        // On normal unmount, OT.unpublish() already does this — this handles Fabric-only
+        // recycles where componentWillUnmount doesn't fire.
+        publisherId?.let { sharedState.getPublishers().remove(it) }
         publisher = null
         super.onDetachedFromWindow()
     }
