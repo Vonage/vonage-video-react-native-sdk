@@ -122,19 +122,33 @@ class jsSDKTesterBot {
             lastSignal: null,
             muteForced: false,
             streamCreated: false,
+            remoteStreams: {},
           };
 
           const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
 
           session.on('streamCreated', (event) => {
             if (!window.botState.connected) return;
+            const ownConnectionId = session.connection && session.connection.connectionId;
+            const streamConnectionId = event.stream && event.stream.connection && event.stream.connection.connectionId;
+            if (ownConnectionId && streamConnectionId === ownConnectionId) {
+              return;
+            }
             session.subscribe(event.stream, 'videos', { insertMode: 'append' });
-            window.botState.subscriberCount++;
+            window.botState.remoteStreams[event.stream.streamId] = {
+              streamId: event.stream.streamId,
+              videoType: event.stream.videoType || null,
+              name: event.stream.name || '',
+            };
+            window.botState.subscriberCount = Object.keys(window.botState.remoteStreams).length;
             window.botState.streamCreated = true;
           });
 
-          session.on('streamDestroyed', () => {
-            window.botState.subscriberCount = Math.max(0, window.botState.subscriberCount - 1);
+          session.on('streamDestroyed', (event) => {
+            if (event.stream && event.stream.streamId) {
+              delete window.botState.remoteStreams[event.stream.streamId];
+            }
+            window.botState.subscriberCount = Object.keys(window.botState.remoteStreams).length;
           });
 
           session.on('signal', (event) => {
@@ -148,6 +162,8 @@ class jsSDKTesterBot {
           session.on('sessionDisconnected', () => {
             window.botState.connected = false;
             window.botState.publishing = false;
+            window.botState.remoteStreams = {};
+            window.botState.subscriberCount = 0;
           });
 
           session.connect('${token}', (err) => {
@@ -190,7 +206,7 @@ class jsSDKTesterBot {
 
   /**
    * Returns the current bot state.
-   * @returns {Promise<{connected: boolean, publishing: boolean, subscriberCount: number, error: string|null, lastSignal: object|null, muteForced: boolean, streamCreated: boolean}>}
+   * @returns {Promise<{connected: boolean, publishing: boolean, subscriberCount: number, error: string|null, lastSignal: object|null, muteForced: boolean, streamCreated: boolean, remoteStreams: object}>}
    */
   async getState() {
     return this.page.evaluate(() => window.botState);
@@ -203,6 +219,22 @@ class jsSDKTesterBot {
   async waitForSubscriber(timeout) {
     await this.page.waitForFunction(
       () => window.botState.subscriberCount > 0,
+      { timeout: timeout || this.options.timeout }
+    );
+  }
+
+  /**
+   * Waits until the bot observes a new remote stream not present in the baseline set.
+   * @param {string[]} previousStreamIds
+   * @param {number} [timeout]
+   */
+  async waitForNewRemoteStream(previousStreamIds = [], timeout) {
+    await this.page.waitForFunction(
+      (baselineIds) =>
+        Object.keys(window.botState.remoteStreams).some(
+          (streamId) => !baselineIds.includes(streamId)
+        ),
+      previousStreamIds,
       { timeout: timeout || this.options.timeout }
     );
   }

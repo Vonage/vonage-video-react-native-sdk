@@ -11,6 +11,7 @@ const { TestSession } = require('./helpers/testSession');
  */
 describe('P2P (Relayed) Session', () => {
   let session;
+  const publisherControlTimeout = 10000;
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
@@ -94,7 +95,13 @@ describe('P2P (Relayed) Session', () => {
     await session.addBot({ subscriberTimeout: 30000 });
 
     // Disable video (audio-only)
+    await waitFor(element(by.id('tabPublisher')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasVideo')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('hasVideo')).tap();
     console.log('[p2p-audio] Video off.');
 
@@ -102,6 +109,9 @@ describe('P2P (Relayed) Session', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
     // Restore video
+    await waitFor(element(by.id('hasVideo')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('hasVideo')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[p2p-audio] Audio-only publish OK in P2P.');
@@ -114,7 +124,13 @@ describe('P2P (Relayed) Session', () => {
     await session.addBot({ subscriberTimeout: 30000 });
 
     // Disable audio (video-only)
+    await waitFor(element(by.id('tabPublisher')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasAudio')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('hasAudio')).tap();
     console.log('[p2p-video] Audio off.');
 
@@ -122,6 +138,9 @@ describe('P2P (Relayed) Session', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
     // Restore audio
+    await waitFor(element(by.id('hasAudio')))
+      .toBeVisible()
+      .withTimeout(publisherControlTimeout);
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[p2p-video] Video-only publish OK in P2P.');
