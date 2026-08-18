@@ -1,7 +1,6 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -48,8 +47,7 @@ describe('Screen Sharing', () => {
     jestExpect(stateBeforeToggle.subscriberCount).toBeGreaterThanOrEqual(1);
     console.log('[screenShare] Bot subscribed to camera stream.');
 
-    // Reset bot streamCreated flag so we can detect the new screen share stream
-    await bot.page.evaluate(() => { window.botState.streamCreated = false; });
+    const initialRemoteStreamIds = Object.keys(stateBeforeToggle.remoteStreams || {});
 
     // Toggle screen share — this destroys the camera publisher and creates a screen publisher
     await element(by.id('tabSession')).tap();
@@ -62,10 +60,10 @@ describe('Screen Sharing', () => {
 
     // Wait for the bot to receive the new screen share stream.
     // The toggle causes streamDestroyed (camera) then streamCreated (screen),
-    // so subscriberCount drops to 0 briefly before going back to 1.
+    // so we wait for a new remote streamId instead of a transient counter.
     console.log('[screenShare] Waiting for bot to receive screen share stream...');
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewRemoteStream(initialRemoteStreamIds, 30000);
     } catch (e) {
       const state = await bot.getState();
       console.log('[screenShare] Bot state at timeout:', JSON.stringify(state));
@@ -74,11 +72,13 @@ describe('Screen Sharing', () => {
       );
     }
 
-    // Verify bot received a NEW streamCreated (not just the old camera one)
     const stateAfterToggle = await bot.getState();
     console.log('[screenShare] Bot state after toggle:', JSON.stringify(stateAfterToggle));
     jestExpect(stateAfterToggle.subscriberCount).toBeGreaterThanOrEqual(1);
-    jestExpect(stateAfterToggle.streamCreated).toBe(true);
+    const screenShareStreamIds = Object.keys(stateAfterToggle.remoteStreams || {});
+    jestExpect(
+      screenShareStreamIds.some((streamId) => !initialRemoteStreamIds.includes(streamId))
+    ).toBe(true);
   });
 
   it('toggling screen share off restores camera publishing to bot', async () => {
@@ -99,11 +99,14 @@ describe('Screen Sharing', () => {
 
     // Wait for bot to get the screen stream
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewRemoteStream(
+        Object.keys(stateInitial.remoteStreams || {}),
+        30000
+      );
     } catch (_) {}
 
-    // Reset streamCreated flag to detect the camera stream after toggle off
-    await bot.page.evaluate(() => { window.botState.streamCreated = false; });
+    const stateBeforeToggleOff = await bot.getState();
+    const screenShareStreamIds = Object.keys(stateBeforeToggleOff.remoteStreams || {});
 
     // Toggle screen share OFF (back to camera)
     await element(by.id('tabSession')).tap();
@@ -116,7 +119,7 @@ describe('Screen Sharing', () => {
 
     // Bot should receive the new camera stream
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewRemoteStream(screenShareStreamIds, 30000);
     } catch (e) {
       const state = await bot.getState();
       throw new Error(
@@ -127,6 +130,9 @@ describe('Screen Sharing', () => {
     const stateAfterRevert = await bot.getState();
     console.log('[screenShare] Bot state after revert:', JSON.stringify(stateAfterRevert));
     jestExpect(stateAfterRevert.subscriberCount).toBeGreaterThanOrEqual(1);
-    jestExpect(stateAfterRevert.streamCreated).toBe(true);
+    const cameraStreamIds = Object.keys(stateAfterRevert.remoteStreams || {});
+    jestExpect(
+      cameraStreamIds.some((streamId) => !screenShareStreamIds.includes(streamId))
+    ).toBe(true);
   });
 });
