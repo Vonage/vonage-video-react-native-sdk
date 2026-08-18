@@ -96,9 +96,6 @@ import UIKit
                 settings.videoCodecPreference = Utils.convertPreferredVideoCodecs(videoCodecPreference)
             }
         }
-        if isScreenSharePublisher {
-            settings.videoType = .screen
-        }
 
         self.publisherId = Utils.sanitizeStringProperty(
             properties["publisherId"] as Any
@@ -170,7 +167,7 @@ import UIKit
             publisher.maxVideoBitrate = maxVideoBitrate
         }
 
- 	    if let videoBitratePreset = properties["videoBitratePreset"] as? String {
+  	    if let videoBitratePreset = properties["videoBitratePreset"] as? String {
             if (videoBitratePreset != "") {
                 publisher.videoBitratePreset = Utils.convertVideoBitratePreset(videoBitratePreset)
             }
