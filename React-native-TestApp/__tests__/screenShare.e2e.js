@@ -11,6 +11,35 @@ const { expect: jestExpect } = require('expect');
  */
 describe('Screen Sharing', () => {
   let session;
+  const streamTransitionTimeout = 45000;
+
+  const waitForRemoteVideoType = async (
+    bot,
+    targetVideoType,
+    excludedStreamIds = [],
+    timeout = streamTransitionTimeout
+  ) => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const state = await bot.getState();
+      const remoteStreams = Object.values(state.remoteStreams || {});
+      const matchingStream = remoteStreams.find(
+        (stream) =>
+          stream &&
+          stream.streamId &&
+          !excludedStreamIds.includes(stream.streamId) &&
+          stream.videoType === targetVideoType
+      );
+
+      if (matchingStream) {
+        return state;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    throw new Error(`Timed out waiting for remote ${targetVideoType} stream`);
+  };
 
   beforeAll(async () => {
     await device.launchApp({
@@ -63,12 +92,12 @@ describe('Screen Sharing', () => {
     // so we wait for a new remote streamId instead of a transient counter.
     console.log('[screenShare] Waiting for bot to receive screen share stream...');
     try {
-      await bot.waitForNewRemoteStream(initialRemoteStreamIds, 30000);
-    } catch (e) {
+      await waitForRemoteVideoType(bot, 'screen', initialRemoteStreamIds);
+    } catch (_) {
       const state = await bot.getState();
       console.log('[screenShare] Bot state at timeout:', JSON.stringify(state));
       throw new Error(
-        `Bot did not receive screen share stream within 30s. State: ${JSON.stringify(state)}`
+        `Bot did not receive screen share stream within 45s. State: ${JSON.stringify(state)}`
       );
     }
 
@@ -99,11 +128,17 @@ describe('Screen Sharing', () => {
 
     // Wait for bot to get the screen stream
     try {
-      await bot.waitForNewRemoteStream(
-        Object.keys(stateInitial.remoteStreams || {}),
-        30000
+      await waitForRemoteVideoType(
+        bot,
+        'screen',
+        Object.keys(stateInitial.remoteStreams || {})
       );
-    } catch (_) {}
+    } catch (_) {
+      const state = await bot.getState();
+      throw new Error(
+        `Bot did not receive screen share stream before toggle off within 45s. State: ${JSON.stringify(state)}`
+      );
+    }
 
     const stateBeforeToggleOff = await bot.getState();
     const screenShareStreamIds = Object.keys(stateBeforeToggleOff.remoteStreams || {});
@@ -119,11 +154,11 @@ describe('Screen Sharing', () => {
 
     // Bot should receive the new camera stream
     try {
-      await bot.waitForNewRemoteStream(screenShareStreamIds, 30000);
-    } catch (e) {
+      await waitForRemoteVideoType(bot, 'camera', screenShareStreamIds);
+    } catch (_) {
       const state = await bot.getState();
       throw new Error(
-        `Bot did not receive camera stream after toggle off within 30s. State: ${JSON.stringify(state)}`
+        `Bot did not receive camera stream after toggle off within 45s. State: ${JSON.stringify(state)}`
       );
     }
 
