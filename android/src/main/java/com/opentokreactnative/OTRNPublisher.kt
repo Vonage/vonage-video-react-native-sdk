@@ -72,22 +72,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onDetachedFromWindow() {
-        // Clean up publisher resources when the view is detached (Fabric recycle or unmount).
-        // Without this, the old Publisher retains its camera/encoder/network resources
-        // and is never released, causing resource exhaustion during prolonged calls.
-        publisher?.setPublisherListener(null)
-        publisher?.setAudioLevelListener(null)
-        publisher?.setAudioStatsListener(null)
-        publisher?.setMuteListener(null)
-        publisher?.setVideoListener(null)
-        publisher?.setVideoStatsListener(null)
-        publisher?.setRtcStatsReportListener(null)
         publisher?.view?.let { this.removeView(it) }
-        // Remove from shared state so the TurboModule layer can't reach a dead publisher.
-        // On normal unmount, OT.unpublish() already does this — this handles Fabric-only
-        // recycles where componentWillUnmount doesn't fire.
-        publisherId?.let { sharedState.getPublishers().remove(it) }
-        publisher = null
         super.onDetachedFromWindow()
     }
 

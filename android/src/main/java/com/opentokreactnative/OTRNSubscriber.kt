@@ -185,22 +185,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     override fun onDetachedFromWindow() {
         // Remove registration to avoid stale references after detach/recycle.
         streamId?.let { unregisterRefreshListener(it, this) }
-        // Clean up subscriber resources to prevent decoder/network leaks
-        // across Fabric view recycles during prolonged calls.
-        subscriber?.setSubscriberListener(null)
-        subscriber?.setRtcStatsReportListener(null)
-        subscriber?.setCaptionsListener(null)
-        subscriber?.setAudioStatsListener(null)
-        subscriber?.setVideoStatsListener(null)
-        subscriber?.setVideoListener(null)
-        subscriber?.setStreamListener(null)
-        subscriber?.setAudioLevelListener(null)
         subscriber?.view?.let { this.removeView(it) }
-        // Remove from shared state so the TurboModule layer can't reach a dead subscriber.
-        // On normal unmount, OT.removeSubscriber() already does this — this handles
-        // Fabric-only recycles where componentWillUnmount doesn't fire.
-        streamId?.let { sharedState.getSubscribers().remove(it) }
-        subscriber = null
         super.onDetachedFromWindow()
     }
 
