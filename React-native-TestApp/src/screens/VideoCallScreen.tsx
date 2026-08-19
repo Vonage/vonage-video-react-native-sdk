@@ -1238,7 +1238,7 @@ class VideoCallScreen extends Component<{}, State> {
     return (
       <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
         <View style={{ flex: 1 }}>
-          <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
+          <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={[styles.scrollContent, this.state.connectedToSession && { paddingBottom: 100 }]}>
             {this.renderConnectionInputs()}
             {this.renderVideoSection()}
             {this.renderCaptureControls()}
@@ -1246,7 +1246,7 @@ class VideoCallScreen extends Component<{}, State> {
           </ScrollView>
 
           {this.state.connectedToSession && (
-            <View>
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
               <TabBar activeTab={this.state.activeTab} onTabPress={(tab: TabName) => this.setState({ activeTab: tab })} />
               <View testID="actionBar" style={styles.actionBar}>
                 {this.state.activeTab === 'session' && this.renderSessionControls()}
