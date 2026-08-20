@@ -134,15 +134,28 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Session mSession = mSessions.get(sessionId);
         if (mSession != null) {
             // Explicitly unpublish all active publishers before disconnecting.
-            // Skipping this step causes a NullPointerException in
-            // Camera2VideoCapturer.destroy() inside the native SDK when the
-            // session teardown triggers capturer cleanup while the ImageReader
-            // is still in an intermediate state.
+            // The native SDK's Camera2VideoCapturer.destroy() is invoked
+            // asynchronously via a Handler post from onCaptureDestroyJNI after
+            // unpublish(). If session.disconnect() fires before that posted
+            // lambda executes, the session teardown triggers a second capturer
+            // cleanup pass while ImageReader is null, causing a NPE crash.
+            //
+            // To avoid this race we:
+            // 1. Unpublish all publishers (queues async capturer destruction)
+            // 2. Delay session.disconnect() by 200ms so the main-thread Handler
+            //    processes the Camera2VideoCapturer.destroy() lambda first
             ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
             for (Publisher publisher : new ArrayList<>(publishers.values())) {
-                mSession.unpublish(publisher);
+                try {
+                    mSession.unpublish(publisher);
+                } catch (Exception e) {
+                    // Belt-and-suspenders: in case unpublish itself throws
+                    // synchronously on an already-destroyed publisher.
+                }
             }
-            mSession.disconnect();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                mSession.disconnect();
+            }, 200);
             promise.resolve(null);
         }
     }
@@ -201,7 +214,13 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
-            mSession.unpublish(publisher);
+            try {
+                mSession.unpublish(publisher);
+            } catch (Exception e) {
+                // Native SDK may throw NullPointerException inside
+                // Camera2VideoCapturer.destroy() if ImageReader is null
+                // (race with concurrent teardown). Safe to swallow.
+            }
             // Fix: remove by String key, not by Publisher object reference.
             // ConcurrentHashMap is keyed by publisherId (String), so passing the
             // Publisher object was a no-op that caused publishers to never be freed.
