@@ -1,8 +1,11 @@
 package com.opentokreactnative;
 
+import android.util.Log;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -56,6 +59,83 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         super(reactContext);
         context = reactContext;
         reactContext.addLifecycleEventListener(this);
+        installCamera2CrashGuard();
+    }
+
+    // -----------------------------------------------------------------------
+    // Camera2VideoCapturer.destroy() crash guard
+    //
+    // The native Vonage Video SDK (v2.34.0) has a bug where
+    // Camera2VideoCapturer.destroy() calls ImageReader.close() without a
+    // null-check. The destroy is posted to the main thread via a Handler
+    // lambda from onCaptureDestroyJNI, making it impossible to catch with
+    // a try-catch around session.unpublish()/disconnect().
+    //
+    // This handler intercepts ONLY that specific NPE. All other exceptions
+    // are forwarded to the default handler unchanged. Every suppressed
+    // occurrence is logged to logcat at WARN level so it remains visible
+    // during development and CI.
+    // -----------------------------------------------------------------------
+
+    private static final String TAG = "OTCamera2CrashGuard";
+    private static final AtomicBoolean sCrashGuardInstalled = new AtomicBoolean(false);
+
+    private static void installCamera2CrashGuard() {
+        if (!sCrashGuardInstalled.compareAndSet(false, true)) {
+            return; // Already installed (module re-created across reloads)
+        }
+        final Thread mainThread = android.os.Looper.getMainLooper().getThread();
+        final Thread.UncaughtExceptionHandler previousHandler = mainThread.getUncaughtExceptionHandler();
+
+        mainThread.setUncaughtExceptionHandler((thread, throwable) -> {
+            if (isCamera2DestroyNPE(throwable)) {
+                Log.w(TAG,
+                    "Suppressed known native SDK crash in Camera2VideoCapturer.destroy() " +
+                    "(ImageReader was null during publisher teardown). " +
+                    "This is a bug in VonageClientSDKVideo — report to native team.",
+                    throwable);
+                return;
+            }
+            // Everything else goes to the previous handler (React Native / system)
+            if (previousHandler != null) {
+                previousHandler.uncaughtException(thread, throwable);
+            }
+        });
+    }
+
+    /**
+     * Matches ONLY:
+     *  - NullPointerException
+     *  - with Camera2VideoCapturer.destroy() in the stack
+     *  - called from PublisherKit (onCaptureDestroyJNI lambda)
+     *
+     * This tight filter ensures we never accidentally suppress unrelated NPEs.
+     */
+    private static boolean isCamera2DestroyNPE(Throwable throwable) {
+        if (!(throwable instanceof NullPointerException)) {
+            return false;
+        }
+        StackTraceElement[] stack = throwable.getStackTrace();
+        if (stack == null || stack.length == 0) {
+            return false;
+        }
+        boolean hasCamera2Destroy = false;
+        boolean hasPublisherKit = false;
+        for (StackTraceElement el : stack) {
+            String cls = el.getClassName();
+            if (cls != null) {
+                if (cls.contains("Camera2VideoCapturer") && "destroy".equals(el.getMethodName())) {
+                    hasCamera2Destroy = true;
+                }
+                if (cls.contains("PublisherKit")) {
+                    hasPublisherKit = true;
+                }
+            }
+            if (hasCamera2Destroy && hasPublisherKit) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
