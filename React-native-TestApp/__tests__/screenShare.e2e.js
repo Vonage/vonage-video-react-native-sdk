@@ -65,7 +65,7 @@ describe('Screen Sharing', () => {
     // so subscriberCount drops to 0 briefly before going back to 1.
     console.log('[screenShare] Waiting for bot to receive screen share stream...');
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewStream(30000);
     } catch (e) {
       const state = await bot.getState();
       console.log('[screenShare] Bot state at timeout:', JSON.stringify(state));
@@ -111,17 +111,12 @@ describe('Screen Sharing', () => {
     await element(by.id('toggleScreenShare')).tap();
     console.log('[screenShare] Toggled screen share OFF.');
 
-    // Wait for the publisher to remount with camera source.
-    // The toggleScreenShare method unmounts the publisher for 1500ms before remounting.
+    // Publisher should remount with camera
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-
-    // Give the OpenTok platform time to propagate the new camera stream to the bot.
-    // The stream destruction + new stream creation needs time to fully propagate.
-    await new Promise(r => setTimeout(r, 5000));
 
     // Bot should receive the new camera stream
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewStream(30000);
     } catch (e) {
       const state = await bot.getState();
       throw new Error(
