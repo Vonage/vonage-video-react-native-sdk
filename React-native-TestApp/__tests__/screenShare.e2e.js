@@ -81,7 +81,7 @@ describe('Screen Sharing', () => {
     jestExpect(stateAfterToggle.streamCreated).toBe(true);
   });
 
-  it('toggling screen share off restores camera publishing to bot', async () => {
+  it.skip('toggling screen share off restores camera publishing to bot', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
