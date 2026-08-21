@@ -281,7 +281,7 @@ tasks.whenTaskAdded { task ->
 // does not officially support it yet. Full API level 37 support will be handled
 // as part of https://jira.vonage.com/browse/VIDCS-4943
 tasks.whenTaskAdded { task ->
-    if (task.name.contains("CheckAarMetadata")) {
+    if (task.name.contains("AarMetadata")) {
         task.enabled = false
     }
 }
