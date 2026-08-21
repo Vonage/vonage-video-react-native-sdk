@@ -1,0 +1,25 @@
+React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/project.pbxproj
+  s_2259db5f642856::t_d4a430a4e6cac9 292,322,391,472
+android/build.gradle
+  s_2259db5f642856::t_9fe094ee95bd68 99
+OpentokReactNative.podspec
+  s_2259db5f642856::t_fc3f06df1c0294 34
+src/generated/packageInfo.js
+  s_2259db5f642856::t_49956dc2eb8d70 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a5e0326a8b33ab44e18555dedd8a5ca344a75737",
+  "prompts": {},
+  "sessions": {
+    "s_2259db5f642856": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_e7f7f203-ead7-4102-b8f5-0a5f499c77eb",
+        "model": "auto"
+      },
+      "human_author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}
