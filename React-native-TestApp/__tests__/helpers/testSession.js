@@ -107,7 +107,9 @@ class TestSession {
     await this.joinBot(bot, joinOptions);
 
     if (shouldWait) {
+      console.log(`[addBot] Waiting for subscriber view (timeout: ${subscriberTimeout}ms)...`);
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(subscriberTimeout);
+      console.log('[addBot] Subscriber view appeared.');
     }
 
     return bot;
@@ -116,20 +118,13 @@ class TestSession {
   // --- App connection ---
 
   async connectApp() {
-    try {
-      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(2000);
-      await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(7000);
-    } catch (_) {}
-
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
     await element(by.id('sessionIdInput')).replaceText(this.credentials.sessionId);
     await element(by.id('tokenInput')).replaceText(this.credentials.tokenApp);
     if (this.credentials.apiUrl) {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
-    // Dismiss keyboard by tapping outside inputs — avoids side effects of
-    // tapReturnKey (autocomplete popups on Android, form submit on iOS).
+    // Dismiss keyboard to avoid autocomplete popups on Android.
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
@@ -155,19 +150,22 @@ class TestSession {
       await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(3000);
       await element(by.id('disconnectSession')).tap();
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(8000);
-    } catch (_) {
-      // App may already be on the connect screen, or unresponsive — either way, move on.
+    } catch (e) {
+      // App may already be on the connect screen, or unresponsive.
+      console.log('[disconnectApp] Could not disconnect gracefully:', e.message?.substring(0, 80));
     }
   }
 
   // --- Cleanup ---
 
   /**
-   * Per-test cleanup: close all bot browsers, disconnect app, clear events.
-   * Bots are fully destroyed (browser closed) — no reuse.
+   * Per-test cleanup: close all bot browsers, then force-relaunch the app.
    *
-   * If the app is unresponsive (ANR), forces a fresh app relaunch so the
-   * next test doesn't inherit a hung state and timeout for 240s.
+   * We always relaunch instead of attempting a graceful disconnect because
+   * the native Vonage SDK can leave the main thread in an ANR state after
+   * certain teardown sequences (forceMute + disconnect, unpublish races).
+   * A fresh app instance avoids cascading 240s timeouts from Espresso
+   * waiting on a deadlocked main thread.
    */
   async cleanup() {
     for (const bot of this.activeBots) {
@@ -177,27 +175,14 @@ class TestSession {
     }
     this.activeBots = [];
 
-    // Attempt graceful disconnect with a short timeout.
-    // If this fails (ANR / app hung), force-relaunch below.
-    let appResponsive = true;
+    // Force-relaunch: always start the next test with a clean app state.
     try {
-      await this.disconnectApp();
-      // Verify the app actually responded by checking for the submit button
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(6000);
-    } catch (e) {
-      appResponsive = false;
-      console.warn('[cleanup] App unresponsive during disconnect (possible ANR). Force-relaunching.');
-    }
-
-    if (!appResponsive) {
-      try {
-        await device.launchApp({ newInstance: true, permissions: { camera: 'YES', microphone: 'YES' } });
-        await device.disableSynchronization();
-        const { waitForAppReady } = require('./waitForApp');
-        await waitForAppReady();
-      } catch (relaunchErr) {
-        console.warn('[cleanup] App relaunch also failed:', relaunchErr.message);
-      }
+      await device.launchApp({ newInstance: true, permissions: { camera: 'YES', microphone: 'YES' } });
+      await device.disableSynchronization();
+      const { waitForAppReady } = require('./waitForApp');
+      await waitForAppReady();
+    } catch (relaunchErr) {
+      console.warn('[cleanup] App relaunch failed:', relaunchErr.message);
     }
 
     try {
