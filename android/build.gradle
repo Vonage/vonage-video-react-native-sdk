@@ -96,7 +96,7 @@ dependencies {
   // consumer app's React Native version, keeping this library in lockstep with it.
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.vonage:client-sdk-video:2.35.0'
+  implementation 'com.vonage:client-sdk-video:2.35.1'
 }
 
 react {
