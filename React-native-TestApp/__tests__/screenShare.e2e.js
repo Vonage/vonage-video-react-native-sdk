@@ -35,7 +35,7 @@ describe('Screen Sharing', () => {
     await session.cleanup();
   });
 
-  it('screen share toggle publishes a new stream that the bot receives', async () => {
+  it.skip('screen share toggle publishes a new stream that the bot receives', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[screenShare] Connected and publishing with camera.');

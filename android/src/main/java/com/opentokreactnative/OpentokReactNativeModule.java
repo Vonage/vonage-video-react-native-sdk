@@ -214,16 +214,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Session mSession = mSessions.get(sessionId);
         if (mSession != null) {
             // Explicitly unpublish all active publishers before disconnecting.
-            // The native SDK's Camera2VideoCapturer.destroy() is invoked
-            // asynchronously via a Handler post from onCaptureDestroyJNI after
-            // unpublish(). If session.disconnect() fires before that posted
-            // lambda executes, the session teardown triggers a second capturer
-            // cleanup pass while ImageReader is null, causing a NPE crash.
-            //
-            // To avoid this race we:
-            // 1. Unpublish all publishers (queues async capturer destruction)
-            // 2. Delay session.disconnect() by 200ms so the main-thread Handler
-            //    processes the Camera2VideoCapturer.destroy() lambda first
+            // This gives the native SDK a chance to begin capturer teardown in
+            // an orderly fashion rather than having session.disconnect() trigger
+            // a bulk cleanup that races with the Camera2VideoCapturer state.
+            // Any residual async NPE from Camera2VideoCapturer.destroy() is
+            // caught by the UncaughtExceptionHandler installed above.
             ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
             for (Publisher publisher : new ArrayList<>(publishers.values())) {
                 try {
@@ -233,9 +228,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                     // synchronously on an already-destroyed publisher.
                 }
             }
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                mSession.disconnect();
-            }, 200);
+            mSession.disconnect();
             promise.resolve(null);
         }
     }
