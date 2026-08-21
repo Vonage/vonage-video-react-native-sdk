@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -220,13 +221,19 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             // Any residual async NPE from Camera2VideoCapturer.destroy() is
             // caught by the UncaughtExceptionHandler installed above.
             ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-            for (Publisher publisher : new ArrayList<>(publishers.values())) {
+            for (Map.Entry<String, Publisher> entry : new ArrayList<>(publishers.entrySet())) {
+                String publisherId = entry.getKey();
+                Publisher publisher = entry.getValue();
                 try {
                     mSession.unpublish(publisher);
                 } catch (Exception e) {
                     // Belt-and-suspenders: in case unpublish itself throws
                     // synchronously on an already-destroyed publisher.
                 }
+                // Ensure stale publisher references do not accumulate across
+                // disconnect cycles (which can trigger repeated teardown on
+                // already-destroyed capturers in later tests).
+                publishers.remove(publisherId);
             }
             mSession.disconnect();
             promise.resolve(null);
