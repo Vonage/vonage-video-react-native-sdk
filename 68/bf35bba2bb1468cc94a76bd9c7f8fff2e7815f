@@ -1,0 +1,14 @@
+android/build.gradle
+  h_2dd6c0fa170a63 107-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "68bf35bba2bb1468cc94a76bd9c7f8fff2e7815f",
+  "prompts": {},
+  "humans": {
+    "h_2dd6c0fa170a63": {
+      "author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}
