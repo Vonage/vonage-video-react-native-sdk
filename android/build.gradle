@@ -96,11 +96,21 @@ dependencies {
   // consumer app's React Native version, keeping this library in lockstep with it.
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.vonage:client-sdk-video:2.34.1'
+  implementation 'com.vonage:client-sdk-video:2.35.1'
 }
 
 react {
   jsRootDir = file("../src/")
   libraryName = "OpentokReactNative"
   codegenJavaPackageName = "com.opentokreactnative"
+}
+
+// TODO: Disable AAR metadata check until compileSdkVersion is bumped to 37.
+// com.vonage:client-sdk-video:2.35.1 requires compile SDK 37, but current AGP
+// does not officially support it yet. Full API level 37 support will be handled
+// as part of https://jira.vonage.com/browse/VIDCS-4943
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("AarMetadata")) {
+        task.enabled = false
+    }
 }
