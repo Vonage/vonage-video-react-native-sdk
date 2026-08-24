@@ -66,6 +66,18 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Connecting app...');
     await session.connectApp();
 
+    // Wait for any stale streams from the shared session to settle.
+    // The previous test's bot may still be disconnecting on the server side,
+    // which could briefly make a subscriber view appear and then disappear.
+    // Ensure we start with NO subscriber view before adding our bot.
+    try {
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
+    } catch (_) {
+      // If a stale subscriber is visible, wait for it to go away
+      console.log('[subscriber] Stale subscriber detected, waiting for it to clear...');
+      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(15000);
+    }
+
     // Set up event capture for streamDestroyed
     await setCaptureFilter(['streamDestroyed']);
 
@@ -100,7 +112,7 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Stream destroyed event verified with correct streamId.');
 
     // Give the UI time to unmount the subscriber view
-    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(10000);
+    await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(15000);
     console.log('[subscriber] Subscriber gone after bot disconnect.');
   });
 });

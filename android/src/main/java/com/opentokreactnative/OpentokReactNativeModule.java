@@ -85,14 +85,15 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         if (!sCrashGuardInstalled.compareAndSet(false, true)) {
             return; // Already installed (module re-created across reloads)
         }
-        final Thread mainThread = android.os.Looper.getMainLooper().getThread();
-        final Thread.UncaughtExceptionHandler previousHandler = mainThread.getUncaughtExceptionHandler();
+        final Thread.UncaughtExceptionHandler previousHandler =
+            Thread.getDefaultUncaughtExceptionHandler();
 
-        mainThread.setUncaughtExceptionHandler((thread, throwable) -> {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             if (isCamera2DestroyNPE(throwable)) {
                 Log.w(TAG,
                     "Suppressed known native SDK crash in Camera2VideoCapturer.destroy() " +
-                    "(ImageReader was null during publisher teardown). " +
+                    "(ImageReader was null during publisher teardown) on thread: " +
+                    thread.getName() + ". " +
                     "This is a bug in VonageClientSDKVideo — report to native team.",
                     throwable);
                 return;
