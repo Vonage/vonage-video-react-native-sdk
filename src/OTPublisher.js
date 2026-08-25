@@ -190,15 +190,22 @@ export default class OTPublisher extends React.Component {
     //NOSONAR - this method is exposed externally
     let transformer;
     if (filter && filter.type === 'backgroundBlur') {
-      const blurStrength = filter.blurStrength || 'high';
+      // Default only when omitted — '', null, false and 0 are invalid inputs and
+      // must reach the check below rather than being silently treated as 'high'.
+      const blurStrength =
+        filter.blurStrength === undefined ? 'high' : filter.blurStrength;
       if (blurStrength !== 'low' && blurStrength !== 'high') {
         throw new Error(
           `applyVideoFilter: blurStrength must be "low" or "high" (got "${filter.blurStrength}").`
         );
       }
+      // The Vonage Media Library expects a capitalised radius ("Low"/"High"/"None");
+      // the Web SDK's public API is lowercase, so translate at the boundary.
       transformer = {
         name: 'BackgroundBlur',
-        properties: JSON.stringify({ radius: blurStrength }),
+        properties: JSON.stringify({
+          radius: blurStrength === 'low' ? 'Low' : 'High',
+        }),
       };
     } else if (filter && filter.type === 'backgroundReplacement') {
       if (

@@ -59,19 +59,29 @@ describe('OTPublisher video filters', () => {
     publisher.state = { ...publisher.state, publisherId: 'pub-1' };
   });
 
-  it('maps backgroundBlur to a BackgroundBlur transformer', () => {
+  // The media library's radius values are capitalised ("Low"/"High") on both
+  // platforms, while the Web SDK's blurStrength is lowercase.
+  it('maps blurStrength "low" to the native radius "Low"', () => {
     publisher.applyVideoFilter({ type: 'backgroundBlur', blurStrength: 'low' });
 
     expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', [
-      { name: 'BackgroundBlur', properties: JSON.stringify({ radius: 'low' }) },
+      { name: 'BackgroundBlur', properties: JSON.stringify({ radius: 'Low' }) },
     ]);
   });
 
-  it('defaults blurStrength to high', () => {
+  it('maps blurStrength "high" to the native radius "High"', () => {
+    publisher.applyVideoFilter({ type: 'backgroundBlur', blurStrength: 'high' });
+
+    expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', [
+      { name: 'BackgroundBlur', properties: JSON.stringify({ radius: 'High' }) },
+    ]);
+  });
+
+  it('defaults an omitted blurStrength to High', () => {
     publisher.applyVideoFilter({ type: 'backgroundBlur' });
 
     expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', [
-      { name: 'BackgroundBlur', properties: JSON.stringify({ radius: 'high' }) },
+      { name: 'BackgroundBlur', properties: JSON.stringify({ radius: 'High' }) },
     ]);
   });
 
@@ -107,6 +117,20 @@ describe('OTPublisher video filters', () => {
   it('throws on an invalid blurStrength', () => {
     expect(() =>
       publisher.applyVideoFilter({ type: 'backgroundBlur', blurStrength: 'medium' })
+    ).toThrow(/blurStrength must be/);
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+  });
+
+  // Only an omitted blurStrength defaults; falsy values are bad input and must
+  // throw rather than silently applying high blur.
+  it.each([
+    ['empty string', ''],
+    ['null', null],
+    ['false', false],
+    ['zero', 0],
+  ])('throws on a falsy blurStrength (%s)', (_label, blurStrength) => {
+    expect(() =>
+      publisher.applyVideoFilter({ type: 'backgroundBlur', blurStrength })
     ).toThrow(/blurStrength must be/);
     expect(OT.setVideoTransformers).not.toHaveBeenCalled();
   });
