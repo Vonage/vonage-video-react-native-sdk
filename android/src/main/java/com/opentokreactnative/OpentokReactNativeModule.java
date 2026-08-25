@@ -3,6 +3,7 @@ package com.opentokreactnative;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -51,8 +52,29 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Application.ActivityLifecycleCallbacks {
     public static final String NAME = "OpentokReactNative";
 
+    /**
+     * Dedicated tag for session/publisher/subscriber lifecycle transitions.
+     * Filter with: adb logcat -s OTRN-LIFECYCLE
+     * Intentionally limited to discrete lifecycle events (create/teardown) so it
+     * stays low-volume — never attach this to per-frame or per-stats callbacks.
+     */
+    private static final String LIFECYCLE_TAG = "OTRN-LIFECYCLE";
+
     private ReactApplicationContext context = null;
     private OTRN sharedState = OTRN.getSharedState();
+
+    /**
+     * Snapshot of shared-state map sizes. Used to spot unbounded growth (leaks)
+     * and to confirm teardown actually released native objects.
+     */
+    private String sharedStateSummary() {
+        return "sessions=" + sharedState.getSessions().size()
+                + " publishers=" + sharedState.getPublishers().size()
+                + " subscribers=" + sharedState.getSubscribers().size()
+                + " subscriberStreams=" + sharedState.getSubscriberStreams().size()
+                + " publisherStreams=" + sharedState.getPublisherStreams().size()
+                + " connections=" + sharedState.getConnections().size();
+    }
 
     @Override
     public String getName() {
@@ -138,6 +160,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void disconnect(String sessionId, Promise promise) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+        Log.i(LIFECYCLE_TAG, "disconnect() sessionId=" + sessionId
+                + " found=" + (mSession != null) + " | " + sharedStateSummary());
         if (mSession != null) {
             mSession.disconnect();
             promise.resolve(null);
@@ -197,9 +221,20 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         }
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
+        Log.i(LIFECYCLE_TAG, "unpublish() publisherId=" + publisherId
+                + " found=" + (publisher != null) + " | " + sharedStateSummary());
         if (publisher != null) {
             mSession.unpublish(publisher);
-            publishers.remove(publisherId);
+            // The publisher is deliberately NOT removed from shared state here.
+            //
+            // Removing it at this point drops the last Java strong reference while the
+            // SDK's native capturer teardown is still queued on the main Looper. When
+            // that queued work runs it can operate on an already-finalized ImageReader,
+            // surfacing as an NPE inside Camera2VideoCapturer.destroy().
+            //
+            // Release happens in OTRNPublisher.onStreamDestroyed() instead, once the SDK
+            // has confirmed the stream is gone. This mirrors the iOS implementation
+            // (PublisherDelegateHandler.publisher(_:streamDestroyed:)).
         }
     }
 
@@ -215,6 +250,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 }
                 ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
                 Subscriber subscriber = subscribers.get(streamId);
+                Log.i(LIFECYCLE_TAG, "removeSubscriber() streamId=" + streamId
+                        + " found=" + (subscriber != null) + " | " + sharedStateSummary());
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
                     subscribers.remove(streamId);
@@ -388,6 +425,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         sharedState.getConnections().clear();
         sharedState.getAndroidOnTopMap().remove(sessionId);
         sharedState.getAndroidZOrderMap().remove(sessionId);
+        // Anything still listed here after a disconnect was not released by its own
+        // lifecycle path (unpublish / removeSubscriber / onStreamDropped).
+        Log.i(LIFECYCLE_TAG, "onDisconnected() sessionId=" + sessionId
+                + " | " + sharedStateSummary());
     }
 
     @Override
