@@ -182,6 +182,53 @@ export default class OTPublisher extends React.Component {
     );
   }
 
+  // Mirrors the Web SDK's Publisher.applyVideoFilter().
+  // NOTE (mobile): backgroundReplacement expects a LOCAL image file path — unlike
+  // the Web SDK's backgroundImgUrl, a remote URL is not fetched by the native
+  // media library, so download the image to a local file first.
+  applyVideoFilter(filter) {
+    //NOSONAR - this method is exposed externally
+    let transformer;
+    if (filter && filter.type === 'backgroundBlur') {
+      const blurStrength = filter.blurStrength || 'high';
+      if (blurStrength !== 'low' && blurStrength !== 'high') {
+        throw new Error(
+          `applyVideoFilter: blurStrength must be "low" or "high" (got "${filter.blurStrength}").`
+        );
+      }
+      transformer = {
+        name: 'BackgroundBlur',
+        properties: JSON.stringify({ radius: blurStrength }),
+      };
+    } else if (filter && filter.type === 'backgroundReplacement') {
+      if (
+        typeof filter.backgroundImgUrl !== 'string' ||
+        filter.backgroundImgUrl.length === 0
+      ) {
+        throw new Error(
+          'applyVideoFilter: backgroundReplacement requires a non-empty ' +
+            'backgroundImgUrl (a local image file path on mobile).'
+        );
+      }
+      transformer = {
+        name: 'BackgroundReplacement',
+        properties: JSON.stringify({ image_file_path: filter.backgroundImgUrl }),
+      };
+    } else {
+      throw new Error(
+        `applyVideoFilter: unsupported filter type "${
+          filter && filter.type
+        }". Use "backgroundBlur" or "backgroundReplacement".`
+      );
+    }
+    this.setVideoTransformers([transformer]);
+  }
+
+  clearVideoFilter() {
+    //NOSONAR - this method is exposed externally
+    this.setVideoTransformers([]);
+  }
+
   componentWillUnmount() {
     OT.unpublish(this.context.sessionId, this.state.publisherId);
     const publisherStreamId = getPublisherStream(this.context.sessionId);
