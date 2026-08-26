@@ -84,6 +84,50 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public OpentokReactNativeModule(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
+        installCameraDestroyNpeCrashGuard();
+    }
+
+    /**
+     * Workaround for a known bug in the native Video SDK (fixed in 2.36.0) where
+     * Camera2VideoCapturer.destroy() throws NPE when ImageReader is null
+     * (camera never opened — e.g. no camera on device, permissions denied,
+     * or publisher torn down before camera init completed).
+     *
+     * This installs a thread-level UncaughtExceptionHandler on the main thread
+     * that suppresses only this specific crash and forwards everything else to
+     * the previous handler.
+     *
+     * TODO: Remove once native SDK is bumped to 2.36.0+
+     */
+    private static boolean crashGuardInstalled = false;
+
+    private static synchronized void installCameraDestroyNpeCrashGuard() {
+        if (crashGuardInstalled) return;
+        crashGuardInstalled = true;
+
+        final Thread mainThread = android.os.Looper.getMainLooper().getThread();
+        final Thread.UncaughtExceptionHandler previousHandler = mainThread.getUncaughtExceptionHandler();
+
+        mainThread.setUncaughtExceptionHandler((thread, throwable) -> {
+            if (isCameraDestroyNpe(throwable)) {
+                Log.w(LIFECYCLE_TAG,
+                        "Suppressed Camera2VideoCapturer.destroy() NPE (known SDK bug, fixed in 2.36.0)",
+                        throwable);
+                return;
+            }
+            if (previousHandler != null) {
+                previousHandler.uncaughtException(thread, throwable);
+            }
+        });
+    }
+
+    private static boolean isCameraDestroyNpe(Throwable throwable) {
+        if (!(throwable instanceof NullPointerException)) return false;
+        StackTraceElement[] stack = throwable.getStackTrace();
+        if (stack == null || stack.length == 0) return false;
+        String cls = stack[0].getClassName();
+        String method = stack[0].getMethodName();
+        return cls.contains("Camera2VideoCapturer") && "destroy".equals(method);
     }
 
     @Override
