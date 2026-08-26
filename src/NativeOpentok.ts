@@ -173,6 +173,28 @@ export interface Spec extends TurboModule {
   forceMuteStream(sessionId: string, streamId: string): Promise<boolean>;
   forceDisconnect(sessionId: string, connectionId: string): Promise<boolean>;
   disableForceMute(sessionId: string): Promise<boolean>;
+
+  // --- Calling services: iOS CallKit / Android ConnectionService (issue #285) ---
+
+  /** True when calling-services mode can be used. iOS: false while a custom
+   *  audio device is installed (e.g. a session created with enableStereoOutput). */
+  isCallingServicesModeAvailable(): Promise<boolean>;
+
+  /** iOS only. Hands AVAudioSession activation to CallKit. Call early in the app lifecycle. */
+  enableCallingServicesMode(): Promise<void>;
+  /** iOS only. Configures (does not activate) the session before a CXAnswer/CXStartCallAction. */
+  preconfigureAudioSessionForCall(mode?: string): Promise<void>;
+  /** iOS only. Forward from CXProviderDelegate provider(_:didActivate:). */
+  notifyAudioSessionActivated(): Promise<void>;
+  /** iOS only. Forward from CXProviderDelegate provider(_:didDeactivate:). */
+  notifyAudioSessionDeactivated(): Promise<void>;
+
+  /** Android only. false delegates audio-focus control to the app/ConnectionService. */
+  setRequestAudioFocus(requestFocus: boolean): Promise<void>;
+  /** Android only. Forward when the Connection becomes active. */
+  notifyAudioFocusActivated(): Promise<void>;
+  /** Android only. Forward when the call ends. */
+  notifyAudioFocusDeactivated(): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('OpentokReactNative');

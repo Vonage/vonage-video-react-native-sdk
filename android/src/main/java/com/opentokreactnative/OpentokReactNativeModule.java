@@ -19,6 +19,8 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
+import com.opentok.android.AudioDeviceManager;
+import com.opentok.android.BaseAudioDevice;
 import com.opentok.android.Connection;
 import com.opentok.android.MuteForcedInfo;
 import com.opentok.android.OpentokError;
@@ -365,6 +367,81 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         } else {
             promise.reject("There was an error setting the encryption secret. The native session instance could not be found.");
         }
+    }
+
+    // --- Calling services: Android ConnectionService (issue #285) ---
+
+    private BaseAudioDevice.AudioFocusManager audioFocusManager = null;
+
+    private BaseAudioDevice.AudioFocusManager getAudioFocusManager() {
+        // getAudioFocusManager() is an INSTANCE method on AudioDeviceManager and needs a Context,
+        // unlike the static setAudioDevice()/getAudioDevice().
+        if (audioFocusManager == null && context != null) {
+            audioFocusManager = new AudioDeviceManager(context).getAudioFocusManager();
+        }
+        return audioFocusManager;
+    }
+
+    @Override
+    public void isCallingServicesModeAvailable(Promise promise) {
+        promise.resolve(getAudioFocusManager() != null);
+    }
+
+    @Override
+    public void setRequestAudioFocus(boolean requestFocus, Promise promise) {
+        BaseAudioDevice.AudioFocusManager manager = getAudioFocusManager();
+        if (manager == null) {
+            promise.reject("CALLING_SERVICES_UNAVAILABLE", "AudioFocusManager is unavailable.");
+            return;
+        }
+        // false delegates audio focus to the app/ConnectionService. The SDK then stops its
+        // automatic audio routing, so the app must drive routing via CallEndpoint/CallAudioState.
+        manager.setRequestAudioFocus(requestFocus);
+        promise.resolve(null);
+    }
+
+    @Override
+    public void notifyAudioFocusActivated(Promise promise) {
+        BaseAudioDevice.AudioFocusManager manager = getAudioFocusManager();
+        if (manager == null) {
+            promise.reject("CALLING_SERVICES_UNAVAILABLE", "AudioFocusManager is unavailable.");
+            return;
+        }
+        manager.audioFocusActivated();
+        promise.resolve(null);
+    }
+
+    @Override
+    public void notifyAudioFocusDeactivated(Promise promise) {
+        BaseAudioDevice.AudioFocusManager manager = getAudioFocusManager();
+        if (manager == null) {
+            promise.reject("CALLING_SERVICES_UNAVAILABLE", "AudioFocusManager is unavailable.");
+            return;
+        }
+        manager.audioFocusDeactivated();
+        promise.resolve(null);
+    }
+
+    // iOS-only methods: no-ops on Android so app code can call them unconditionally.
+
+    @Override
+    public void enableCallingServicesMode(Promise promise) {
+        promise.resolve(null);
+    }
+
+    @Override
+    public void preconfigureAudioSessionForCall(String mode, Promise promise) {
+        promise.resolve(null);
+    }
+
+    @Override
+    public void notifyAudioSessionActivated(Promise promise) {
+        promise.resolve(null);
+    }
+
+    @Override
+    public void notifyAudioSessionDeactivated(Promise promise) {
+        promise.resolve(null);
     }
 
     @Override
