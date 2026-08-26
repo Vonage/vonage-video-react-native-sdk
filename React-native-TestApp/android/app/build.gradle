@@ -112,7 +112,11 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    
+
+    // Local .aar from native SDK nightly build (2.36.0-preview) to test
+    // Camera2VideoCapturer NPE fix. Remove once 2.36.0 is on Maven.
+    implementation files("${rootProject.projectDir}/../node_modules/@vonage/client-sdk-video-react-native/android/libs/opentok-android-sdk-2.36.0.aar")
+
     // MultiDex support for apps with >64K methods
     implementation("androidx.multidex:multidex:2.0.1")
 

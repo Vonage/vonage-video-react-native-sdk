@@ -96,7 +96,14 @@ dependencies {
   // consumer app's React Native version, keeping this library in lockstep with it.
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.vonage:client-sdk-video:2.35.1'
+  // Using local .aar from nightly build to test Camera2VideoCapturer NPE fix.
+  // The .aar can't live here (library modules reject local .aar deps).
+  // It's declared in the test app's build.gradle instead.
+  // Revert to Maven once 2.36.0 is officially released:
+  //   implementation 'com.vonage:client-sdk-video:2.35.1'
+  compileOnly files('libs/opentok-android-sdk-2.36.0.aar')
+  // The .aar's transitive dependency on webrtc still needs to come from Maven:
+  implementation 'com.vonage:webrtc:145.0.113'
 }
 
 react {
