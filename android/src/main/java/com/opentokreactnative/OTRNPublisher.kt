@@ -41,6 +41,36 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    // Throttle: only emit onAudioLevel once per this interval.
+    private var lastAudioLevelEmitMs: Long = 0
+    private val AUDIO_LEVEL_THROTTLE_MS: Long = 200
+
+    // Diagnostics
+    private var diagLastReportMs: Long = System.currentTimeMillis()
+    private var diagAudioLevelFired: Int = 0
+    private var diagAudioLevelEmitted: Int = 0
+    private var diagAudioStatsFired: Int = 0
+    private var diagVideoStatsFired: Int = 0
+
+    private fun maybePrintDiagnostics() {
+        val now = System.currentTimeMillis()
+        if (now - diagLastReportMs < 10_000) return
+        val elapsed = (now - diagLastReportMs) / 1000.0
+        Log.i("OTRN-DIAG", String.format(
+            "publisher id=%s | %.1fs | audioLevel: %d fired, %d emitted | audioStats=%d videoStats=%d | publishers=%d",
+            publisherId ?: "?",
+            elapsed,
+            diagAudioLevelFired, diagAudioLevelEmitted,
+            diagAudioStatsFired, diagVideoStatsFired,
+            sharedState.getPublishers().size
+        ))
+        diagLastReportMs = now
+        diagAudioLevelFired = 0
+        diagAudioLevelEmitted = 0
+        diagAudioStatsFired = 0
+        diagVideoStatsFired = 0
+    }
+
     constructor(context: Context) : super(context) {
         configureComponent()
     }
@@ -413,6 +443,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
+        diagAudioLevelFired++
+        maybePrintDiagnostics()
+
+        // Throttle: skip if we emitted within the last AUDIO_LEVEL_THROTTLE_MS.
+        val now = System.currentTimeMillis()
+        if (now - lastAudioLevelEmitMs < AUDIO_LEVEL_THROTTLE_MS) return
+        lastAudioLevelEmitMs = now
+        diagAudioLevelEmitted++
+
         val publisherId = Utils.getPublisherId(publisher) // Do we need this?
         if (publisherId.isNotEmpty()) {
             val payload =
@@ -445,6 +484,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherAudioStats>?
     ) {
+        diagAudioStatsFired++
         val statsArray: WritableArray = Arguments.createArray()
         for (stat in stats!!) {
             val audioStats: WritableMap = Arguments.createMap()
@@ -474,6 +514,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherVideoStats>?
     ) {
+        diagVideoStatsFired++
         val publisherId = Utils.getPublisherId(publisher)
         if (publisherId.isNotEmpty()) {
             val statsArrayMap: WritableArray = Arguments.createArray()
