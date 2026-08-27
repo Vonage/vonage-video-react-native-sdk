@@ -65,6 +65,32 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
+    public void invalidate() {
+        // New-Architecture cleanup hook. OTRN is a static singleton, so without this
+        // the previous Session survives a JS reload — still connected to the backend
+        // and still dispatching callbacks into a destroyed React instance. Disconnect
+        // the sessions, remove their listeners, and clear the shared registries.
+        for (Session session : sharedState.getSessions().values()) {
+            session.setSessionListener(null);
+            session.setConnectionListener(null);
+            session.setSignalListener(null);
+            session.setArchiveListener(null);
+            session.setMuteListener(null);
+            session.setStreamPropertiesListener(null);
+            session.setStreamCaptionsPropertiesListener(null);
+            session.disconnect();
+        }
+        sharedState.getSessions().clear();
+        sharedState.getPublishers().clear();
+        sharedState.getSubscribers().clear();
+        sharedState.getConnections().clear();
+        sharedState.getSubscriberStreams().clear();
+        sharedState.getAndroidOnTopMap().clear();
+        sharedState.getAndroidZOrderMap().clear();
+        super.invalidate();
+    }
+
+    @Override
     public void initSession(String apiKey, String sessionId, ReadableMap options) {
 
         final boolean useTextureViews = options.getBoolean("useTextureViews");
