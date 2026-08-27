@@ -1,6 +1,7 @@
 package com.opentokreactnative
 
 import android.content.Context
+import android.hardware.camera2.CameraManager
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
 import android.util.Log
@@ -246,6 +247,16 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             publisher = publisherBuilder?.build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen)
         } else if (this.props?.get("videoSource") == "camera") {
+            // Check if any camera is available. If not, substitute a no-op capturer
+            // to prevent the SDK from constructing Camera2VideoCapturer (whose destroy()
+            // throws NPE when ImageReader is null — fixed in native SDK 2.36.0).
+            val hasCamera = try {
+                val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                cameraManager.cameraIdList.isNotEmpty()
+            } catch (e: Exception) {
+                false
+            }
+
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
                 .audioBitrate((this.props?.get("audioBitrate") as Double).toInt())
                 .publisherAudioFallbackEnabled(this.props?.get("publisherAudioFallback") as Boolean)
@@ -261,12 +272,18 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 .videoTrack(this.props?.get("videoTrack") as Boolean)
                 .enableOpusDtx(this.props?.get("enableDtx") as Boolean)
                 .senderStatsTrack(this.props?.get("publishSenderStats") as Boolean)
+
+            if (!hasCamera) {
+                publisherBuilder = publisherBuilder.capturer(OTNoOpVideoCapturer())
+                Log.w(LIFECYCLE_TAG, "No camera available — using OTNoOpVideoCapturer to avoid SDK NPE")
+            }
+
             if (preferredVideoCodecs != null) {
                 publisherBuilder?.preferredVideoCodecs(preferredVideoCodecs)
             }
             publisher = publisherBuilder?.build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeCamera)
-            if (this.props?.get("videoTrack") as Boolean) {
+            if (hasCamera && this.props?.get("videoTrack") as Boolean) {
                 publisher?.getCapturer()?.setVideoContentHint(
                     Utils.convertVideoContentHint(this.props?.get("videoContentHint") as String)
                 )
