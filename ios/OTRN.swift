@@ -24,7 +24,7 @@ import React
 /// every per-key operation is atomic and the backing storage is never read while
 /// it is being mutated on another thread. The queue is private and non-reentrant,
 /// so `sync` from the main thread cannot deadlock.
-final class AtomicDictionary<Key: Hashable, Value> {
+private final class AtomicDictionary<Key: Hashable, Value> {
   private var storage: [Key: Value]
   private let queue = DispatchQueue(
     label: "com.opentokreactnative.atomicdictionary",
