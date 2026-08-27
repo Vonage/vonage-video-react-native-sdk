@@ -1,5 +1,5 @@
-// Regression test for PR #192 review: the Android permission-denial .catch must
-// surface the error to the CURRENT props.eventHandlers.error (not a stale cached
+// Regression test for #190: the Android permission-denial .catch must surface
+// the error to the CURRENT props.eventHandlers.error (not a stale cached
 // reference), matching the render onError path.
 
 jest.mock('react-native', () => ({
@@ -10,11 +10,6 @@ jest.mock('../OT', () => ({
   OT: { publish: jest.fn() },
   checkAndroidPermissions: jest.fn(() => Promise.reject(new Error('permission denied'))),
 }));
-jest.mock(
-  'deprecated-react-native-prop-types',
-  () => ({ ViewPropTypes: { style: () => null } }),
-  { virtual: true }
-);
 jest.mock('react-native-uuid', () => ({ v4: () => 'pub-uuid-1' }));
 jest.mock('../OTPublisherNativeComponent', () => 'OTRNPublisher');
 jest.mock('../helpers/OTPublisherHelper', () => ({
