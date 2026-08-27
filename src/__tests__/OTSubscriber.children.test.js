@@ -14,6 +14,12 @@ jest.mock(
   { virtual: true }
 );
 jest.mock('../OTSubscriberView', () => 'OTSubscriberView');
+jest.mock('../helpers/OTSessionHelper', () => ({
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  getStreams: jest.fn(() => []),
+  getPublisherStream: jest.fn(() => null),
+}));
 
 import React from 'react';
 import OTSubscriber from '../OTSubscriber';
