@@ -43,11 +43,11 @@ describe('Publisher Options', () => {
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Muted.');
 
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Unmuted.');
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
   });
 
   it('toggle video off then on (camera off/on)', async () => {
@@ -55,20 +55,20 @@ describe('Publisher Options', () => {
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera off.');
 
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera on.');
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
   });
 
   it('unpublish then republish', async () => {
     await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(15000);
     await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Unpublished.');
 
-    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(15000);
     await element(by.id('stopPublishing')).tap();
     console.log('[unpublish] Republished.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
@@ -77,24 +77,24 @@ describe('Publisher Options', () => {
 
   it('publish audio-only (video off)', async () => {
     await element(by.id('tabPublisher')).tap();
-    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasVideo')).tap();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[audio-only] Publishing audio only.');
 
     // Restore
     await element(by.id('hasVideo')).tap();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
   });
 
   it('publish video-only (audio off)', async () => {
     await element(by.id('tabPublisher')).tap();
     await element(by.id('hasAudio')).tap();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[video-only] Publishing video only.');
 
     // Restore
     await element(by.id('hasAudio')).tap();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
   });
 });

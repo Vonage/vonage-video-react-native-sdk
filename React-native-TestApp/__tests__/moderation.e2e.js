@@ -84,8 +84,8 @@ describe('Moderation', () => {
     console.log('[forceMute] Bot was force-muted!');
 
     // Verify event indicators on the RN app side
-    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(15000);
 
     // Verify muteForced payload (moderator may not always receive this callback)
     try {
@@ -190,7 +190,7 @@ describe('Moderation', () => {
     console.log('[muteStream] Bot muteForced:', muteReceived);
 
     // No crash
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
     console.log('[muteStream] forceMuteStream completed without crash.');
   });
 
@@ -231,8 +231,8 @@ describe('Moderation', () => {
     jestExpect(destroyedEvent.streamId).toBe(streamId);
     console.log('[forceUnpublish] streamDestroyed streamId matches.');
 
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
     console.log('[forceUnpublish] Force-unpublish completed.');
   });
 

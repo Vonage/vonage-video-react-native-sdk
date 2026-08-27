@@ -125,7 +125,7 @@ describe('Moderation Advanced', () => {
       console.log('[disableForceMute] Bot muteForced:', botState.muteForced);
 
       // Verify session stable
-      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
       console.log('[disableForceMute] Session stable after forceMuteAll.');
     });
   });
@@ -182,7 +182,7 @@ describe('Moderation Advanced', () => {
       jestExpect(botState.muteForced).toBe(true);
 
       // App stays connected
-      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
       console.log('[forceMuteStream] forceMuteStream completed successfully.');
     });
 

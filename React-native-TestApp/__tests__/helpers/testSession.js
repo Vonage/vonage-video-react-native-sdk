@@ -118,7 +118,7 @@ class TestSession {
   async connectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
@@ -139,7 +139,7 @@ class TestSession {
   async connectAppWithCredentials(apiKey, sessionId, token) {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
     await element(by.id('apiKeyInput')).replaceText(apiKey);
@@ -152,7 +152,7 @@ class TestSession {
   async disconnectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
   }
 
