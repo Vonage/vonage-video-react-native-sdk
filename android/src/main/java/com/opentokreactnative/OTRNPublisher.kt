@@ -216,6 +216,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
+        // Guard against re-attach: Android fires onAttachedToWindow again after any
+        // detach; without this a second attach builds a duplicate Publisher, orphans
+        // the first in the shared map, and contends for the camera.
+        if (publisher != null) return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -319,11 +323,21 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
+        // Safe cast: if props haven't fully populated during attach, bail out instead
+        // of throwing on an unchecked `as String` (matches the prop-cast hardening in
+        // this PR); the pending-publish path retries once the view is attached.
+        val publisherId = this.props?.get("publisherId") as? String ?: return
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String, publisher ?: return);
+            .put(publisherId, publisher ?: return);
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
+        }
+        // Complete a publish request that arrived from JS before this view attached
+        // (OpentokReactNativeModule.publish records it when the publisher is not yet
+        // registered). Whichever side arrives second performs the actual publish.
+        if (sharedState.getPendingPublishers().remove(publisherId) != null) {
+            sharedState.getSessions().get(sessionId)?.publish(publisher)
         }
     }
 
