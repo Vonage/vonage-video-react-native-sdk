@@ -25,6 +25,11 @@ class OTRNSubscriberManager(context: ReactApplicationContext) :
     override fun createViewInstance(context: ThemedReactContext): OTRNSubscriber =
         OTRNSubscriber(context)
 
+    override fun onDropViewInstance(view: OTRNSubscriber) {
+        view.cleanUpMemory()
+        super.onDropViewInstance(view)
+    }
+
     @ReactProp(name = "streamId")
     override public fun setStreamId(view: OTRNSubscriber, streamId: String?) {
         view.setStreamId(streamId)
