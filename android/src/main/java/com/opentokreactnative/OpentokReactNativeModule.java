@@ -1,17 +1,14 @@
 package com.opentokreactnative;
 
-import android.app.Activity;
-import android.app.Application;
-import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.util.Log;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -47,8 +44,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Session.MuteListener,
         Session.StreamPropertiesListener,
         Session.StreamCaptionsPropertiesListener,
-        // Revisit this
-        Application.ActivityLifecycleCallbacks {
+        LifecycleEventListener {
     public static final String NAME = "OpentokReactNative";
 
     private ReactApplicationContext context = null;
@@ -62,6 +58,84 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public OpentokReactNativeModule(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
+        reactContext.addLifecycleEventListener(this);
+        installCamera2CrashGuard();
+    }
+
+    // -----------------------------------------------------------------------
+    // Camera2VideoCapturer.destroy() crash guard
+    //
+    // The native Vonage Video SDK (v2.34.0) has a bug where
+    // Camera2VideoCapturer.destroy() calls ImageReader.close() without a
+    // null-check. The destroy is posted to the main thread via a Handler
+    // lambda from onCaptureDestroyJNI, making it impossible to catch with
+    // a try-catch around session.unpublish()/disconnect().
+    //
+    // This handler intercepts ONLY that specific NPE. All other exceptions
+    // are forwarded to the default handler unchanged. Every suppressed
+    // occurrence is logged to logcat at WARN level so it remains visible
+    // during development and CI.
+    // -----------------------------------------------------------------------
+
+    private static final String TAG = "OTCamera2CrashGuard";
+    private static final AtomicBoolean sCrashGuardInstalled = new AtomicBoolean(false);
+
+    private static void installCamera2CrashGuard() {
+        if (!sCrashGuardInstalled.compareAndSet(false, true)) {
+            return; // Already installed (module re-created across reloads)
+        }
+        final Thread mainThread = android.os.Looper.getMainLooper().getThread();
+        final Thread.UncaughtExceptionHandler previousHandler = mainThread.getUncaughtExceptionHandler();
+
+        mainThread.setUncaughtExceptionHandler((thread, throwable) -> {
+            if (isCamera2DestroyNPE(throwable)) {
+                Log.w(TAG,
+                    "Suppressed known native SDK crash in Camera2VideoCapturer.destroy() " +
+                    "(ImageReader was null during publisher teardown). " +
+                    "This is a bug in VonageClientSDKVideo — report to native team.",
+                    throwable);
+                return;
+            }
+            // Everything else goes to the previous handler (React Native / system)
+            if (previousHandler != null) {
+                previousHandler.uncaughtException(thread, throwable);
+            }
+        });
+    }
+
+    /**
+     * Matches ONLY:
+     *  - NullPointerException
+     *  - with Camera2VideoCapturer.destroy() in the stack
+     *  - called from PublisherKit (onCaptureDestroyJNI lambda)
+     *
+     * This tight filter ensures we never accidentally suppress unrelated NPEs.
+     */
+    private static boolean isCamera2DestroyNPE(Throwable throwable) {
+        if (!(throwable instanceof NullPointerException)) {
+            return false;
+        }
+        StackTraceElement[] stack = throwable.getStackTrace();
+        if (stack == null || stack.length == 0) {
+            return false;
+        }
+        boolean hasCamera2Destroy = false;
+        boolean hasPublisherKit = false;
+        for (StackTraceElement el : stack) {
+            String cls = el.getClassName();
+            if (cls != null) {
+                if (cls.contains("Camera2VideoCapturer") && "destroy".equals(el.getMethodName())) {
+                    hasCamera2Destroy = true;
+                }
+                if (cls.contains("PublisherKit")) {
+                    hasPublisherKit = true;
+                }
+            }
+            if (hasCamera2Destroy && hasPublisherKit) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -198,8 +272,17 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisher);
+            try {
+                mSession.unpublish(publisher);
+            } catch (Exception e) {
+                // Native SDK may throw NullPointerException inside
+                // Camera2VideoCapturer.destroy() if ImageReader is null
+                // (race with concurrent teardown). Safe to swallow.
+            }
+            // Fix: remove by String key, not by Publisher object reference.
+            // ConcurrentHashMap is keyed by publisherId (String), so passing the
+            // Publisher object was a no-op that caused publishers to never be freed.
+            publishers.remove(publisherId);
         }
     }
 
@@ -217,8 +300,14 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 Subscriber subscriber = subscribers.get(streamId);
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    // Fix: remove by String key (streamId), not by Subscriber object.
+                    // The map is keyed by streamId, so passing the Subscriber object
+                    // was a no-op that caused subscribers to never be freed.
+                    subscribers.remove(streamId);
                 }
+                // Also remove the stream reference so it doesn't accumulate
+                // across join/leave cycles during prolonged calls.
+                sharedState.getSubscriberStreams().remove(streamId);
             };
         });
     }
@@ -389,8 +478,14 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+
+        String sessionId = session.getSessionId();
+
+        sharedState.getAndroidOnTopMap().remove(sessionId);
+        sharedState.getAndroidZOrderMap().remove(sessionId);
+
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
     }
 
     @Override
@@ -402,6 +497,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void onStreamDropped(Session session, Stream stream) {
+        // Fix: remove the stream from subscriberStreams to prevent stale references
+        // from accumulating during prolonged calls. Without this, every stream that
+        // joins and leaves keeps its native Stream object alive indefinitely.
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
     }
@@ -528,38 +627,35 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
     }
 
-    @Override
-    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
+    // --- Lifecycle management for OpenTok video rendering ---
+    // The OpenTok SDK uses GLSurfaceView for video rendering, which requires
+    // onPause()/onResume() to be forwarded from the Activity lifecycle.
+    // Without these calls, the GL context and video pipeline degrade over time
+    // as unmanaged lifecycle transitions accumulate (notifications, screen off, etc.).
+    // This was present in v2.30.2 and was lost during the new architecture rewrite.
 
+    @Override
+    public void onHostResume() {
+        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+        for (Publisher publisher : publishers.values()) {
+            publisher.onResume();
+        }
+        // TODO: Consider adding subscriber.onResume() for subscriber GLSurfaceViews.
+        // The old v2.30.2 code only managed publisher lifecycle. Adding subscriber
+        // lifecycle would be more correct but deviates from proven behavior.
     }
 
     @Override
-    public void onActivityStarted(@NonNull Activity activity) {
-
+    public void onHostPause() {
+        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+        for (Publisher publisher : publishers.values()) {
+            publisher.onPause();
+        }
+        // TODO: Consider adding subscriber.onPause() for subscriber GLSurfaceViews.
+        // See onHostResume() comment above.
     }
 
     @Override
-    public void onActivityResumed(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivityPaused(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivityStopped(@NonNull Activity activity) {
-
-    }
-
-    @Override
-    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-
-    }
-
-    @Override
-    public void onActivityDestroyed(@NonNull Activity activity) {
-
+    public void onHostDestroy() {
     }
 }

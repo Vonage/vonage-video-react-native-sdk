@@ -254,12 +254,18 @@ describe('Moderation Advanced', () => {
       });
       console.log('[connectionDestroyed] Bot connectionId:', connectionId);
 
+      // Clear any stale connectionDestroyed events that may have leaked in
+      // from the previous test's cleanup disconnect (the orderly unpublish-then-
+      // disconnect on Android delays server-side processing enough for the old
+      // app's connectionDestroyed to arrive after the new app is already listening).
+      await clearCapturedEvents();
+
       // Explicitly disconnect bot to trigger event
       await bot.disconnect();
       console.log('[connectionDestroyed] Bot disconnected.');
 
       // Wait for connectionDestroyed event
-      const event = await waitForEvent('connectionDestroyed', 10000);
+      const event = await waitForEvent('connectionDestroyed', 15000);
       console.log('[connectionDestroyed] Payload:', JSON.stringify(event));
 
       jestExpect(event).toHaveProperty('connectionId');

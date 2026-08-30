@@ -67,7 +67,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        publishStream(/*session ?: return*/)
+        if (publisher != null) return
+        publishStream()
+    }
+
+    override fun onDetachedFromWindow() {
+        publisher?.view?.let { this.removeView(it) }
+        super.onDetachedFromWindow()
     }
 
     private fun configureComponent() {
@@ -101,7 +107,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     public fun setPublishVideo(value: Boolean) {
-        publisher?.setPublishVideo(value)
+        try {
+            publisher?.setPublishVideo(value)
+        } catch (e: NullPointerException) {
+            // Camera2VideoCapturer.destroy() can throw NPE when ImageReader is
+            // null during a capturer restart triggered by publishVideo toggle.
+            // This is the same native SDK bug (v2.34.0) that affects disconnect.
+            // TODO: check if this is necessary once the native SDK is updated and the NullPointerException issue is fixed
+            android.util.Log.w("OTRNPublisher", "Camera2 NPE during publishVideo toggle", e)
+        }
     }
 
     public fun setPublishCaptions(value: Boolean) {
@@ -125,7 +139,11 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     @Suppress("UNUSED_PARAMETER")
     public fun setCameraPosition(value: String?) {
-        publisher?.cycleCamera()
+        try {
+            publisher?.cycleCamera()
+        } catch (e: NullPointerException) {
+            android.util.Log.w("OTRNPublisher", "Camera2 NPE during cycleCamera", e)
+        }
     }
 
     public fun setCameraTorch(value: Boolean) {
