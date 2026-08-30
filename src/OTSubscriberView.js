@@ -95,17 +95,14 @@ export default class OTSubscriberView extends React.Component {
         preferredFrameRate={preferredFrameRate}
         preferredResolution={preferredResolution}
         audioVolume={audioVolume}
-        onAudioLevel={(event) => {
-          eventHandlers.audioLevel?.(event.nativeEvent);
-        }}
-        onAudioNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.audioNetworkStats?.(
+        onAudioLevel={eventHandlers?.audioLevel ? (event) => {
+          eventHandlers.audioLevel(event.nativeEvent);
+        } : undefined}
+        onAudioNetworkStats={eventHandlers?.audioNetworkStats ? (event) => {
+          eventHandlers.audioNetworkStats(
             withParsedJsonStats(event.nativeEvent)
           );
-        }}
+        } : undefined}
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
           eventHandlers.subscriberConnected?.(event.nativeEvent);
@@ -117,43 +114,37 @@ export default class OTSubscriberView extends React.Component {
         onSubscriberError={(event) => {
           eventHandlers.error?.(event.nativeEvent);
         }}
-        onCaptionReceived={(event) => {
-          eventHandlers.captionReceived?.(event.nativeEvent);
-        }}
-        onVideoDataReceived={(event) => {
-          eventHandlers.videoDataReceived?.(event.nativeEvent);
-        }}
-        onVideoDisabled={(event) => {
-          eventHandlers.videoDisabled?.(event.nativeEvent);
-        }}
-        onVideoDisableWarning={(event) => {
-          eventHandlers.videoDisableWarning?.(event.nativeEvent);
-        }}
-        onVideoDisableWarningLifted={(event) => {
-          eventHandlers.videoDisableWarningLifted?.(event.nativeEvent);
-        }}
-        onRtcStatsReport={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.rtcStatsReport?.(
+        onCaptionReceived={eventHandlers?.captionReceived ? (event) => {
+          eventHandlers.captionReceived(event.nativeEvent);
+        } : undefined}
+        onVideoDataReceived={eventHandlers?.videoDataReceived ? (event) => {
+          eventHandlers.videoDataReceived(event.nativeEvent);
+        } : undefined}
+        onVideoDisabled={eventHandlers?.videoDisabled ? (event) => {
+          eventHandlers.videoDisabled(event.nativeEvent);
+        } : undefined}
+        onVideoDisableWarning={eventHandlers?.videoDisableWarning ? (event) => {
+          eventHandlers.videoDisableWarning(event.nativeEvent);
+        } : undefined}
+        onVideoDisableWarningLifted={eventHandlers?.videoDisableWarningLifted ? (event) => {
+          eventHandlers.videoDisableWarningLifted(event.nativeEvent);
+        } : undefined}
+        onRtcStatsReport={eventHandlers?.rtcStatsReport ? (event) => {
+          eventHandlers.rtcStatsReport(
             withParsedJsonStats(event.nativeEvent)
           );
-        }}
-        onVideoEnabled={(event) => {
-          eventHandlers.videoEnabled?.(event.nativeEvent);
-        }}
-        onReconnected={(event) => {
-          eventHandlers.reconnected?.(event.nativeEvent);
-        }}
-        onVideoNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.videoNetworkStats?.(
+        } : undefined}
+        onVideoEnabled={eventHandlers?.videoEnabled ? (event) => {
+          eventHandlers.videoEnabled(event.nativeEvent);
+        } : undefined}
+        onReconnected={eventHandlers?.reconnected ? (event) => {
+          eventHandlers.reconnected(event.nativeEvent);
+        } : undefined}
+        onVideoNetworkStats={eventHandlers?.videoNetworkStats ? (event) => {
+          eventHandlers.videoNetworkStats(
             withParsedJsonStats(event.nativeEvent)
           );
-        }}
+        } : undefined}
         style={style}
       />
     );

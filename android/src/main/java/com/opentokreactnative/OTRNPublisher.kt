@@ -67,7 +67,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        publishStream(/*session ?: return*/)
+        if (publisher != null) return
+        publishStream()
+    }
+
+    override fun onDetachedFromWindow() {
+        publisher?.view?.let { this.removeView(it) }
+        super.onDetachedFromWindow()
     }
 
     private fun configureComponent() {

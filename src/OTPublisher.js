@@ -228,45 +228,39 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}
         onStreamDestroyed={this.onStreamDestroyed}
-        onAudioLevel={(event) => {
-          this.props.eventHandlers?.audioLevel?.(event.nativeEvent);
-        }}
+        onAudioLevel={this.props.eventHandlers?.audioLevel ? (event) => {
+          this.props.eventHandlers.audioLevel(event.nativeEvent);
+        } : undefined}
         onMuteForced={(event) => {
           this.props.eventHandlers?.muteForced?.();
         }}
-        onAudioNetworkStats={(event) => {
-          // Backward compatibility:
-          // - preferred key: jsonStats (iOS and updated Android)
-          // - deprecated legacy Android key: stats
+        onAudioNetworkStats={this.props.eventHandlers?.audioNetworkStats ? (event) => {
           const eventData = getParsedStatsPayload(event.nativeEvent);
-          this.props.eventHandlers?.audioNetworkStats?.(eventData);
-        }}
-        onRtcStatsReport={(event) => {
-          this.props.eventHandlers?.rtcStatsReport?.(
+          this.props.eventHandlers.audioNetworkStats(eventData);
+        } : undefined}
+        onRtcStatsReport={this.props.eventHandlers?.rtcStatsReport ? (event) => {
+          this.props.eventHandlers.rtcStatsReport(
             getParsedStatsPayload(event.nativeEvent)
           );
-        }}
-        onVideoDisabled={(event) => {
-          this.props.eventHandlers?.videoDisabled?.(event.nativeEvent);
-        }}
-        onVideoDisableWarning={(event) => {
-          this.props.eventHandlers?.videoDisableWarning?.(event.nativeEvent);
-        }}
-        onVideoDisableWarningLifted={(event) => {
-          this.props.eventHandlers?.videoDisableWarningLifted?.(
+        } : undefined}
+        onVideoDisabled={this.props.eventHandlers?.videoDisabled ? (event) => {
+          this.props.eventHandlers.videoDisabled(event.nativeEvent);
+        } : undefined}
+        onVideoDisableWarning={this.props.eventHandlers?.videoDisableWarning ? (event) => {
+          this.props.eventHandlers.videoDisableWarning(event.nativeEvent);
+        } : undefined}
+        onVideoDisableWarningLifted={this.props.eventHandlers?.videoDisableWarningLifted ? (event) => {
+          this.props.eventHandlers.videoDisableWarningLifted(
             event.nativeEvent
           );
-        }}
-        onVideoEnabled={(event) => {
-          this.props.eventHandlers?.videoEnabled?.(event.nativeEvent);
-        }}
-        onVideoNetworkStats={(event) => {
-          // Backward compatibility:
-          // - preferred key: jsonStats (iOS and updated Android)
-          // - deprecated legacy Android key: stats
+        } : undefined}
+        onVideoEnabled={this.props.eventHandlers?.videoEnabled ? (event) => {
+          this.props.eventHandlers.videoEnabled(event.nativeEvent);
+        } : undefined}
+        onVideoNetworkStats={this.props.eventHandlers?.videoNetworkStats ? (event) => {
           const eventData = getParsedStatsPayload(event.nativeEvent);
-          this.props.eventHandlers?.videoNetworkStats?.(eventData);
-        }}
+          this.props.eventHandlers.videoNetworkStats(eventData);
+        } : undefined}
         style={this.props.style}
         {...this.state.publisherProperties}
       />

@@ -148,7 +148,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         // Check subscriberStreams (remote streams)
         var stream = sharedState.getSubscriberStreams().get(streamId)
         if (stream != null) return stream
-        
+
         // Check publisher streams (your own published streams)
         val publishers = sharedState.getPublishers()
         for (publisher in publishers.values) {
@@ -161,17 +161,19 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        
+
         val safeSessionId = sessionId
         val safeStreamId = streamId
-        
+
         if (safeSessionId == null || safeStreamId == null) {
             return
         }
 
+        if (subscriber != null) return
+
         // Re-register on attach in case this view was detached/recycled.
         registerRefreshListener(safeStreamId, this)
-        
+
         session = sharedState.getSessions().get(safeSessionId)
         stream = findStream(safeStreamId)
 
@@ -183,6 +185,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     override fun onDetachedFromWindow() {
         // Remove registration to avoid stale references after detach/recycle.
         streamId?.let { unregisterRefreshListener(it, this) }
+        subscriber?.view?.let { this.removeView(it) }
         super.onDetachedFromWindow()
     }
 
