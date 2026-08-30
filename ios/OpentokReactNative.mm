@@ -58,7 +58,7 @@ RCT_EXPORT_MODULE()
     if (options.enableSinglePeerConnection().has_value()) {
         optionsDict[@"enableSinglePeerConnection"] = @(options.enableSinglePeerConnection().value());
     }
-    if (options.enableSinglePeerConnection().has_value()) {
+    if (options.sessionMigration().has_value()) {
         optionsDict[@"sessionMigration"] = @(options.sessionMigration().value());
     }
     if (options.ipWhitelist().has_value()) {
