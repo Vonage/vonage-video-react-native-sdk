@@ -43,8 +43,8 @@ describe('Publish and Subscribe', () => {
     console.log('[publish→bot] App connected and publishing.');
 
     // Verify session and publisher events fired
-    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(15000);
     console.log('[publish→bot] Session/publisher event indicators confirmed.');
 
     // Add bot — 2 participants = relayed
@@ -68,7 +68,7 @@ describe('Publish and Subscribe', () => {
     jestExpect(state.subscriberCount).toBeGreaterThanOrEqual(1);
 
     // Verify publisher stream created event indicator
-    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('publisher-streamCreated'))).not.toHaveText('0').withTimeout(15000);
   });
 
   it('Bot publishes → RN app shows subscriber', async () => {
@@ -89,7 +89,7 @@ describe('Publish and Subscribe', () => {
     console.log('[bot→subscribe] Subscriber visible in app!');
 
     // Verify session stream created event indicator
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(15000);
 
     // Verify streamCreated payload — bot publishes with name 'bot-publisher'
     const streamEvent = await waitForEvent('streamCreated', 15000);

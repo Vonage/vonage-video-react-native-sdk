@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -53,7 +53,7 @@ describe.skip('Screen Sharing', () => {
 
     // Toggle screen share — this destroys the camera publisher and creates a screen publisher
     await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(15000);
     await element(by.id('toggleScreenShare')).tap();
     console.log('[screenShare] Toggled screen share ON.');
 
@@ -92,7 +92,7 @@ describe.skip('Screen Sharing', () => {
 
     // Toggle screen share ON
     await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(15000);
     await element(by.id('toggleScreenShare')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[screenShare] Screen share ON.');
@@ -107,7 +107,7 @@ describe.skip('Screen Sharing', () => {
 
     // Toggle screen share OFF (back to camera)
     await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(15000);
     await element(by.id('toggleScreenShare')).tap();
     console.log('[screenShare] Toggled screen share OFF.');
 

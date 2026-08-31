@@ -3,6 +3,7 @@ package com.opentokreactnative
 import android.content.Context
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
@@ -48,6 +49,43 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidOnTopMap = sharedState.getAndroidOnTopMap();
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
+
+    // Throttle: only emit onAudioLevel once per this interval.
+    // Reduces ~50 events/sec to ~5/sec without losing usability for VU meters.
+    private var lastAudioLevelEmitMs: Long = 0
+    private val AUDIO_LEVEL_THROTTLE_MS: Long = 200
+
+    // Diagnostics: event counters reset every DIAG_INTERVAL_MS
+    private var diagLastReportMs: Long = System.currentTimeMillis()
+    private var diagAudioLevelFired: Int = 0
+    private var diagAudioLevelEmitted: Int = 0
+    private var diagAudioStatsFired: Int = 0
+    private var diagVideoStatsFired: Int = 0
+    private var diagVideoEnabledFired: Int = 0
+    private var diagVideoDisabledFired: Int = 0
+
+    private fun maybePrintDiagnostics() {
+        val now = System.currentTimeMillis()
+        if (now - diagLastReportMs < DIAG_INTERVAL_MS) return
+        val elapsed = (now - diagLastReportMs) / 1000.0
+        Log.i(DIAG_TAG, String.format(
+            "subscriber streamId=%s | %.1fs | audioLevel: %d fired, %d emitted | audioStats=%d videoStats=%d | videoEnabled=%d videoDisabled=%d | subscribers=%d subscriberStreams=%d",
+            streamId ?: "?",
+            elapsed,
+            diagAudioLevelFired, diagAudioLevelEmitted,
+            diagAudioStatsFired, diagVideoStatsFired,
+            diagVideoEnabledFired, diagVideoDisabledFired,
+            sharedState.getSubscribers().size,
+            sharedState.getSubscriberStreams().size
+        ))
+        diagLastReportMs = now
+        diagAudioLevelFired = 0
+        diagAudioLevelEmitted = 0
+        diagAudioStatsFired = 0
+        diagVideoStatsFired = 0
+        diagVideoEnabledFired = 0
+        diagVideoDisabledFired = 0
+    }
 
     // Cached stream metadata, refreshed only on state-changing events
     // (connect, video enabled/disabled). @Volatile + immutable data class gives
@@ -364,6 +402,15 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
+        diagAudioLevelFired++
+        maybePrintDiagnostics()
+
+        // Throttle: skip if we emitted within the last AUDIO_LEVEL_THROTTLE_MS.
+        val now = System.currentTimeMillis()
+        if (now - lastAudioLevelEmitMs < AUDIO_LEVEL_THROTTLE_MS) return
+        lastAudioLevelEmitMs = now
+        diagAudioLevelEmitted++
+
         // High-frequency callback. Use cache to avoid repeated SDK lookups.
         val payload =
             Arguments.createMap().apply {
@@ -388,6 +435,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberAudioStats?
     ) {
+        diagAudioStatsFired++
         val audioPacketsLost = stats?.audioPacketsLost?.toDouble() ?: 0.0
         val audioPacketsReceived = stats?.audioPacketsReceived?.toDouble() ?: 0.0
         val audioBytesReceived = stats?.audioBytesReceived?.toDouble() ?: 0.0
@@ -421,6 +469,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberVideoStats?
     ) {
+        diagVideoStatsFired++
         val videoPacketsLost = stats?.videoPacketsLost ?: 0
         val videoBytesReceived = stats?.videoBytesReceived ?: 0
         val videoPacketsReceived = stats?.videoPacketsReceived ?: 0
@@ -472,6 +521,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDisabled(subscriber: SubscriberKit?, reason: String?) {
+        diagVideoDisabledFired++
         // Staleness policy: refresh on callbacks where we observe state deltas.
         // Keep this aligned with iOS behavior for easier cross-platform debugging.
         if (subscriber != null) refreshStreamCache(subscriber)
@@ -484,6 +534,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoEnabled(subscriber: SubscriberKit?, reason: String?) {
+        diagVideoEnabledFired++
         // Staleness policy: refresh on callbacks where we observe state deltas.
         // Keep this aligned with iOS behavior for easier cross-platform debugging.
         if (subscriber != null) refreshStreamCache(subscriber)
@@ -621,5 +672,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
                 view.requestLocalCacheRefreshForStream(streamId)
             }
         }
+
+        private const val DIAG_TAG = "OTRN-DIAG"
+        private const val DIAG_INTERVAL_MS: Long = 10_000
     }
 }
