@@ -145,7 +145,14 @@ jobs:
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    runs-on: ubuntu-latest
+    # Larger runner: the Android emulator renders WebRTC video in software
+    # (swiftshader) and the default 2-core runner exhausts GL color buffers
+    # mid-run ("Failed to find ColorBuffer"), destabilising the emulator and
+    # dropping the adb tunnel. More cores/RAM keeps the emulator stable.
+    # NOTE: GitHub larger runners must be enabled for the org/repo. If this
+    # label is unavailable the job will fail to start — fall back to
+    # `ubuntu-latest` or a runner label your org provides.
+    runs-on: ubuntu-latest-4-cores
     timeout-minutes: 60
 
     steps:
@@ -251,11 +258,23 @@ jobs:
           api-level: 35
           arch: x86_64
           avd-name: Pixel_8_API_35
+          # Give the emulator more RAM and cores so the GL/video pipeline stays
+          # stable across all suites (paired with the larger runner above).
+          cores: 4
+          ram-size: 6144M
           # Cameras must be emulated, not "none". With no camera the native SDK's
           # Camera2VideoCapturer never creates its ImageReader, and destroy() then
           # throws NPE on teardown (SDK bug, fixed in 2.36.0). It also means the
           # video publish/subscribe paths are never actually exercised.
-          emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          #
+          # GPU: `-gpu auto` lets the emulator pick the best backend available on
+          # a KVM-accelerated runner instead of forcing pure-software swiftshader,
+          # which was leaking GL color buffers ("Failed to find ColorBuffer") and
+          # destabilising the emulator mid-run. Standard GitHub Linux runners have
+          # no physical GPU, so `-gpu host` is not an option here; `auto` is the
+          # safe upgrade. If `auto` proves unstable, revert to
+          # `-gpu swiftshader_indirect`.
+          emulator-options: -no-snapshot-load -no-window -gpu auto -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
           disable-animations: true
           script: sh ./scripts/run-android-e2e-in-emulator.sh
 

@@ -62,6 +62,7 @@
     "test:e2e:ios:suite:release": "detox test -c ios.sim.release -- --testPathPattern",
     "test:e2e:android:build": "detox build -c android.emu.debug",
     "test:e2e:android": "detox test -c android.emu.debug --record-logs all --take-screenshots failing --retries 2 -- --testTimeout=240000",
+    "test:e2e:android:fast": "detox test -c android.emu.debug --record-logs all --take-screenshots failing --retries 0 -- --testTimeout=90000",
     "test:e2e:android:suite": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000 --testPathPattern",
     "test:e2e:install-bot": "npx playwright install chromium",
     "test:e2e:local": "sh scripts/run-e2e-local.sh",
