@@ -40,6 +40,7 @@ describe('Publisher Options', () => {
 
   it('toggle audio off then on (mute/unmute)', async () => {
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Muted.');
 
@@ -52,6 +53,7 @@ describe('Publisher Options', () => {
 
   it('toggle video off then on (camera off/on)', async () => {
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera off.');
 
@@ -89,6 +91,7 @@ describe('Publisher Options', () => {
 
   it('publish video-only (audio off)', async () => {
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[video-only] Publishing video only.');

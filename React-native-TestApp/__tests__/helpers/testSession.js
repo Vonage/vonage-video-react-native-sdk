@@ -120,6 +120,9 @@ class TestSession {
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
+    // Wait for the connect form to render before filling it — avoids racing the
+    // screen render (e.g. right after launch or a defensive disconnect).
+    await waitFor(element(by.id('apiKeyInput'))).toBeVisible().withTimeout(15000);
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
     await element(by.id('sessionIdInput')).replaceText(this.credentials.sessionId);
     await element(by.id('tokenInput')).replaceText(this.credentials.tokenApp);
@@ -131,6 +134,7 @@ class TestSession {
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
@@ -141,9 +145,12 @@ class TestSession {
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
+    // Wait for the connect form to render before filling it.
+    await waitFor(element(by.id('apiKeyInput'))).toBeVisible().withTimeout(15000);
     await element(by.id('apiKeyInput')).replaceText(apiKey);
     await element(by.id('sessionIdInput')).replaceText(sessionId);
     await element(by.id('tokenInput')).replaceText(token);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }

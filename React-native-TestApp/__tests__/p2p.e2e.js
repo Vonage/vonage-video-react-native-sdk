@@ -95,6 +95,9 @@ describe('P2P (Relayed) Session', () => {
 
     // Disable video (audio-only)
     await element(by.id('tabPublisher')).tap();
+    // Wait for the control to mount after the tab switch before tapping it.
+    // Without this, the tap can race the tab's render and fail to match.
+    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasVideo')).tap();
     console.log('[p2p-audio] Video off.');
 
@@ -102,6 +105,7 @@ describe('P2P (Relayed) Session', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
     // Restore video
+    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasVideo')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[p2p-audio] Audio-only publish OK in P2P.');
@@ -115,6 +119,9 @@ describe('P2P (Relayed) Session', () => {
 
     // Disable audio (video-only)
     await element(by.id('tabPublisher')).tap();
+    // Wait for the control to mount after the tab switch before tapping it.
+    // Without this, the tap can race the tab's render and fail to match.
+    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasAudio')).tap();
     console.log('[p2p-video] Audio off.');
 
@@ -122,6 +129,7 @@ describe('P2P (Relayed) Session', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
     // Restore audio
+    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(15000);
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[p2p-video] Video-only publish OK in P2P.');

@@ -78,6 +78,7 @@ describe('Subscriber Options', () => {
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
 
       // Toggle video back on
+      await waitFor(element(by.id('toggleSubscribeVideo'))).toBeVisible().withTimeout(15000);
       await element(by.id('toggleSubscribeVideo')).tap();
       console.log('[subVideo] Toggled subscribeToVideo on.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
@@ -96,6 +97,7 @@ describe('Subscriber Options', () => {
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
 
       // Toggle audio back on
+      await waitFor(element(by.id('toggleSubscribeAudio'))).toBeVisible().withTimeout(15000);
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio on.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(15000);
@@ -123,10 +125,12 @@ describe('Subscriber Options', () => {
 
       // Unsubscribe first
       await element(by.id('tabSubscriber')).tap();
+      await waitFor(element(by.id('unsubscribe'))).toBeVisible().withTimeout(15000);
       await element(by.id('unsubscribe')).tap();
       await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(15000);
 
       // Resubscribe
+      await waitFor(element(by.id('resubscribe'))).toBeVisible().withTimeout(15000);
       await element(by.id('resubscribe')).tap();
       console.log('[resubscribe] Tapped resubscribe.');
 

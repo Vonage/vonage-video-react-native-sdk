@@ -19,6 +19,11 @@
  * @param {string[]} eventTypes - e.g. ['signal', 'streamPropertyChanged']
  */
 async function setCaptureFilter(eventTypes) {
+  // The capture controls render after connection; wait for the first one to
+  // mount before tapping, so we don't race the connected-screen render.
+  await waitFor(element(by.id('clearCapturedEvents')))
+    .toBeVisible()
+    .withTimeout(15000);
   await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
   // Dismiss keyboard before tapping Set Filter — on iOS, replaceText leaves

@@ -112,6 +112,7 @@ describe('Moderation Advanced', () => {
 
       // forceMuteAll via moderation tab
       await element(by.id('tabModeration')).tap();
+      await waitFor(element(by.id('muteAll'))).toBeVisible().withTimeout(15000);
       await element(by.id('muteAll')).tap();
       console.log('[disableForceMute] forceMuteAll called.');
 

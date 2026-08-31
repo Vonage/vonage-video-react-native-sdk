@@ -64,7 +64,8 @@ describe('Moderation', () => {
 
     // Navigate to moderation tab and tap muteAll
     await element(by.id('tabModeration')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Wait for the control to mount after the tab switch (replaces a fixed sleep).
+    await waitFor(element(by.id('muteAll'))).toBeVisible().withTimeout(15000);
     await element(by.id('muteAll')).tap();
     console.log('[forceMute] muteAll tapped.');
 
