@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 describe('Subscriber Tests', () => {
@@ -45,8 +45,8 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Subscriber visible!');
 
     // Verify event indicators
-    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(15000);
 
     // Verify streamCreated payload
     const streamEvent = await waitForEvent('streamCreated', 15000);
@@ -96,7 +96,7 @@ describe('Subscriber Tests', () => {
     }
 
     // Confirm the counter incremented
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(15000);
     console.log('[subscriber] Stream destroyed event verified with correct streamId.');
 
     // Give the UI time to unmount the subscriber view

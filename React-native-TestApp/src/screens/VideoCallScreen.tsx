@@ -526,7 +526,7 @@ class VideoCallScreen extends Component<{}, State> {
             isScreenSharing: !isScreenSharing,
             forceDisconnect: false,
           });
-        }, 500);
+        }, 1500);
       });
     } catch (error) {
       console.error('Screen share toggle failed:', error);
