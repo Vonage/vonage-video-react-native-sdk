@@ -145,14 +145,12 @@ jobs:
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    # Larger runner: the Android emulator renders WebRTC video in software
-    # (swiftshader) and the default 2-core runner exhausts GL color buffers
-    # mid-run ("Failed to find ColorBuffer"), destabilising the emulator and
-    # dropping the adb tunnel. More cores/RAM keeps the emulator stable.
-    # NOTE: GitHub larger runners must be enabled for the org/repo. If this
-    # label is unavailable the job will fail to start — fall back to
-    # `ubuntu-latest` or a runner label your org provides.
-    runs-on: ubuntu-latest-4-cores
+    # NOTE: A larger runner (e.g. ubuntu-latest-4-cores) would help the emulator's
+    # software GL pipeline, but GitHub larger runners must be explicitly enabled
+    # for the org/repo — otherwise the job queues forever waiting for a runner
+    # that never appears. Staying on the standard runner and instead giving the
+    # emulator itself more cores/RAM (below), which needs no special runner.
+    runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
@@ -258,10 +256,12 @@ jobs:
           api-level: 35
           arch: x86_64
           avd-name: Pixel_8_API_35
-          # Give the emulator more RAM and cores so the GL/video pipeline stays
-          # stable across all suites (paired with the larger runner above).
-          cores: 4
-          ram-size: 6144M
+          # Standard ubuntu-latest has 2 vCPUs and ~16GB RAM. Give the emulator
+          # both cores and a healthy RAM allotment so the GL/video pipeline has
+          # room across all suites. Don't exceed the host's 2 cores — over-
+          # subscribing CPU hurts emulator stability rather than helping.
+          cores: 2
+          ram-size: 4096M
           # Cameras must be emulated, not "none". With no camera the native SDK's
           # Camera2VideoCapturer never creates its ImageReader, and destroy() then
           # throws NPE on teardown (SDK bug, fixed in 2.36.0). It also means the
