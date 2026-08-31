@@ -1,7 +1,6 @@
 'use strict';
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
-const { clearCapturedEvents } = require('./eventCapture');
 
 /**
  * TestSession - Encapsulates session lifecycle for isolated E2E tests.
@@ -159,8 +158,13 @@ class TestSession {
   // --- Cleanup ---
 
   /**
-   * Per-test cleanup: close all bot browsers, disconnect app, clear events.
+   * Per-test cleanup: close all bot browsers and disconnect the app.
    * Bots are fully destroyed (browser closed) — no reuse.
+   *
+   * Note: captured events are NOT cleared here. The capture UI only exists while
+   * connected, and cleanup runs after disconnectApp() has unmounted it, so a clear
+   * here can never succeed. It's also unnecessary — every event-reading test calls
+   * setCaptureFilter() first, which clears captured events as its first step.
    */
   async cleanup() {
     for (const bot of this.activeBots) {
@@ -171,10 +175,6 @@ class TestSession {
     this.activeBots = [];
 
     await this.disconnectApp();
-
-    try {
-      await clearCapturedEvents();
-    } catch (_) {}
   }
 
   /**

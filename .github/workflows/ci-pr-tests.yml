@@ -248,9 +248,9 @@ jobs:
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
           API_URL: ${{ secrets.API_URL }}
         with:
-          api-level: 36
+          api-level: 35
           arch: x86_64
-          avd-name: Pixel_8_API_36
+          avd-name: Pixel_8_API_35
           # Cameras must be emulated, not "none". With no camera the native SDK's
           # Camera2VideoCapturer never creates its ImageReader, and destroy() then
           # throws NPE on teardown (SDK bug, fixed in 2.36.0). It also means the
