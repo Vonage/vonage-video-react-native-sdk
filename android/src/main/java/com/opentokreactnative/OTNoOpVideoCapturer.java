@@ -1,7 +1,5 @@
 package com.opentokreactnative;
 
-import android.util.Log;
-
 import com.opentok.android.BaseVideoCapturer;
 
 /**
@@ -19,30 +17,21 @@ import com.opentok.android.BaseVideoCapturer;
  */
 public class OTNoOpVideoCapturer extends BaseVideoCapturer {
 
-    private static final String TAG = "OTRN-LIFECYCLE";
-
     private boolean capturing = false;
-
-    public OTNoOpVideoCapturer() {
-        Log.i(TAG, "OTNoOpVideoCapturer constructed");
-    }
 
     @Override
     public void init() {
-        Log.i(TAG, "OTNoOpVideoCapturer.init()");
     }
 
     @Override
     public int startCapture() {
         capturing = true;
-        Log.i(TAG, "OTNoOpVideoCapturer.startCapture()");
         return 0;
     }
 
     @Override
     public int stopCapture() {
         capturing = false;
-        Log.i(TAG, "OTNoOpVideoCapturer.stopCapture()");
         return 0;
     }
 
@@ -63,8 +52,7 @@ public class OTNoOpVideoCapturer extends BaseVideoCapturer {
 
     @Override
     public void destroy() {
-        // No-op. No ImageReader, no NPE. This is the whole point of this class.
-        Log.i(TAG, "OTNoOpVideoCapturer.destroy() (no-op, no ImageReader to close)");
+        // No-op. No ImageReader, no NPE.
     }
 
     @Override

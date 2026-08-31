@@ -84,40 +84,6 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public OpentokReactNativeModule(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
-        startMainThreadHeartbeat();
-    }
-
-    /**
-     * Diagnostic heartbeat. Posts a log to the MAIN thread every 2s.
-     * If these logs keep appearing at a steady ~2s cadence, the main thread is
-     * healthy — so any Detox "app not responding" / "listener not found" failure
-     * is an ADB/port-forwarding (infra) issue, not an app hang.
-     * If the gap between beats grows or stops, the main thread is actually blocked.
-     *
-     * TODO: Remove once CI flakiness is resolved.
-     */
-    private static final android.os.Handler MAIN_HANDLER =
-        new android.os.Handler(android.os.Looper.getMainLooper());
-    private static boolean heartbeatStarted = false;
-    private long heartbeatSeq = 0;
-    private long heartbeatLastMs = System.currentTimeMillis();
-
-    private void startMainThreadHeartbeat() {
-        if (heartbeatStarted) return;
-        heartbeatStarted = true;
-        final Runnable beat = new Runnable() {
-            @Override
-            public void run() {
-                long now = System.currentTimeMillis();
-                long delta = now - heartbeatLastMs;
-                heartbeatLastMs = now;
-                // Flag if the beat was late (main thread was busy/blocked).
-                String suffix = delta > 3000 ? " LATE(main thread was busy)" : "";
-                Log.i("OTRN-HEARTBEAT", "beat=" + (heartbeatSeq++) + " gap=" + delta + "ms" + suffix);
-                MAIN_HANDLER.postDelayed(this, 2000);
-            }
-        };
-        MAIN_HANDLER.postDelayed(beat, 2000);
     }
 
     @Override

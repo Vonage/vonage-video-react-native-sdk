@@ -280,19 +280,12 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             // Check if any camera is available. If not, substitute a no-op capturer
             // to prevent the SDK from constructing Camera2VideoCapturer (whose destroy()
             // throws NPE when ImageReader is null — fixed in native SDK 2.36.0).
-            val cameraIds: Array<String> = try {
+            val hasCamera = try {
                 val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-                cameraManager.cameraIdList
+                cameraManager.cameraIdList.isNotEmpty()
             } catch (e: Exception) {
-                Log.w(LIFECYCLE_TAG, "camera detection threw ${e.javaClass.simpleName}: ${e.message}")
-                emptyArray()
+                false
             }
-            val hasCamera = cameraIds.isNotEmpty()
-            Log.i(
-                LIFECYCLE_TAG,
-                "camera detection: hasCamera=$hasCamera cameraCount=${cameraIds.size} " +
-                    "ids=${cameraIds.joinToString(",")} publisherId=$publisherId"
-            )
 
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
                 .audioBitrate((this.props?.get("audioBitrate") as Double).toInt())
@@ -312,9 +305,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
             if (!hasCamera) {
                 publisherBuilder = publisherBuilder.capturer(OTNoOpVideoCapturer())
-                Log.w(LIFECYCLE_TAG, "No camera available — using OTNoOpVideoCapturer (publisherId=$publisherId)")
-            } else {
-                Log.i(LIFECYCLE_TAG, "Camera available — using SDK default Camera2VideoCapturer (publisherId=$publisherId)")
+                Log.w(LIFECYCLE_TAG, "No camera available — using OTNoOpVideoCapturer to avoid SDK NPE")
             }
 
             if (preferredVideoCodecs != null) {
