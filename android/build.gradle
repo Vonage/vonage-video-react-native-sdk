@@ -16,7 +16,6 @@ buildscript {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
@@ -71,16 +70,18 @@ android {
     targetCompatibility JavaVersion.VERSION_17
   }
 
-  kotlinOptions {
-    jvmTarget = "17"
-  }
-
   sourceSets {
     main {
       java.srcDirs += [
         "build/generated/source/codegen/java"
       ]
     }
+  }
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 
@@ -103,14 +104,4 @@ react {
   jsRootDir = file("../src/")
   libraryName = "OpentokReactNative"
   codegenJavaPackageName = "com.opentokreactnative"
-}
-
-// TODO: Disable AAR metadata check until compileSdkVersion is bumped to 37.
-// com.vonage:client-sdk-video:2.35.1 requires compile SDK 37, but current AGP
-// does not officially support it yet. Full API level 37 support will be handled
-// as part of https://jira.vonage.com/browse/VIDCS-4943
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("AarMetadata")) {
-        task.enabled = false
-    }
 }
