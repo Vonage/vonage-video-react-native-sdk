@@ -88,6 +88,9 @@ export default class OTSubscriberView extends React.Component {
       <OTRNSubscriber
         sessionId={this.context.sessionId}
         streamId={streamId}
+        emitAudioLevel={!!eventHandlers.audioLevel}
+        emitAudioNetworkStats={!!eventHandlers.audioNetworkStats}
+        emitVideoNetworkStats={!!eventHandlers.videoNetworkStats}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}
@@ -95,17 +98,22 @@ export default class OTSubscriberView extends React.Component {
         preferredFrameRate={preferredFrameRate}
         preferredResolution={preferredResolution}
         audioVolume={audioVolume}
-        onAudioLevel={(event) => {
-          eventHandlers.audioLevel?.(event.nativeEvent);
-        }}
-        onAudioNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.audioNetworkStats?.(
-            withParsedJsonStats(event.nativeEvent)
-          );
-        }}
+        onAudioLevel={
+          eventHandlers.audioLevel
+            ? (event) => {
+                eventHandlers.audioLevel(event.nativeEvent);
+              }
+            : undefined
+        }
+        onAudioNetworkStats={
+          eventHandlers.audioNetworkStats
+            ? (event) => {
+                eventHandlers.audioNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
           eventHandlers.subscriberConnected?.(event.nativeEvent);
@@ -146,14 +154,15 @@ export default class OTSubscriberView extends React.Component {
         onReconnected={(event) => {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
-        onVideoNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.videoNetworkStats?.(
-            withParsedJsonStats(event.nativeEvent)
-          );
-        }}
+        onVideoNetworkStats={
+          eventHandlers.videoNetworkStats
+            ? (event) => {
+                eventHandlers.videoNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         style={style}
       />
     );

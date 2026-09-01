@@ -3,6 +3,7 @@ package com.opentokreactnative
 import android.content.Context
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
@@ -49,19 +50,28 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    // Native emission gates for high-frequency events. Driven from JS by whether
+    // the corresponding eventHandler exists. When false, the callback returns
+    // before building any payload, so nothing is serialized or crosses the bridge.
+    // No throttling: when a handler is attached, every native event is forwarded.
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
+
     // Cached stream metadata, refreshed only on state-changing events
     // (connect, video enabled/disabled). @Volatile + immutable data class gives
     // cross-thread visibility without lock overhead: any thread reading this field
     // always sees the latest fully-constructed cache reference.
     @Volatile private var streamCache: StreamCache? = null
 
-    // Reads current state from the OpenTok SDK and stores it as an immutable cache entry.
-    // Must only be called on events that actually change stream metadata, not per-frame.
-    private fun refreshStreamCache(subscriber: SubscriberKit) {
-        val stream = subscriber.stream ?: return
-        val session = subscriber.session ?: return
-        val sessionId = session.sessionId ?: return
-        streamCache = StreamCache(
+    // True only while the native stream/connection backing this subscriber is known alive.
+    // Cleared the moment teardown begins so no queued callback performs a live SDK read.
+    @Volatile private var nativeStreamAlive: Boolean = false
+
+    // Pure mapping from a live Stream into an immutable cache entry.
+    // The caller is responsible for knowing the stream is alive.
+    private fun buildCacheEntry(stream: Stream, sessionId: String): StreamCache {
+        return StreamCache(
             streamId = stream.streamId,
             height = stream.videoHeight,
             width = stream.videoWidth,
@@ -75,6 +85,24 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             hasVideo = stream.hasVideo(),
             videoType = if (stream.streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen) "screen" else "camera"
         )
+    }
+
+    // Primes the cache from a Stream obtained while it is known alive (subscribe time),
+    // so no callback ever needs a live SDK read to build a payload.
+    private fun primeStreamCache(stream: Stream, session: Session) {
+        val sid = session.sessionId ?: return
+        streamCache = buildCacheEntry(stream, sid)
+    }
+
+    // Reads current state from the OpenTok SDK and stores it as an immutable cache entry.
+    // Must only be called on events that actually change stream metadata, not per-frame.
+    private fun refreshStreamCache(subscriber: SubscriberKit) {
+        // Live SDK read. Only safe while the native stream is alive.
+        if (!nativeStreamAlive) return
+        val stream = subscriber.stream ?: return
+        val session = subscriber.session ?: return
+        val sessionId = session.sessionId ?: return
+        streamCache = buildCacheEntry(stream, sessionId)
     }
 
     // Converts an immutable cache entry into the event stream map shape.
@@ -99,24 +127,16 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         }
     }
 
-    // Fast path for frequent callbacks: serve from cache if available.
-    // Slow path (rare): if cache is missing, fallback to direct SDK read once,
-    // then seed cache to restore hot-path behavior.
-    //
-    // NOTE FOR DEBUGGING:
-    // If stream payloads are unexpectedly empty in onVideoDataReceived/onAudioLevel,
-    // verify whether this method is hitting the fallback path repeatedly.
-    private fun buildStreamMapForFrequentEvent(subscriber: SubscriberKit?): WritableMap {
-        val cache = streamCache
-        if (cache != null) {
-            return buildStreamMapFromCacheEntry(cache)
-        }
-
-        val fallback = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
-        if (subscriber != null) {
-            refreshStreamCache(subscriber)
-        }
-        return fallback
+    // Builds the event `stream` payload purely from the cached snapshot.
+    // Deliberately takes no SubscriberKit and performs NO live SDK read: any callback
+    // may be delivered after the native stream and connection have been freed, and
+    // SubscriberKit.getStream() deep-copies that native memory (SIGSEGV in
+    // otc_connection_copy / otc_stream_copy). Do not add a live fallback here.
+    // Returns an empty map if the cache was never primed, which is the same value
+    // EventUtils.prepareJSStreamMap already returns for a null stream.
+    private fun buildStreamMapFromCache(): WritableMap {
+        val cache = streamCache ?: return Arguments.createMap()
+        return buildStreamMapFromCacheEntry(cache)
     }
 
     constructor(context: Context) : super(context) {
@@ -181,6 +201,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onDetachedFromWindow() {
+        // Teardown begins here: block any further live SDK reads from queued callbacks.
+        nativeStreamAlive = false
         // Remove registration to avoid stale references after detach/recycle.
         streamId?.let { unregisterRefreshListener(it, this) }
         super.onDetachedFromWindow()
@@ -200,6 +222,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
     public fun setSessionId(str: String?) {
         sessionId = str
+    }
+
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
     }
 
     public fun setSubscribeToAudio(value: Boolean) {
@@ -242,9 +276,16 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     fun setPreferredResolution(value: String?) {
-        var values: List<String> = value?.split("x") ?: return
-        var width: Int = values[0].toInt()
-        var height: Int = values[1].toInt()
+        applyPreferredResolution(value)
+    }
+
+    // Parses a "WIDTHxHEIGHT" string defensively: a missing separator or a
+    // non-numeric component leaves the current resolution untouched instead of throwing.
+    private fun applyPreferredResolution(value: String?) {
+        val parts = value?.split("x") ?: return
+        if (parts.size != 2) return
+        val width = parts[0].trim().toIntOrNull() ?: return
+        val height = parts[1].trim().toIntOrNull() ?: return
         subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
     }
 
@@ -256,7 +297,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         sharedState.getSubscribers().put(stream.getStreamId(), subscriber ?: return);
         subscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
+            (this.props?.get("scaleBehavior") as? String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -283,28 +324,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber?.setStreamListener(this)
         subscriber?.setAudioLevelListener(this)
 
-        if (this.props?.get("subscribeToAudio") != null) {
-            subscriber?.setSubscribeToAudio(this.props?.get("subscribeToAudio") as Boolean)
-        }
-        if (this.props?.get("subscribeToVideo") != null) {
-            subscriber?.setSubscribeToVideo(this.props?.get("subscribeToVideo") as Boolean)
-        }
-        if (this.props?.get("subscribeToCaptions") != null) {
-            subscriber?.setSubscribeToCaptions(this.props?.get("subscribeToCaptions") as Boolean)
-        }
-        if (this.props?.get("audioVolume") != null) {
-            subscriber?.setAudioVolume(this.props?.get("audioVolume") as Double)
-        }
-        if (this.props?.get("preferredFrameRate") != null) {
-            subscriber?.setPreferredFrameRate((this.props?.get("preferredFrameRate") as Double).toFloat())
-        }
-        if (this.props?.get("preferredResolution") != null) {
-            var res : String = this.props?.get("preferredResolution") as String
-            var values: List<String> = res.split("x")
-            var width: Int = values[0].toInt()
-            var height: Int = values[1].toInt()
-            subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
-        }
+        // Prime before session.subscribe so the cache is populated before any callback can fire.
+        primeStreamCache(stream, session)
+        nativeStreamAlive = true
+
+        // Only apply props that are actually present and of the expected type: `props` is
+        // cleared at the end of this method, so a re-attach must not force default values.
+        (this.props?.get("subscribeToAudio") as? Boolean)?.let { subscriber?.setSubscribeToAudio(it) }
+        (this.props?.get("subscribeToVideo") as? Boolean)?.let { subscriber?.setSubscribeToVideo(it) }
+        (this.props?.get("subscribeToCaptions") as? Boolean)?.let { subscriber?.setSubscribeToCaptions(it) }
+        (this.props?.get("audioVolume") as? Number)?.let { subscriber?.setAudioVolume(it.toDouble()) }
+        (this.props?.get("preferredFrameRate") as? Number)?.let { subscriber?.setPreferredFrameRate(it.toFloat()) }
+        applyPreferredResolution(this.props?.get("preferredResolution") as? String)
 
         this.props?.clear()
 
@@ -327,59 +358,60 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onSubscriberConnected", payload)
     }
 
     override fun onDisconnected(subscriber: SubscriberKit) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
+        // Teardown begins here: block any further live SDK reads from queued callbacks.
+        nativeStreamAlive = false
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onSubscriberDisconnected", payload)
     }
 
     override fun onError(subscriber: SubscriberKit, opentokError: OpentokError) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val error = EventUtils.prepareJSErrorMap(opentokError)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
                 putMap("error", error)
             }
         emitOpenTokEvent("onSubscriberError", payload)
     }
 
     override fun onRtcStatsReport(subscriber: SubscriberKit, jsonArrayOfReports: String) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber.getStream(), subscriber.getSession())
         val payload =
             Arguments.createMap().apply {
                 putString("jsonArrayOfReports", jsonArrayOfReports) // deprecated: use jsonStats
                 putString("jsonStats", jsonArrayOfReports) // matches iOS key and TS spec
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onRtcStatsReport", payload)
     }
 
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitAudioLevel) return
+
         // High-frequency callback. Use cache to avoid repeated SDK lookups.
         val payload =
             Arguments.createMap().apply {
                 putDouble("audioLevel", audioLevel.toDouble())
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onAudioLevel", payload)
     }
 
     override fun onCaptionText(subscriber: SubscriberKit?, text: String?, isFinal: Boolean) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload =
             Arguments.createMap().apply {
                 putString("text", text)
                 putBoolean("isFinal", isFinal)
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onCaptionReceived", payload)
     }
@@ -388,6 +420,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberAudioStats?
     ) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitAudioNetworkStats) return
         val audioPacketsLost = stats?.audioPacketsLost?.toDouble() ?: 0.0
         val audioPacketsReceived = stats?.audioPacketsReceived?.toDouble() ?: 0.0
         val audioBytesReceived = stats?.audioBytesReceived?.toDouble() ?: 0.0
@@ -403,10 +437,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             put("timestamp", timeStamp)   // matches iOS field name
         }.toString()
 
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload = Arguments.createMap().apply {
             putString("jsonStats", jsonStats)     // matches iOS key, consumed by JS deserializer
-            putMap("stream", stream)              // matches iOS structure
+            putMap("stream", buildStreamMapFromCache()) // matches iOS structure
             // Backward compat: keep flat fields for existing Android consumers
             putDouble("audioPacketsLost", audioPacketsLost)
             putDouble("audioPacketsReceived", audioPacketsReceived)
@@ -421,6 +454,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberVideoStats?
     ) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitVideoNetworkStats) return
         val videoPacketsLost = stats?.videoPacketsLost ?: 0
         val videoBytesReceived = stats?.videoBytesReceived ?: 0
         val videoPacketsReceived = stats?.videoPacketsReceived ?: 0
@@ -441,10 +476,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             }
         }
 
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload = Arguments.createMap().apply {
             putString("jsonStats", statsJson.toString()) // matches iOS key, consumed by JS deserializer
-            putMap("stream", stream)                     // matches iOS structure
+            putMap("stream", buildStreamMapFromCache())   // matches iOS structure
             // Backward compat: keep flat fields so existing Android consumers still work
             putInt("videoPacketsLost", videoPacketsLost)
             putInt("videoBytesReceived", videoBytesReceived)
@@ -462,11 +496,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
     override fun onVideoDataReceived(subscriber: SubscriberKit?) {
         // This callback fires when video data starts arriving, not continuously.
-        // Use direct SDK lookup here; cache fast-path is unnecessary.
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onVideoDataReceived", payload)
     }
@@ -477,7 +509,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", buildStreamMapFromCache())
                 putString("reason", reason)
             }
         emitOpenTokEvent("onVideoDisabled", payload)
@@ -489,26 +521,24 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", buildStreamMapFromCache())
                 putString("reason", reason)
             }
         emitOpenTokEvent("onVideoEnabled", payload)
     }
 
     override fun onVideoDisableWarning(subscriber: SubscriberKit?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onVideoDisableWarning", payload)
     }
 
     override fun onVideoDisableWarningLifted(subscriber: SubscriberKit?) {
-        val stream = EventUtils.prepareJSStreamMap(subscriber?.getStream(), subscriber?.getSession())
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", stream)
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onVideoDisableWarningLifted", payload)
     }
@@ -519,7 +549,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (subscriber != null) refreshStreamCache(subscriber)
         val payload =
             Arguments.createMap().apply {
-                putMap("stream", buildStreamMapForFrequentEvent(subscriber))
+                putMap("stream", buildStreamMapFromCache())
             }
         emitOpenTokEvent("onReconnected", payload)
     }
