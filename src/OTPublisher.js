@@ -216,6 +216,9 @@ export default class OTPublisher extends React.Component {
       <OTRNPublisher
         sessionId={this.context.sessionId}
         publisherId={this.state.publisherId}
+        emitAudioLevel={!!this.props.eventHandlers?.audioLevel}
+        emitAudioNetworkStats={!!this.props.eventHandlers?.audioNetworkStats}
+        emitVideoNetworkStats={!!this.props.eventHandlers?.videoNetworkStats}
         onError={(event) => {
           this.props.eventHandlers?.error?.(event.nativeEvent);
         }}

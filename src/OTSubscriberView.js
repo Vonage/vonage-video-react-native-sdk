@@ -88,6 +88,9 @@ export default class OTSubscriberView extends React.Component {
       <OTRNSubscriber
         sessionId={this.context.sessionId}
         streamId={streamId}
+        emitAudioLevel={!!eventHandlers.audioLevel}
+        emitAudioNetworkStats={!!eventHandlers.audioNetworkStats}
+        emitVideoNetworkStats={!!eventHandlers.videoNetworkStats}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}

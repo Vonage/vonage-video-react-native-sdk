@@ -66,6 +66,14 @@ export interface NativeProps extends ViewProps {
   publishSenderStats?: boolean;
   preferredVideoCodecs?: string;
 
+  // Native emission gates for high-frequency events. When false, the native
+  // side skips building the payload and dispatching the event entirely, so no
+  // work crosses the bridge for events that have no JS handler attached.
+  // Driven from JS by whether the corresponding eventHandler exists.
+  emitAudioLevel?: boolean;
+  emitAudioNetworkStats?: boolean;
+  emitVideoNetworkStats?: boolean;
+
   onError?: BubblingEventHandler<ErrorEvent> | null;
   onStreamCreated?: BubblingEventHandler<StreamEvent> | null;
   onStreamDestroyed?: BubblingEventHandler<StreamEvent> | null;
