@@ -1,0 +1,19 @@
+.github/workflows/ci-pr-tests.yml
+  s_cc487ee6e0a383::t_36fe65731b13c6 32-36,43-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1572a9491fd61e18e36f4205a38b20bbb7cb96f9",
+  "prompts": {},
+  "sessions": {
+    "s_cc487ee6e0a383": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_f45b5e2c-de7b-4d27-be6d-be5efe700269",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
