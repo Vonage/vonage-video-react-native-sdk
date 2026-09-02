@@ -29,6 +29,18 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         Log.d("OTRNPublisherManager", "createViewInstance: $nativeProps")
         return OTRNPublisher(context)
     }
+    /**
+     * Guaranteed teardown point for the publisher.
+     *
+     * React calls this exactly once, on the UI thread, when it is finished with the view
+     * — regardless of how the publisher ended. onDetachedFromWindow is deliberately not
+     * used: it also fires on re-parenting, which would tear down a publisher that is
+     * about to be re-attached.
+     */
+    override fun onDropViewInstance(view: OTRNPublisher) {
+        view.releaseNative("viewDropped")
+        super.onDropViewInstance(view)
+    }
 
     override fun getNativeProps(): Map<String?, String?>? {
         return super.getNativeProps()

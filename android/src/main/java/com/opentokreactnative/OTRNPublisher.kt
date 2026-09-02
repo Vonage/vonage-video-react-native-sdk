@@ -1,6 +1,7 @@
 package com.opentokreactnative
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
@@ -34,6 +35,16 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     private var sessionId: String? = ""
     private var publisherId: String? = ""
+
+    // The exact key publishStream() inserted into shared state. Prefer this over
+    // Utils.getPublisherId() reverse lookup: the lookup is O(n) over the publishers
+    // map and returns "" once the entry is gone, so it cannot identify this publisher
+    // on a second callback (or after release).
+    private var registeredPublisherId: String? = null
+
+    // Set once teardown has run so every entry point is idempotent. Also blocks
+    // publishStream() from resurrecting a released view if it is re-attached.
+    @Volatile private var released = false
 
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
@@ -270,6 +281,19 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
+        // onAttachedToWindow can fire more than once for the same view (re-parenting,
+        // or Fabric reusing the instance). Building a second Publisher here would orphan
+        // the first one: its shared-state entry would be overwritten and nothing would
+        // ever stop its capturer. Also refuse to build after teardown.
+        if (publisher != null || released) {
+            Log.i(
+                LIFECYCLE_TAG,
+                "publishStream skipped: alreadyCreated=${publisher != null} released=$released" +
+                    " publisherId=$publisherId"
+            )
+            return
+        }
+
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -295,15 +319,29 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             publisher = publisherBuilder?.build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen)
         } else if (this.props?.get("videoSource") == "camera") {
-            // Check if any camera is available. If not, substitute a no-op capturer
-            // to prevent the SDK from constructing Camera2VideoCapturer (whose destroy()
-            // throws NPE when ImageReader is null — fixed in native SDK 2.36.0).
-            val hasCamera = try {
+            // Substitute a no-op capturer whenever we can tell up front that the camera
+            // will never open, so the SDK does not construct Camera2VideoCapturer. Its
+            // destroy() closes the ImageReader without a null check, and that reader is
+            // only created once the camera actually opens — so a Camera2VideoCapturer
+            // that never opened throws NPE during teardown, on a Looper message where it
+            // cannot be caught. Fixed in native SDK 2.36.0 (unreleased as of 2.35.1).
+            //
+            // Two detectable cases: no camera hardware, and CAMERA permission not
+            // granted. Neither covers "camera exists and is permitted but fails to open"
+            // — that path still depends on the native fix.
+            val hasCameraHardware = try {
                 val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
                 cameraManager.cameraIdList.isNotEmpty()
             } catch (e: Exception) {
                 false
             }
+            val hasCameraPermission = try {
+                context.checkSelfPermission(android.Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+            } catch (e: Exception) {
+                false
+            }
+            val hasCamera = hasCameraHardware && hasCameraPermission
 
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
                 .audioBitrate(propDouble("audioBitrate", 40000.0).toInt())
@@ -319,7 +357,11 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
             if (!hasCamera) {
                 publisherBuilder = publisherBuilder.capturer(OTNoOpVideoCapturer())
-                Log.w(LIFECYCLE_TAG, "No camera available — using OTNoOpVideoCapturer to avoid SDK NPE")
+                Log.w(
+                    LIFECYCLE_TAG,
+                    "No usable camera — using OTNoOpVideoCapturer to avoid SDK NPE" +
+                        " (hardware=$hasCameraHardware permission=$hasCameraPermission)"
+                )
             }
 
             if (preferredVideoCodecs != null) {
@@ -395,6 +437,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         }
         sharedState.getPublishers()
             .put(resolvedPublisherId, publisher ?: return);
+        // Remember the exact key we inserted so teardown and callbacks never depend on a
+        // reverse lookup that stops working the moment the entry is removed.
+        registeredPublisherId = resolvedPublisherId
         // videoTrack/videoSource are logged because a publisher that never opens a camera
         // has no ImageReader to close, which is one of the shapes that trips the SDK's
         // capturer teardown.
@@ -428,58 +473,152 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         )
     }
 
+    /**
+     * Single deterministic teardown for this publisher.
+     *
+     * WHY IT LIVES HERE
+     * The view creates the publisher (onAttachedToWindow -> publishStream), so the view
+     * owns destroying it. Called from OTRNPublisherManager.onDropViewInstance, which is
+     * the one signal that arrives on every path — graceful unpublish, publish error,
+     * involuntary disconnect, screen navigation, app teardown. Before this existed the
+     * only release site was onStreamDestroyed, so any publisher that never created and
+     * gracefully tore down a stream stayed in shared state with its capturer running.
+     *
+     * This restores the sequence the old architecture ran in
+     * OTSessionManager.destroyPublisher(), which the new-architecture rewrite dropped.
+     *
+     * Note this stops the capturer but deliberately does NOT call Publisher.destroy().
+     * destroy() posts capturer teardown onto a Looper after flushing its own queue, so
+     * for a camera that never opened it would reliably trigger the uncatchable
+     * Camera2VideoCapturer NPE. Stopping capture releases the camera, which is the
+     * resource that matters; the native publisher object is reclaimed by the SDK's
+     * finalizer. Revisit once native SDK 2.36.0 ships the null check.
+     *
+     * Idempotent, and safe to call after a lifecycle callback already released the
+     * shared-state entry.
+     */
+    fun releaseNative(reason: String) {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        val idForRelease = registeredPublisherId
+
+        if (pub != null) {
+            // 1. Detach listeners first so no queued SDK callback re-enters a view that
+            //    is already half torn down.
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+
+            // 2. Drop the SDK's render view out of our hierarchy.
+            runCatching { removeAllViews() }
+
+            // 3. Unpublish while the session can still accept it. Session.unpublish()
+            //    reports SessionDisconnected and does nothing once the session is down,
+            //    so this is best-effort by design — step 4 is what guarantees release.
+            runCatching { pub.session?.unpublish(pub) }
+
+            // 4. Release the camera deterministically. Without this the capturer keeps
+            //    running until the garbage collector happens to finalize the publisher,
+            //    which may be a long time or never.
+            runCatching { pub.capturer?.stopCapture() }
+        }
+
+        publisher = null
+
+        // 5. Drop the shared-state strong reference. That map is a static singleton, so
+        //    an entry left behind keeps the whole publisher reachable forever.
+        Utils.releasePublisher(idForRelease, reason)
+
+        Log.i(
+            LIFECYCLE_TAG,
+            "releaseNative() reason=$reason" +
+                " publisherId=$idForRelease" +
+                " hadPublisher=${pub != null}"
+        )
+    }
+
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
         OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
 
-        // Release the publisher from shared state here rather than in
-        // OpentokReactNativeModule.unpublish(). At this point the SDK has confirmed the
-        // stream is gone, so dropping our strong reference is safe. Releasing earlier
-        // (during unpublish) raced with the SDK's queued capturer teardown and could
-        // surface as an NPE inside Camera2VideoCapturer.destroy().
-        //
-        // Resolved via reverse lookup so the key we remove is guaranteed to be the one
-        // publishStream() inserted.
-        val resolvedPublisherId = Utils.getPublisherId(publisher)
-        if (resolvedPublisherId.isNotEmpty()) {
-            OTRN.sharedState.getPublishers().remove(resolvedPublisherId)
-        }
+        // Early release on the graceful path: the SDK has confirmed the stream is gone,
+        // so there is no reason to keep the shared-state entry until the view is dropped.
+        // This is an optimisation, not the guarantee — releaseNative() is the backstop
+        // for every path where this callback never arrives.
+        val idForRelease = registeredPublisherId
+        Utils.releasePublisher(idForRelease, "streamDestroyed")
         Log.i(
             LIFECYCLE_TAG,
             "publisher onStreamDestroyed streamId=${stream.streamId}" +
-                " resolvedPublisherId=$resolvedPublisherId" +
-                " released=${resolvedPublisherId.isNotEmpty()}" +
-                " publishersInState=${OTRN.sharedState.getPublishers().size}"
+                " publisherId=$idForRelease"
         )
     }
 
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
-        // A publisher that errors here may never produce a stream, which means
-        // onStreamDestroyed will never fire and its shared-state entry will linger.
+        // Release only on errors the publisher provably cannot recover from. Inferring
+        // this from "has no stream yet" would be wrong: a healthy publisher that hits a
+        // transient error before its stream exists looks identical, and unregistering it
+        // would silently break every publisherId lookup for it (unpublish, RTC stats,
+        // transformers) as well as the audioLevel and videoNetworkStats gates.
+        //
+        // Anything not on this list is left alone and released by onStreamDestroyed or,
+        // failing that, by releaseNative() when the view is dropped.
+        val isFatal = isFatalPublisherError(opentokError.errorCode)
+        if (isFatal) {
+            Utils.releasePublisher(
+                registeredPublisherId,
+                "fatalError:${opentokError.errorCode}"
+            )
+        }
         Log.w(
             LIFECYCLE_TAG,
-            "publisher onError publisherId=$publisherId" +
+            "publisher onError publisherId=$registeredPublisherId" +
                 " code=${opentokError.errorCode}" +
                 " message=${opentokError.message}" +
-                " publishersInState=${OTRN.sharedState.getPublishers().size}"
+                " fatal=$isFatal"
         )
     }
+
+    /**
+     * Errors after which the publisher is dead and will never produce a stream, so
+     * onStreamDestroyed can never fire for it.
+     */
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.CameraFailed -> true
+            else -> false
+        }
 
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
         // Suppressed at emission when no JS handler is attached.
         if (!emitAudioLevel) return
+        // Gate on our own registration rather than a reverse lookup: this fires per audio
+        // frame, and Utils.getPublisherId() walks the whole publishers map every time.
+        if (released || registeredPublisherId == null) return
 
-        val publisherId = Utils.getPublisherId(publisher) // Do we need this?
-        if (publisherId.isNotEmpty()) {
-            val payload =
-                Arguments.createMap().apply {
-                    putDouble("audioLevel", audioLevel.toDouble())
-                }
-            emitOpenTokEvent("onAudioLevel", payload)
-        }
+        val payload =
+            Arguments.createMap().apply {
+                putDouble("audioLevel", audioLevel.toDouble())
+            }
+        emitOpenTokEvent("onAudioLevel", payload)
     }
 
     override fun onRtcStatsReport(
@@ -537,8 +676,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     ) {
         // Suppressed at emission when no JS handler is attached.
         if (!emitVideoNetworkStats) return
-        val publisherId = Utils.getPublisherId(publisher)
-        if (publisherId.isNotEmpty()) {
+        // Same reasoning as onAudioLevelUpdated: use our own registration, not an O(n)
+        // reverse lookup that also fails as soon as the shared-state entry is released.
+        if (!released && registeredPublisherId != null) {
             val statsArrayMap: WritableArray = Arguments.createArray()
             for (stat in stats!!) {
                 val audioStats: WritableMap = Arguments.createMap()

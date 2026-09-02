@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -214,28 +215,27 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
+        Session mSession = sharedState.getSessions().get(sessionId);
         Log.i(LIFECYCLE_TAG, "unpublish() publisherId=" + publisherId
-                + " found=" + (publisher != null) + " | " + sharedStateSummary());
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            // The publisher is deliberately NOT removed from shared state here.
-            //
-            // Removing it at this point drops the last Java strong reference while the
-            // SDK's native capturer teardown is still queued on the main Looper. When
-            // that queued work runs it can operate on an already-finalized ImageReader,
-            // surfacing as an NPE inside Camera2VideoCapturer.destroy().
-            //
-            // Release happens in OTRNPublisher.onStreamDestroyed() instead, once the SDK
-            // has confirmed the stream is gone. This mirrors the iOS implementation
-            // (PublisherDelegateHandler.publisher(_:streamDestroyed:)).
+                + " found=" + (publisher != null)
+                + " sessionFound=" + (mSession != null) + " | " + sharedStateSummary());
+        if (publisher == null) {
+            return;
         }
+        // Do not bail out when the session lookup fails. On an involuntary disconnect
+        // onDisconnected() removes the session from shared state before JS unmounts the
+        // publisher, so an early return here made the whole call a no-op on exactly the
+        // path that leaked.
+        if (mSession != null) {
+            mSession.unpublish(publisher);
+        }
+        // The publisher is deliberately NOT removed from shared state here — this is the
+        // graceful path, so onStreamDestroyed will clear the entry once the SDK confirms
+        // the stream is gone. OTRNPublisher.releaseNative(), driven by
+        // OTRNPublisherManager.onDropViewInstance, is the backstop that guarantees
+        // release (and stops the capturer) on every other path.
     }
 
     @Override
@@ -429,9 +429,31 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         mSessions.remove(sessionId);
+        // FIXME: not session-scoped. This module is the shared SessionListener for every
+        // session, so disconnecting one session drops every session's connections and
+        // breaks sendSignal() for the others. Scoping it needs a session -> connectionIds
+        // index, since Connection exposes no owning session. Pre-existing; tracked
+        // separately from the publisher-leak fix.
         sharedState.getConnections().clear();
         sharedState.getAndroidOnTopMap().remove(sessionId);
         sharedState.getAndroidZOrderMap().remove(sessionId);
+        // Sweep publishers belonging to THIS session that were never released by their
+        // own lifecycle path: on an involuntary disconnect a publisher's
+        // onStreamDestroyed may never fire, leaving its entry in shared state.
+        //
+        // Scoped by session id because this listener serves every session — an unscoped
+        // sweep would release other sessions' live publishers, silently breaking their
+        // unpublish / RTC stats / transformer lookups.
+        //
+        // A publisher with a null session never published, so it is still owned by its
+        // live view and is left for OTRNPublisher.releaseNative() to handle.
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
         // Anything still listed here after a disconnect was not released by its own
         // lifecycle path (unpublish / removeSubscriber / onStreamDropped).
         Log.i(LIFECYCLE_TAG, "onDisconnected() sessionId=" + sessionId
