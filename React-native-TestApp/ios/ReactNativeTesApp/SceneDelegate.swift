@@ -27,9 +27,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     // Ensure the window has a valid frame even in headless/CI environments
     // (e.g. "Designed for iPad on macOS" or a headless simulator) where the
-    // scene's coordinate space may initially report zero bounds.
+    // scene's coordinate space may initially report zero bounds. Use the
+    // scene-owned screen (UIScreen.main is deprecated on iOS 26/27).
     if window.frame.isEmpty {
-      window.frame = UIScreen.main.bounds
+      window.frame = windowScene.screen.bounds
       if window.frame.isEmpty {
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
       }
