@@ -29,17 +29,25 @@ jobs:
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    runs-on: macos-15-xlarge
+    # TEMPORARY (VIDCS-4847): use the preview "xcode-27" image to validate the SDK
+    # against iOS 27 before Apple's GA. Once Xcode 27 / iOS 27 land in the standard
+    # "macos-26" image, revert this to "macos-26-xlarge" and select Xcode explicitly
+    # via the "Select Xcode" step below (setup-xcode with xcode-version: '27.0').
+    runs-on: xcode-27-xlarge
     timeout-minutes: 60
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      # TEMPORARY (VIDCS-4847): the "xcode-27" preview image ships Xcode 27 as the
+      # default toolchain, so no explicit selection is needed while validating iOS 27.
+      # When moving back to a standard macOS image, re-enable this step and pin the
+      # desired Xcode version, e.g. xcode-version: '27.0'.
+      # - name: Select Xcode
+      #   uses: maxim-lobanov/setup-xcode@v1
+      #   with:
+      #     xcode-version: latest-stable
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
