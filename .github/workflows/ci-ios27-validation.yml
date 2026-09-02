@@ -1,0 +1,152 @@
+# iOS 27 validation (preview toolchain)
+#
+# Dedicated, temporary companion to the main "PR CI" workflow. It runs the iOS
+# Detox E2E suite on GitHub's preview `xcode-27-xlarge` image (Xcode 27 beta +
+# iOS 27 simulator runtime) so we can validate the SDK against iOS 27 ahead of
+# Apple's GA, without putting the preview runner on the critical path of every
+# PR in the main workflow.
+#
+# Lifecycle / how to operate:
+# - This workflow triggers on `pull_request` so it runs automatically on all PRs
+#   during a toolchain-transition window. Enable/disable it from the GitHub UI
+#   (Actions tab > this workflow > "..." > Disable/Enable workflow) — no code
+#   change required.
+# - `xcode-27` is a temporary PREVIEW label. Once Xcode 27 / iOS 27 land in the
+#   standard `macos-26` image (post-GA), fold this into the main CI and disable
+#   this workflow. Next year, bump to the iOS 28 preview label, re-enable during
+#   the overlap, then disable again.
+#
+# Refs: VIDCS-4847
+name: iOS 27 validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios27-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-ios27-tests:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment: prod
+    # PREVIEW image: ships Xcode 27 beta as the default toolchain plus the iOS 27
+    # simulator runtime. Do not use this label in the main PR CI — it is temporary
+    # and will be retired once iOS 27 reaches the standard macos image.
+    runs-on: xcode-27-xlarge
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # No "Select Xcode" step: the xcode-27 preview image already defaults to
+      # Xcode 27, which is exactly the toolchain we want to validate here.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew trust wix/brew
+          brew install applesimutils
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: React-native-TestApp/ios/Pods
+          key: ${{ runner.os }}-xcode27-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode27-pods-
+
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
+        run: npm install
+
+      - name: Install CocoaPods dependencies
+        working-directory: React-native-TestApp/ios
+        run: pod install
+
+      - name: Detect available iOS simulator
+        id: detect-simulator
+        run: |
+          echo "Available simulators:"
+          applesimutils --list
+
+          # Extract first available iPhone device name
+          DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
+
+          if [ -z "$DEVICE_NAME" ]; then
+            echo "No iPhone simulators found, using default"
+            DEVICE_NAME="iPhone 17 Pro"
+          fi
+
+          echo "Selected simulator: $DEVICE_NAME"
+          echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build iOS Detox app
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+        run: npm run test:e2e:ios:build
+
+      - name: Start Metro bundler
+        working-directory: React-native-TestApp
+        run: |
+          nohup npm start > metro.log 2>&1 &
+          METRO_PID=$!
+          echo "Metro PID: $METRO_PID"
+
+          for i in {1..120}; do
+            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
+              echo "Metro is running on attempt $i"
+              exit 0
+            fi
+            if ! ps -p $METRO_PID > /dev/null 2>&1; then
+              echo "Metro process died"
+              tail -n 100 metro.log || true
+              exit 1
+            fi
+            sleep 3
+          done
+
+          echo "Metro failed to start after 120 retries"
+          echo "=== Metro log output ==="
+          tail -n 150 metro.log || true
+          kill $METRO_PID 2>/dev/null || true
+          exit 1
+
+      - name: Run iOS Detox tests
+        env:
+          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
+        # Run Detox headless on CI: the runner has no GUI, so Detox's
+        # `open -a Simulator` fails, which tears down the Detox session and
+        # cascades into every test failing. `--headless` boots the simulator
+        # without launching the Simulator.app UI.
+        run: npx detox test -c ios.sim.debug --headless --take-screenshots failing --record-logs failing
+
+      - name: Upload iOS 27 E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios27-e2e-diagnostics
+          path: |
+            artifacts/
+            React-native-TestApp/metro.log
+          if-no-files-found: ignore
