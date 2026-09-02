@@ -137,7 +137,11 @@ jobs:
           VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
           API_URL: ${{ secrets.API_URL }}
-        run: npm run test:e2e:ios
+        # Run Detox in headless mode on CI: the runner has no GUI, so Detox's
+        # `open -a Simulator` fails ("Unable to find application named 'Simulator'"),
+        # which tears down the Detox session and cascades into every test failing.
+        # `--headless` boots the simulator without launching the Simulator.app UI.
+        run: npx detox test -c ios.sim.debug --headless --take-screenshots failing --record-logs failing
 
       - name: Upload iOS E2E diagnostics
         if: always()
