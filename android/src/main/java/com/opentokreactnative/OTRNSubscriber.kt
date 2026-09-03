@@ -28,6 +28,7 @@ import com.opentokreactnative.utils.toVideoScaleType;
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
@@ -58,14 +59,19 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     @Volatile private var emitAudioNetworkStats: Boolean = false
     @Volatile private var emitVideoNetworkStats: Boolean = false
 
-    // Cached stream metadata, refreshed only on state-changing events
-    // (connect, video enabled/disabled). @Volatile + immutable data class gives
-    // cross-thread visibility without lock overhead: any thread reading this field
-    // always sees the latest fully-constructed cache reference.
-    @Volatile private var streamCache: StreamCache? = null
+    // Cached stream metadata. Written in exactly two ways, never by reading the SDK:
+    //   PRIME — once at subscribe time, from the Stream we were handed (primeStreamCache).
+    //   PATCH — when a session property callback delivers a new value (applyXChange).
+    // AtomicReference rather than @Volatile because a patch is a read-modify-write:
+    // @Volatile would publish the new reference safely but could still lose one of two
+    // overlapping updates. updateAndGet keeps it lock-free and correct.
+    private val streamCache = AtomicReference<StreamCache?>(null)
 
-    // True only while the native stream/connection backing this subscriber is known alive.
-    // Cleared the moment teardown begins so no queued callback performs a live SDK read.
+    // True only while the subscriber is known connected. Used to suppress event emission
+    // after teardown. Deliberately NOT relied on as a safety guard for SDK reads: it is
+    // cleared from queued callbacks (onDisconnected / onDetachedFromWindow), so it is
+    // always at least one queue slot behind the SDK's own native teardown. That is why
+    // the fix is to never do a live read at all, rather than to guard one.
     @Volatile private var nativeStreamAlive: Boolean = false
 
     // Pure mapping from a live Stream into an immutable cache entry.
@@ -87,23 +93,57 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         )
     }
 
-    // Primes the cache from a Stream obtained while it is known alive (subscribe time),
-    // so no callback ever needs a live SDK read to build a payload.
+    // Primes the cache from a Stream obtained while it is known alive (subscribe time).
+    // This is the ONLY place a Stream is ever read. Every later change arrives as a plain
+    // value through applyXChange below, so no callback needs to touch the SDK again.
     private fun primeStreamCache(stream: Stream, session: Session) {
         val sid = session.sessionId ?: return
-        streamCache = buildCacheEntry(stream, sid)
+        streamCache.set(buildCacheEntry(stream, sid))
     }
 
-    // Reads current state from the OpenTok SDK and stores it as an immutable cache entry.
-    // Must only be called on events that actually change stream metadata, not per-frame.
-    private fun refreshStreamCache(subscriber: SubscriberKit) {
-        // Live SDK read. Only safe while the native stream is alive.
-        if (!nativeStreamAlive) return
-        val stream = subscriber.stream ?: return
-        val session = subscriber.session ?: return
-        val sessionId = session.sessionId ?: return
-        streamCache = buildCacheEntry(stream, sessionId)
+    /**
+     * Applies a single field change to the cached snapshot.
+     *
+     * WHY PUSH INSTEAD OF PULL
+     * The previous implementation refreshed the cache by calling subscriber.stream, which
+     * is not a field read: SubscriberKit.getStream() calls otc_subscriber_get_stream() and
+     * then constructs Stream(ptr, shouldDestroyOnFinalize = true), which deep-copies the
+     * native stream and its connection (otc_stream_copy -> otc_connection_copy).
+     *
+     * That copy is a use-after-free whenever the callback is delivered after the SDK's own
+     * threads have freed the native stream, which happens under connect/disconnect churn.
+     * It cannot be null-checked away: otc_subscriber_get_stream returns a dangling but
+     * non-null pointer, so the crash lands inside the native copy (SIGSEGV, read at 0x0).
+     *
+     * It also cannot be guarded by a flag. nativeStreamAlive is cleared from callbacks
+     * that sit in the same Handler queue as the callback doing the read, so it is always
+     * late by at least one queue slot, while the native free happens off-queue.
+     *
+     * COMPLETENESS
+     * Session.StreamPropertiesListener is exactly four callbacks — hasAudio, hasVideo,
+     * videoDimensions, videoType — and each delivers its new value as a plain argument.
+     * Those are the only mutable fields in StreamCache; everything else (streamId, name,
+     * connection details, creation times) is fixed for the stream's lifetime and is
+     * captured once by primeStreamCache. So nothing can change without us being told,
+     * which means nothing needs to be re-read.
+     *
+     * No-op until the cache has been primed.
+     */
+    private fun patchStreamCache(update: (StreamCache) -> StreamCache) {
+        streamCache.updateAndGet { current -> current?.let(update) }
     }
+
+    private fun applyHasAudioChange(hasAudio: Boolean) =
+        patchStreamCache { it.copy(hasAudio = hasAudio) }
+
+    private fun applyHasVideoChange(hasVideo: Boolean) =
+        patchStreamCache { it.copy(hasVideo = hasVideo) }
+
+    private fun applyVideoDimensionsChange(width: Int, height: Int) =
+        patchStreamCache { it.copy(width = width, height = height) }
+
+    private fun applyVideoTypeChange(videoType: String) =
+        patchStreamCache { it.copy(videoType = videoType) }
 
     // Converts an immutable cache entry into the event stream map shape.
     private fun buildStreamMapFromCacheEntry(cache: StreamCache): WritableMap {
@@ -135,7 +175,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     // Returns an empty map if the cache was never primed, which is the same value
     // EventUtils.prepareJSStreamMap already returns for a null stream.
     private fun buildStreamMapFromCache(): WritableMap {
-        val cache = streamCache ?: return Arguments.createMap()
+        val cache = streamCache.get() ?: return Arguments.createMap()
         return buildStreamMapFromCacheEntry(cache)
     }
 
@@ -165,18 +205,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     private fun findStream(streamId: String): Stream? {
-        // Check subscriberStreams (remote streams)
-        var stream = sharedState.getSubscriberStreams().get(streamId)
-        if (stream != null) return stream
-        
-        // Check publisher streams (your own published streams)
-        val publishers = sharedState.getPublishers()
-        for (publisher in publishers.values) {
-            if (publisher.stream?.streamId == streamId) {
-                return publisher.stream
-            }
-        }
-        return null
+        // Remote streams, recorded by the session's onStreamReceived.
+        sharedState.getSubscriberStreams()[streamId]?.let { return it }
+
+        // Own published streams, recorded by OTRNPublisher.onStreamCreated.
+        //
+        // Resolved from publisherStreams rather than by iterating publishers and calling
+        // publisher.stream: PublisherKit.getStream() is a live SDK read that copies native
+        // memory, so looping over every publisher meant several such reads per attach, any
+        // of which could touch a stream the SDK had already torn down. The Stream objects
+        // in this map are the ones the SDK handed to onStreamCreated, which are owned
+        // copies and safe to hold.
+        return sharedState.getPublisherStreams()[streamId]
     }
 
     override fun onAttachedToWindow() {
@@ -255,12 +295,19 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         }
     }
 
-    // Triggered from session-level stream-property callbacks.
-    // Refreshes only when this view is bound to the changed stream.
-    private fun requestLocalCacheRefreshForStream(changedStreamId: String) {
+    // Applies a session-level property change to this view's cache, if this view is bound
+    // to the changed stream. Takes the already-resolved value: no SubscriberKit is touched
+    // and no Stream is read, so this is safe at any point in the stream's lifecycle,
+    // including after the native stream has been freed.
+    private fun applyStreamPropertyChange(changedStreamId: String, change: StreamPropertyChange) {
         if (streamId != changedStreamId) return
-        val activeSubscriber = subscriber ?: return
-        refreshStreamCache(activeSubscriber)
+        when (change) {
+            is StreamPropertyChange.HasAudio -> applyHasAudioChange(change.hasAudio)
+            is StreamPropertyChange.HasVideo -> applyHasVideoChange(change.hasVideo)
+            is StreamPropertyChange.VideoDimensions ->
+                applyVideoDimensionsChange(change.width, change.height)
+            is StreamPropertyChange.VideoType -> applyVideoTypeChange(change.videoType)
+        }
     }
 
     fun setSubscribeToCaptions(value: Boolean) {
@@ -354,8 +401,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onConnected(subscriber: SubscriberKit) {
-        // Prime cache on connect so subsequent frequent callbacks stay on fast path.
-        refreshStreamCache(subscriber)
+        // No cache read here: subscribeToStream already primed it from a live Stream
+        // immediately before session.subscribe(), and later changes arrive via
+        // applyStreamPropertyChange.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -504,9 +552,11 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDisabled(subscriber: SubscriberKit?, reason: String?) {
-        // Staleness policy: refresh on callbacks where we observe state deltas.
-        // Keep this aligned with iOS behavior for easier cross-platform debugging.
-        if (subscriber != null) refreshStreamCache(subscriber)
+        // Does NOT touch the cache. This event reports subscriber-side video suspension
+        // (usually VIDEO_REASON_QUALITY), which is not the same thing as stream.hasVideo:
+        // the publisher is still sending video. hasVideo is updated only from
+        // onStreamHasVideoChanged, which carries the real value.
+        // This is also where the SIGSEGV in otc_stream_copy used to originate.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -516,9 +566,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoEnabled(subscriber: SubscriberKit?, reason: String?) {
-        // Staleness policy: refresh on callbacks where we observe state deltas.
-        // Keep this aligned with iOS behavior for easier cross-platform debugging.
-        if (subscriber != null) refreshStreamCache(subscriber)
+        // See onVideoDisabled: subscriber-side video state, not stream.hasVideo.
+        // No cache read.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -544,9 +593,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onReconnected(subscriber: SubscriberKit?) {
-        // Refresh cache on reconnect: stream state (hasAudio/hasVideo) may have changed
-        // during the reconnect window. Aligns with onConnected staleness policy.
-        if (subscriber != null) refreshStreamCache(subscriber)
+        // No cache read. Reconnect is one of the highest-risk moments for a live SDK read,
+        // since the native stream may have been torn down and rebuilt. Property changes
+        // that happened during the reconnect window arrive via onStreamHasVideoChanged and
+        // friends, which is the safe channel.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -554,8 +604,19 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         emitOpenTokEvent("onReconnected", payload)
     }
 
-    // Immutable snapshot of stream metadata fields extracted from the OpenTok SDK.
-    // Replacing the whole reference atomically (via @Volatile) avoids the need for locks.
+    // A stream property change carrying its already-resolved new value.
+    // Mirrors Session.StreamPropertiesListener one-for-one: those four callbacks are the
+    // complete set of ways a stream's metadata can change, which is why a push-fed cache
+    // needs no fallback to reading the SDK.
+    private sealed class StreamPropertyChange {
+        data class HasAudio(val hasAudio: Boolean) : StreamPropertyChange()
+        data class HasVideo(val hasVideo: Boolean) : StreamPropertyChange()
+        data class VideoDimensions(val width: Int, val height: Int) : StreamPropertyChange()
+        data class VideoType(val videoType: String) : StreamPropertyChange()
+    }
+
+    // Immutable snapshot of stream metadata. Held in an AtomicReference and replaced
+    // wholesale on every prime/patch, so readers never see a half-updated entry.
     private data class StreamCache(
         val streamId: String,
         val height: Int,
@@ -623,8 +684,34 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             }
         }
 
+        // Entry points for the session-level property callbacks in
+        // OpentokReactNativeModule. Each carries the new value the SDK handed us, so no
+        // subscriber view ever has to read the SDK back. These replaced a single
+        // requestCacheRefreshForStream(streamId) that told views to re-read themselves,
+        // which is what produced the SIGSEGV in otc_stream_copy.
         @JvmStatic
-        fun requestCacheRefreshForStream(streamId: String) {
+        fun applyHasAudioChangeForStream(streamId: String, hasAudio: Boolean) =
+            dispatchStreamPropertyChange(streamId, StreamPropertyChange.HasAudio(hasAudio))
+
+        @JvmStatic
+        fun applyHasVideoChangeForStream(streamId: String, hasVideo: Boolean) =
+            dispatchStreamPropertyChange(streamId, StreamPropertyChange.HasVideo(hasVideo))
+
+        @JvmStatic
+        fun applyVideoDimensionsChangeForStream(streamId: String, width: Int, height: Int) =
+            dispatchStreamPropertyChange(
+                streamId,
+                StreamPropertyChange.VideoDimensions(width, height)
+            )
+
+        @JvmStatic
+        fun applyVideoTypeChangeForStream(streamId: String, videoType: String) =
+            dispatchStreamPropertyChange(streamId, StreamPropertyChange.VideoType(videoType))
+
+        private fun dispatchStreamPropertyChange(
+            streamId: String,
+            change: StreamPropertyChange
+        ) {
             val listeners = refreshListenersByStreamId[streamId] ?: return
             val staleRefs = ArrayList<WeakReference<OTRNSubscriber>>()
             val liveViews = ArrayList<OTRNSubscriber>()
@@ -645,10 +732,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
                 refreshListenersByStreamId.remove(streamId, listeners)
             }
 
-            // Refresh every currently live subscriber view bound to this stream.
-            // If multiple updates arrive in parallel, the latest refresh wins.
+            // Apply to every currently live subscriber view bound to this stream.
             for (view in liveViews) {
-                view.requestLocalCacheRefreshForStream(streamId)
+                view.applyStreamPropertyChange(streamId, change)
             }
         }
     }
