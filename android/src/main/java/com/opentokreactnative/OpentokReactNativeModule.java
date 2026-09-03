@@ -3,12 +3,14 @@ package com.opentokreactnative;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -51,8 +53,29 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Application.ActivityLifecycleCallbacks {
     public static final String NAME = "OpentokReactNative";
 
+    /**
+     * Dedicated tag for session/publisher/subscriber lifecycle transitions.
+     * Filter with: adb logcat -s OTRN-LIFECYCLE
+     * Intentionally limited to discrete lifecycle events (create/teardown) so it
+     * stays low-volume — never attach this to per-frame or per-stats callbacks.
+     */
+    private static final String LIFECYCLE_TAG = "OTRN-LIFECYCLE";
+
     private ReactApplicationContext context = null;
     private OTRN sharedState = OTRN.getSharedState();
+
+    /**
+     * Snapshot of shared-state map sizes. Used to spot unbounded growth (leaks)
+     * and to confirm teardown actually released native objects.
+     */
+    private String sharedStateSummary() {
+        return "sessions=" + sharedState.getSessions().size()
+                + " publishers=" + sharedState.getPublishers().size()
+                + " subscribers=" + sharedState.getSubscribers().size()
+                + " subscriberStreams=" + sharedState.getSubscriberStreams().size()
+                + " publisherStreams=" + sharedState.getPublisherStreams().size()
+                + " connections=" + sharedState.getConnections().size();
+    }
 
     @Override
     public String getName() {
@@ -138,6 +161,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void disconnect(String sessionId, Promise promise) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+        Log.i(LIFECYCLE_TAG, "disconnect() sessionId=" + sessionId
+                + " found=" + (mSession != null) + " | " + sharedStateSummary());
         if (mSession != null) {
             mSession.disconnect();
             promise.resolve(null);
@@ -190,17 +215,27 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisher);
+        Session mSession = sharedState.getSessions().get(sessionId);
+        Log.i(LIFECYCLE_TAG, "unpublish() publisherId=" + publisherId
+                + " found=" + (publisher != null)
+                + " sessionFound=" + (mSession != null) + " | " + sharedStateSummary());
+        if (publisher == null) {
+            return;
         }
+        // Do not bail out when the session lookup fails. On an involuntary disconnect
+        // onDisconnected() removes the session from shared state before JS unmounts the
+        // publisher, so an early return here made the whole call a no-op on exactly the
+        // path that leaked.
+        if (mSession != null) {
+            mSession.unpublish(publisher);
+        }
+        // The publisher is deliberately NOT removed from shared state here — this is the
+        // graceful path, so onStreamDestroyed will clear the entry once the SDK confirms
+        // the stream is gone. OTRNPublisher.releaseNative(), driven by
+        // OTRNPublisherManager.onDropViewInstance, is the backstop that guarantees
+        // release (and stops the capturer) on every other path.
     }
 
     @Override
@@ -215,9 +250,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 }
                 ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
                 Subscriber subscriber = subscribers.get(streamId);
+                Log.i(LIFECYCLE_TAG, "removeSubscriber() streamId=" + streamId
+                        + " found=" + (subscriber != null) + " | " + sharedStateSummary());
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    subscribers.remove(streamId);
                 }
             };
         });
@@ -389,8 +426,38 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+        String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
+        // FIXME: not session-scoped. This module is the shared SessionListener for every
+        // session, so disconnecting one session drops every session's connections and
+        // breaks sendSignal() for the others. Scoping it needs a session -> connectionIds
+        // index, since Connection exposes no owning session. Pre-existing; tracked
+        // separately from the publisher-leak fix.
+        sharedState.getConnections().clear();
+        sharedState.getAndroidOnTopMap().remove(sessionId);
+        sharedState.getAndroidZOrderMap().remove(sessionId);
+        // Sweep publishers belonging to THIS session that were never released by their
+        // own lifecycle path: on an involuntary disconnect a publisher's
+        // onStreamDestroyed may never fire, leaving its entry in shared state.
+        //
+        // Scoped by session id because this listener serves every session — an unscoped
+        // sweep would release other sessions' live publishers, silently breaking their
+        // unpublish / RTC stats / transformer lookups.
+        //
+        // A publisher with a null session never published, so it is still owned by its
+        // live view and is left for OTRNPublisher.releaseNative() to handle.
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
+        // Anything still listed here after a disconnect was not released by its own
+        // lifecycle path (unpublish / removeSubscriber / onStreamDropped).
+        Log.i(LIFECYCLE_TAG, "onDisconnected() sessionId=" + sessionId
+                + " | " + sharedStateSummary());
     }
 
     @Override
@@ -404,6 +471,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onStreamDropped(Session session, Stream stream) {
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
     }
 
     @Override
@@ -481,7 +549,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasCaptions", !hasCaptions, hasCaptions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // hasCaptions is not part of the subscriber stream cache, so there is nothing to
+        // push. Previously this triggered a cache refresh that re-read the SDK for no
+        // reason, which was one of the paths into the otc_stream_copy crash.
     }
 
     @Override
@@ -489,7 +559,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Push the value we were handed into the subscriber cache. The subscriber must
+        // never re-read the SDK to discover it: see OTRNSubscriber.patchStreamCache.
+        OTRNSubscriber.applyHasAudioChangeForStream(stream.getStreamId(), hasAudio);
     }
 
     @Override
@@ -497,7 +569,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyHasVideoChangeForStream(stream.getStreamId(), hasVideo);
     }
 
     @Override
@@ -515,7 +587,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyVideoDimensionsChangeForStream(stream.getStreamId(), width, height);
     }
 
     @Override
@@ -525,7 +597,13 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Normalise to the same "screen"/"camera" vocabulary buildCacheEntry uses, so the
+        // cached value stays consistent with the one primed at subscribe time.
+        String normalisedVideoType =
+                streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen
+                        ? "screen"
+                        : "camera";
+        OTRNSubscriber.applyVideoTypeChangeForStream(stream.getStreamId(), normalisedVideoType);
     }
 
     @Override

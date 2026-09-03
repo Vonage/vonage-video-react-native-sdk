@@ -28,6 +28,12 @@ using namespace facebook::react;
 
 @implementation OTRNPublisherComponentView {
     OTRNPublisherImpl *_impl;
+    // Native emission gates for high-frequency events. Driven from JS by whether
+    // the corresponding eventHandler exists. When false, the handle method returns
+    // before building any payload, so nothing is serialized or crosses the bridge.
+    BOOL _emitAudioLevel;
+    BOOL _emitAudioNetworkStats;
+    BOOL _emitVideoNetworkStats;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -149,6 +155,10 @@ using namespace facebook::react;
         [_impl setCameraPosition:RCTNSStringFromString(newViewProps.cameraPosition)];
     }
 
+    _emitAudioLevel = newViewProps.emitAudioLevel;
+    _emitAudioNetworkStats = newViewProps.emitAudioNetworkStats;
+    _emitVideoNetworkStats = newViewProps.emitVideoNetworkStats;
+
     [super updateProps:props oldProps:oldProps];
 }
 
@@ -197,6 +207,8 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioLevel:(float)audioLevel {
+    // Suppressed at emission when no JS handler is attached.
+    if (!_emitAudioLevel) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnAudioLevel payload{
@@ -206,6 +218,8 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioNetworkStats:(NSString *)jsonString {
+    // Suppressed at emission when no JS handler is attached.
+    if (!_emitAudioNetworkStats) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnAudioNetworkStats payload{
@@ -215,6 +229,8 @@ using namespace facebook::react;
 }
 
 - (void)handleVideoNetworkStats:(NSString *)jsonString {
+    // Suppressed at emission when no JS handler is attached.
+    if (!_emitVideoNetworkStats) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnVideoNetworkStats payload{

@@ -82,6 +82,27 @@ class OTRNSubscriberManager(context: ReactApplicationContext) :
         view?.setPreferredResolution(value)
     }
 
+    override fun setEmitAudioLevel(
+        view: OTRNSubscriber?,
+        value: Boolean
+    ) {
+        view?.setEmitAudioLevel(value)
+    }
+
+    override fun setEmitAudioNetworkStats(
+        view: OTRNSubscriber?,
+        value: Boolean
+    ) {
+        view?.setEmitAudioNetworkStats(value)
+    }
+
+    override fun setEmitVideoNetworkStats(
+        view: OTRNSubscriber?,
+        value: Boolean
+    ) {
+        view?.setEmitVideoNetworkStats(value)
+    }
+
     override fun updateProperties(
         viewToUpdate: OTRNSubscriber,
         props: ReactStylesDiffMap?

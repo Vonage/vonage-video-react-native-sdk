@@ -1,8 +1,11 @@
 package com.opentokreactnative
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.hardware.camera2.CameraManager
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.FrameLayout
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
@@ -33,11 +36,29 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
 
+    // The exact key publishStream() inserted into shared state. Prefer this over
+    // Utils.getPublisherId() reverse lookup: the lookup is O(n) over the publishers
+    // map and returns "" once the entry is gone, so it cannot identify this publisher
+    // on a second callback (or after release).
+    private var registeredPublisherId: String? = null
+
+    // Set once teardown has run so every entry point is idempotent. Also blocks
+    // publishStream() from resurrecting a released view if it is re-attached.
+    @Volatile private var released = false
+
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
     private var androidOnTopMap = sharedState.getAndroidOnTopMap();
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
+
+    // Native emission gates for high-frequency events. Driven from JS by whether
+    // the corresponding eventHandler exists. When false, the callback returns
+    // before building any payload, so nothing is serialized or crosses the bridge.
+    // No throttling: when a handler is attached, every native event is forwarded.
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
 
     constructor(context: Context) : super(context) {
         configureComponent()
@@ -65,6 +86,38 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         }
     }
 
+    // Safe prop readers: every prop except sessionId/publisherId is optional in the
+    // codegen spec, so a missing or wrong-typed value must fall back to the same default
+    // the JS sanitizer applies (see src/helpers/OTPublisherHelper.js) rather than throwing.
+    private fun propBool(key: String, default: Boolean): Boolean =
+        this.props?.get(key) as? Boolean ?: default
+
+    private fun propString(key: String, default: String): String =
+        this.props?.get(key) as? String ?: default
+
+    private fun propDouble(key: String, default: Double): Double =
+        (this.props?.get(key) as? Number)?.toDouble() ?: default
+
+    // Publisher.CameraCaptureFrameRate.valueOf throws on a name the native SDK does not
+    // know, so an out-of-range frameRate falls back to the sanitizer default instead of
+    // taking down the publisher.
+    private fun resolveCaptureFrameRate(fps: Int): Publisher.CameraCaptureFrameRate =
+        try {
+            Publisher.CameraCaptureFrameRate.valueOf("FPS_$fps")
+        } catch (e: IllegalArgumentException) {
+            Log.w(LIFECYCLE_TAG, "Unsupported frameRate FPS_$fps — falling back to FPS_30")
+            Publisher.CameraCaptureFrameRate.FPS_30
+        }
+
+    // Same guard for Publisher.CameraCaptureResolution.valueOf.
+    private fun resolveCaptureResolution(name: String): Publisher.CameraCaptureResolution =
+        try {
+            Publisher.CameraCaptureResolution.valueOf(name)
+        } catch (e: IllegalArgumentException) {
+            Log.w(LIFECYCLE_TAG, "Unsupported resolution '$name' — falling back to MEDIUM")
+            Publisher.CameraCaptureResolution.MEDIUM
+        }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         publishStream(/*session ?: return*/)
@@ -88,6 +141,18 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
     }
 
     public fun setPublishAudio(value: Boolean) {
@@ -216,6 +281,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
+        // DIAGNOSTIC (temporary): the publishStream() re-entry guard was removed to test
+        // whether it is the cause of the "invalid surface: null" render crash on connect.
+        // Bisect pinned the regression to this commit; within it, this guard is the only
+        // executable change on the publisher startup path. If this build connects cleanly,
+        // the guard is confirmed as the cause and must be replaced by a version that
+        // prevents the double-publisher leak WITHOUT suppressing the view rebuild the SDK
+        // renderer depends on.
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -224,19 +296,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         if (this.props?.get("videoSource") == "screen") {
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
-                .audioBitrate((this.props?.get("audioBitrate") as Double).toInt())
-                .name(this.props?.get("name") as String)
-                .frameRate(
-                    Publisher.CameraCaptureFrameRate.valueOf(
-                        "FPS_" + (((this.props?.get("frameRate") as Double)).toInt()).toString()
-                    )
-                )
-                .resolution(Publisher.CameraCaptureResolution.valueOf(this.props?.get("resolution") as String)) //test
-                .audioTrack(this.props?.get("audioTrack") as Boolean)
-                .videoTrack(this.props?.get("videoTrack") as Boolean)
-                .enableOpusDtx(this.props?.get("enableDtx") as Boolean)
-                .scalableScreenshare(this.props?.get("scalableScreenshare") as Boolean)
-                .allowAudioCaptureWhileMuted(this.props?.get("allowAudioCaptureWhileMuted") as Boolean)
+                .audioBitrate(propDouble("audioBitrate", 40000.0).toInt())
+                .name(propString("name", ""))
+                .frameRate(resolveCaptureFrameRate(propDouble("frameRate", 30.0).toInt()))
+                .resolution(resolveCaptureResolution(propString("resolution", "MEDIUM")))
+                .audioTrack(propBool("audioTrack", true))
+                .videoTrack(propBool("videoTrack", true))
+                .enableOpusDtx(propBool("enableDtx", false))
+                .scalableScreenshare(propBool("scalableScreenshare", false))
+                .allowAudioCaptureWhileMuted(propBool("allowAudioCaptureWhileMuted", false))
                 .capturer(OTScreenCapturer(this))
                 .senderStatsTrack(publishSenderStats)
             if (preferredVideoCodecs != null) {
@@ -245,50 +313,80 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             publisher = publisherBuilder?.build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen)
         } else if (this.props?.get("videoSource") == "camera") {
+            // Substitute a no-op capturer whenever we can tell up front that the camera
+            // will never open, so the SDK does not construct Camera2VideoCapturer. Its
+            // destroy() closes the ImageReader without a null check, and that reader is
+            // only created once the camera actually opens — so a Camera2VideoCapturer
+            // that never opened throws NPE during teardown, on a Looper message where it
+            // cannot be caught. Fixed in native SDK 2.36.0 (unreleased as of 2.35.1).
+            //
+            // Two detectable cases: no camera hardware, and CAMERA permission not
+            // granted. Neither covers "camera exists and is permitted but fails to open"
+            // — that path still depends on the native fix.
+            val hasCameraHardware = try {
+                val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                cameraManager.cameraIdList.isNotEmpty()
+            } catch (e: Exception) {
+                false
+            }
+            val hasCameraPermission = try {
+                context.checkSelfPermission(android.Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+            } catch (e: Exception) {
+                false
+            }
+            val hasCamera = hasCameraHardware && hasCameraPermission
+
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
-                .audioBitrate((this.props?.get("audioBitrate") as Double).toInt())
-                .publisherAudioFallbackEnabled(this.props?.get("publisherAudioFallback") as Boolean)
-                .subscriberAudioFallbackEnabled(this.props?.get("subscriberAudioFallback") as Boolean)
-                .name(this.props?.get("name") as String)
-                .frameRate(
-                    Publisher.CameraCaptureFrameRate.valueOf(
-                        "FPS_" + (((this.props?.get("frameRate") as Double)).toInt()).toString()
-                    )
+                .audioBitrate(propDouble("audioBitrate", 40000.0).toInt())
+                .publisherAudioFallbackEnabled(propBool("publisherAudioFallback", false))
+                .subscriberAudioFallbackEnabled(propBool("subscriberAudioFallback", true))
+                .name(propString("name", ""))
+                .frameRate(resolveCaptureFrameRate(propDouble("frameRate", 30.0).toInt()))
+                .resolution(resolveCaptureResolution(propString("resolution", "MEDIUM")))
+                .audioTrack(propBool("audioTrack", true))
+                .videoTrack(propBool("videoTrack", true))
+                .enableOpusDtx(propBool("enableDtx", false))
+                .senderStatsTrack(publishSenderStats)
+
+            if (!hasCamera) {
+                publisherBuilder = publisherBuilder.capturer(OTNoOpVideoCapturer())
+                Log.w(
+                    LIFECYCLE_TAG,
+                    "No usable camera — using OTNoOpVideoCapturer to avoid SDK NPE" +
+                        " (hardware=$hasCameraHardware permission=$hasCameraPermission)"
                 )
-                .resolution(Publisher.CameraCaptureResolution.valueOf(this.props?.get("resolution") as String)) //test
-                .audioTrack(this.props?.get("audioTrack") as Boolean)
-                .videoTrack(this.props?.get("videoTrack") as Boolean)
-                .enableOpusDtx(this.props?.get("enableDtx") as Boolean)
-                .senderStatsTrack(this.props?.get("publishSenderStats") as Boolean)
+            }
+
             if (preferredVideoCodecs != null) {
                 publisherBuilder?.preferredVideoCodecs(preferredVideoCodecs)
             }
             publisher = publisherBuilder?.build()
             publisher?.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeCamera)
-            if (this.props?.get("videoTrack") as Boolean) {
+            if (hasCamera && propBool("videoTrack", true)) {
                 publisher?.getCapturer()?.setVideoContentHint(
-                    Utils.convertVideoContentHint(this.props?.get("videoContentHint") as String)
+                    Utils.convertVideoContentHint(propString("videoContentHint", ""))
                 )
             }
-            if (this.props?.get("cameraPosition") as String == "back") {
+            if (propString("cameraPosition", "front") == "back") {
                 // Do not set publishVideo here, start when stream is created
                 // to avoid front camera preview flash
                 publisher?.setPublishVideo(false)
             } else {
-                publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
+                publisher?.setPublishVideo(propBool("publishVideo", true))
             }
         }
 
-        publisher?.setPublishAudio(this.props?.get("publishAudio") as Boolean)
-        publisher?.setPublishCaptions(this.props?.get("publishCaptions") as Boolean)
+        publisher?.setPublishAudio(propBool("publishAudio", true))
+        publisher?.setPublishCaptions(propBool("publishCaptions", false))
         val degradationPreferenceInt =
-            (this.props?.get("degradationPreference") as? Double)?.toInt() ?: -1
+            (this.props?.get("degradationPreference") as? Number)?.toInt() ?: -1
         publisher?.setDegradationPreference(
             Utils.convertDegradationPreference(degradationPreferenceInt)
         )
         publisher?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
+            (this.props?.get("scaleBehavior") as? String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -306,8 +404,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             }
         }
 
-        publisher?.setCameraTorch(this.props?.get("cameraTorch") as Boolean)
-        publisher?.setCameraZoomFactor((this.props?.get("cameraZoomFactor") as Double).toFloat())
+        publisher?.setCameraTorch(propBool("cameraTorch", false))
+        publisher?.setCameraZoomFactor(propDouble("cameraZoomFactor", 1.0).toFloat())
 
         //Listeners
         publisher?.setPublisherListener(this)
@@ -319,8 +417,33 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
+        // publisherId is required by the codegen spec, so there is no sensible default:
+        // without it the publisher cannot be keyed into shared state at all.
+        val resolvedPublisherId = this.props?.get("publisherId") as? String
+        if (resolvedPublisherId.isNullOrBlank()) {
+            Log.e(
+                LIFECYCLE_TAG,
+                "publisher cannot be registered: publisherId prop missing or blank" +
+                    " sessionId=$sessionId" +
+                    " videoSource=${this.props?.get("videoSource")}"
+            )
+            return
+        }
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String, publisher ?: return);
+            .put(resolvedPublisherId, publisher ?: return);
+        // Remember the exact key we inserted so teardown and callbacks never depend on a
+        // reverse lookup that stops working the moment the entry is removed.
+        registeredPublisherId = resolvedPublisherId
+        // videoTrack/videoSource are logged because a publisher that never opens a camera
+        // has no ImageReader to close, which is one of the shapes that trips the SDK's
+        // capturer teardown.
+        Log.i(
+            LIFECYCLE_TAG,
+            "publisher created publisherId=$resolvedPublisherId" +
+                " videoTrack=${this.props?.get("videoTrack")}" +
+                " videoSource=${this.props?.get("videoSource")}" +
+                " publishersInState=${sharedState.getPublishers().size}"
+        )
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
@@ -331,33 +454,165 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         val cameraPosition = this.props?.get("cameraPosition") as? String ?: "front"
         if (cameraPosition == "back") {
             this.publisher?.cycleCamera()
-            this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
+            this.publisher?.setPublishVideo(propBool("publishVideo", true))
         }
         OTRN.sharedState.getPublisherStreams()[stream.streamId] = stream
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamCreated", payload)
+        Log.i(
+            LIFECYCLE_TAG,
+            "publisher onStreamCreated streamId=${stream.streamId}" +
+                " publisherId=$publisherId" +
+                " publishersInState=${OTRN.sharedState.getPublishers().size}"
+        )
+    }
+
+    /**
+     * Single deterministic teardown for this publisher.
+     *
+     * WHY IT LIVES HERE
+     * The view creates the publisher (onAttachedToWindow -> publishStream), so the view
+     * owns destroying it. Called from OTRNPublisherManager.onDropViewInstance, which is
+     * the one signal that arrives on every path — graceful unpublish, publish error,
+     * involuntary disconnect, screen navigation, app teardown. Before this existed the
+     * only release site was onStreamDestroyed, so any publisher that never created and
+     * gracefully tore down a stream stayed in shared state with its capturer running.
+     *
+     * This restores the sequence the old architecture ran in
+     * OTSessionManager.destroyPublisher(), which the new-architecture rewrite dropped.
+     *
+     * Note this stops the capturer but deliberately does NOT call Publisher.destroy().
+     * destroy() posts capturer teardown onto a Looper after flushing its own queue, so
+     * for a camera that never opened it would reliably trigger the uncatchable
+     * Camera2VideoCapturer NPE. Stopping capture releases the camera, which is the
+     * resource that matters; the native publisher object is reclaimed by the SDK's
+     * finalizer. Revisit once native SDK 2.36.0 ships the null check.
+     *
+     * Idempotent, and safe to call after a lifecycle callback already released the
+     * shared-state entry.
+     */
+    fun releaseNative(reason: String) {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        val idForRelease = registeredPublisherId
+
+        if (pub != null) {
+            // 1. Detach listeners first so no queued SDK callback re-enters a view that
+            //    is already half torn down.
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+
+            // 2. Drop the SDK's render view out of our hierarchy.
+            runCatching { removeAllViews() }
+
+            // 3. Unpublish while the session can still accept it. Session.unpublish()
+            //    reports SessionDisconnected and does nothing once the session is down,
+            //    so this is best-effort by design — step 4 is what guarantees release.
+            runCatching { pub.session?.unpublish(pub) }
+
+            // 4. Release the camera deterministically. Without this the capturer keeps
+            //    running until the garbage collector happens to finalize the publisher,
+            //    which may be a long time or never.
+            runCatching { pub.capturer?.stopCapture() }
+        }
+
+        publisher = null
+
+        // 5. Drop the shared-state strong reference. That map is a static singleton, so
+        //    an entry left behind keeps the whole publisher reachable forever.
+        Utils.releasePublisher(idForRelease, reason)
+
+        Log.i(
+            LIFECYCLE_TAG,
+            "releaseNative() reason=$reason" +
+                " publisherId=$idForRelease" +
+                " hadPublisher=${pub != null}"
+        )
     }
 
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
         OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
+
+        // Early release on the graceful path: the SDK has confirmed the stream is gone,
+        // so there is no reason to keep the shared-state entry until the view is dropped.
+        // This is an optimisation, not the guarantee — releaseNative() is the backstop
+        // for every path where this callback never arrives.
+        val idForRelease = registeredPublisherId
+        Utils.releasePublisher(idForRelease, "streamDestroyed")
+        Log.i(
+            LIFECYCLE_TAG,
+            "publisher onStreamDestroyed streamId=${stream.streamId}" +
+                " publisherId=$idForRelease"
+        )
     }
 
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
+        // Release only on errors the publisher provably cannot recover from. Inferring
+        // this from "has no stream yet" would be wrong: a healthy publisher that hits a
+        // transient error before its stream exists looks identical, and unregistering it
+        // would silently break every publisherId lookup for it (unpublish, RTC stats,
+        // transformers) as well as the audioLevel and videoNetworkStats gates.
+        //
+        // Anything not on this list is left alone and released by onStreamDestroyed or,
+        // failing that, by releaseNative() when the view is dropped.
+        val isFatal = isFatalPublisherError(opentokError.errorCode)
+        if (isFatal) {
+            Utils.releasePublisher(
+                registeredPublisherId,
+                "fatalError:${opentokError.errorCode}"
+            )
+        }
+        Log.w(
+            LIFECYCLE_TAG,
+            "publisher onError publisherId=$registeredPublisherId" +
+                " code=${opentokError.errorCode}" +
+                " message=${opentokError.message}" +
+                " fatal=$isFatal"
+        )
     }
 
-    override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
-        val publisherId = Utils.getPublisherId(publisher) // Do we need this?
-        if (publisherId.isNotEmpty()) {
-            val payload =
-                Arguments.createMap().apply {
-                    putDouble("audioLevel", audioLevel.toDouble())
-                }
-            emitOpenTokEvent("onAudioLevel", payload)
+    /**
+     * Errors after which the publisher is dead and will never produce a stream, so
+     * onStreamDestroyed can never fire for it.
+     */
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.CameraFailed -> true
+            else -> false
         }
+
+    override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitAudioLevel) return
+        // Gate on our own registration rather than a reverse lookup: this fires per audio
+        // frame, and Utils.getPublisherId() walks the whole publishers map every time.
+        if (released || registeredPublisherId == null) return
+
+        val payload =
+            Arguments.createMap().apply {
+                putDouble("audioLevel", audioLevel.toDouble())
+            }
+        emitOpenTokEvent("onAudioLevel", payload)
     }
 
     override fun onRtcStatsReport(
@@ -382,6 +637,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherAudioStats>?
     ) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitAudioNetworkStats) return
         val statsArray: WritableArray = Arguments.createArray()
         for (stat in stats!!) {
             val audioStats: WritableMap = Arguments.createMap()
@@ -411,8 +668,11 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherVideoStats>?
     ) {
-        val publisherId = Utils.getPublisherId(publisher)
-        if (publisherId.isNotEmpty()) {
+        // Suppressed at emission when no JS handler is attached.
+        if (!emitVideoNetworkStats) return
+        // Same reasoning as onAudioLevelUpdated: use our own registration, not an O(n)
+        // reverse lookup that also fails as soon as the shared-state entry is released.
+        if (!released && registeredPublisherId != null) {
             val statsArrayMap: WritableArray = Arguments.createArray()
             for (stat in stats!!) {
                 val audioStats: WritableMap = Arguments.createMap()
@@ -491,5 +751,14 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     ) : Event<OpenTokEvent>(surfaceId, viewId) {
         override fun getEventName() = name
         override fun getEventData() = payload
+    }
+
+    private companion object {
+        /**
+         * Shared with OpentokReactNativeModule so the whole publisher lifecycle can be
+         * read as one stream: adb logcat -s OTRN-LIFECYCLE
+         * Only discrete lifecycle transitions log here — never per-frame callbacks.
+         */
+        const val LIFECYCLE_TAG = "OTRN-LIFECYCLE"
     }
 }
