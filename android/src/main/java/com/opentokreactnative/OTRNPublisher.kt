@@ -281,19 +281,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
-        // onAttachedToWindow can fire more than once for the same view (re-parenting,
-        // or Fabric reusing the instance). Building a second Publisher here would orphan
-        // the first one: its shared-state entry would be overwritten and nothing would
-        // ever stop its capturer. Also refuse to build after teardown.
-        if (publisher != null || released) {
-            Log.i(
-                LIFECYCLE_TAG,
-                "publishStream skipped: alreadyCreated=${publisher != null} released=$released" +
-                    " publisherId=$publisherId"
-            )
-            return
-        }
-
+        // DIAGNOSTIC (temporary): the publishStream() re-entry guard was removed to test
+        // whether it is the cause of the "invalid surface: null" render crash on connect.
+        // Bisect pinned the regression to this commit; within it, this guard is the only
+        // executable change on the publisher startup path. If this build connects cleanly,
+        // the guard is confirmed as the cause and must be replaced by a version that
+        // prevents the double-publisher leak WITHOUT suppressing the view rebuild the SDK
+        // renderer depends on.
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
