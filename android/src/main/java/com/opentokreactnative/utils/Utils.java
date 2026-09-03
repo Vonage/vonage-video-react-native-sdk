@@ -16,63 +16,12 @@ import com.opentok.android.BaseVideoCapturer.VideoContentHint;
 import com.opentokreactnative.OTRN;
 
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.UiThreadUtil;
-
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class Utils {
-
-    /**
-     * Single, safe release path for a publisher held in shared state.
-     *
-     * WHY THIS EXISTS
-     * A publisher is only ever added to OTRN.sharedState.getPublishers() when it is
-     * created, and it must be removed on EVERY terminal path or it leaks (holding its
-     * native camera capturer). Historically the only removal was in
-     * OTRNPublisher.onStreamDestroyed(), so publishers that never produced/destroyed a
-     * stream gracefully (publish timeout / error, involuntary session disconnect,
-     * rapid unpublish during screen-share toggles) were never removed and accumulated.
-     *
-     * SAFETY
-     * Removal is posted to the main (UI) thread and the strong reference is dropped
-     * there. This preserves the original ordering guarantee that avoided an NPE inside
-     * Camera2VideoCapturer.destroy() when the reference was dropped while the SDK's
-     * queued capturer teardown was still pending on the main Looper.
-     *
-     * IDEMPOTENT
-     * onStreamDestroyed, onError and session onDisconnected can all fire for the same
-     * publisher. ConcurrentHashMap.remove() is a no-op when the key is already gone, so
-     * this is safe to call multiple times for the same id.
-     *
-     * @param publisherId the shared-state key (never null/blank for a real publisher).
-     * @param reason short label for lifecycle logging (e.g. "streamDestroyed",
-     *               "terminalError", "sessionDisconnected").
-     */
-    public static void releasePublisher(final String publisherId, final String reason) {
-        if (publisherId == null || publisherId.isEmpty()) {
-            return;
-        }
-        UiThreadUtil.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ConcurrentHashMap<String, Publisher> publishers =
-                        OTRN.sharedState.getPublishers();
-                Publisher removed = publishers.remove(publisherId);
-                Log.i(
-                    "OTRN-LIFECYCLE",
-                    "releasePublisher() publisherId=" + publisherId
-                        + " reason=" + reason
-                        + " removed=" + (removed != null)
-                        + " publishersInState=" + publishers.size()
-                );
-            }
-        });
-    }
 
     public static boolean didConnectionFail(OpentokError errorCode) {
 
