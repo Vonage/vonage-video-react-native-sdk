@@ -9,6 +9,7 @@
 import Foundation
 import OpenTok
 import React
+import OpentokReactNativeObjC
 
 class OTRN : NSObject {
   static let sharedState = OTRN()

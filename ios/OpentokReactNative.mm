@@ -1,9 +1,16 @@
 #import <Foundation/Foundation.h>
 #import <RNOpentokReactNativeSpec/RNOpentokReactNativeSpec.h>
 #if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
+// CocoaPods: module name is OpentokReactNative.
 #import <OpentokReactNative/OpentokReactNative-Swift.h>
-#else
+#elif __has_include(<OpentokReactNative-Swift.h>)
 #import <OpentokReactNative-Swift.h>
+#else
+// SPM: SPM does not expose the Swift target's generated -Swift.h to this
+// ObjC++ target, so we import the hand-authored ObjC mirror shipped as a
+// public header of the OpentokReactNativeObjC module (kept in sync with the
+// Swift @objc public API). See that header for the rationale.
+#import <OpentokReactNativeObjC/OpentokReactNativeSwift-Swift.h>
 #endif
 
 

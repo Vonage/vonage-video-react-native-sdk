@@ -72,5 +72,15 @@ android/src/main/java/com/facebook
 android/.gradle
 
 .kiro/
+.build/
+
+# SPM resolved-versions lockfile for the wrapper's ios/Package.swift — a build
+# artifact resolved per consuming app, not committed.
+ios/Package.resolved
+
+# CocoaPods is not used (iOS is SPM-only). Xcode/SPM may regenerate an
+# .xcworkspace locally; never commit it or a Pods dir.
+React-native-TestApp/ios/ReactNativeTesApp.xcworkspace/
+React-native-TestApp/ios/Pods/
 
 artifacts/
