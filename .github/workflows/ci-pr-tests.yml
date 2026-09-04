@@ -76,6 +76,13 @@ jobs:
 
       - name: Set up iOS SPM integration
         working-directory: React-native-TestApp/ios
+        # RCT_SPM_AUTOLINKING_CONFIG_COMMAND points RN's autolinking at a wrapper
+        # that synthesizes project.ios from the .xcodeproj. The stock RN CLI
+        # detects the iOS project only via a Podfile, which this SPM-only app
+        # does not ship; without this the step fails on a clean checkout with
+        # "CLI config did not provide project.ios.sourceDir".
+        env:
+          RCT_SPM_AUTOLINKING_CONFIG_COMMAND: '["node","scripts/rn-spm-config.js"]'
         run: npx react-native spm --yes
 
       - name: Detect available iOS simulator

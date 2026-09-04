@@ -181,7 +181,10 @@
   "generatedSources": {},
   "scriptPhases": {},
   "artifactsVersionOverride": null,
-  "configCommand": null,
+  "configCommand": [
+    "node",
+    "scripts/rn-spm-config.js"
+  ],
   "scheme": {
     "file": "ReactNativeTesApp.xcscheme",
     "created": false
