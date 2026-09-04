@@ -34,6 +34,22 @@ npm install opentok-react-native@<VERSION>
 
 **Note:** Replace `<VERSION>` with the target version to use.
 
+#### iOS integration (Swift Package Manager)
+
+On iOS this SDK integrates via **Swift Package Manager** (CocoaPods is no longer
+used for the native Vonage Video dependency). The underlying native SDK is the
+[Vonage Video Client SDK for Swift](https://github.com/vonage/vonage-video-client-sdk-swift)
+`2.35.1`, and it is wired in through React Native's SPM autolinking:
+
+```bash
+cd ios && npx react-native spm --yes
+```
+
+> **Note:** React Native's Swift Package Manager support is experimental/opt-in
+> in RN 0.87. This SDK is a New Architecture module (TurboModules + Fabric with
+> C++/Objective-C++ glue); the SPM integration has been validated on iOS but
+> relies on that experimental tooling.
+
 ### Basic Usage
 
 The packages are functionally identical. The only difference is their session prop names:

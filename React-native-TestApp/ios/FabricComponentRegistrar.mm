@@ -1,7 +1,7 @@
 #import "FabricComponentRegistrar.h"
 #import <React/RCTComponentViewFactory.h>
-#import "OTRNPublisherComponentView.h"
-#import "OTRNSubscriberComponentView.h"
+#import <OpentokReactNativeObjC/OTRNPublisherComponentView.h>
+#import <OpentokReactNativeObjC/OTRNSubscriberComponentView.h>
 
 @implementation FabricComponentRegistrar
 

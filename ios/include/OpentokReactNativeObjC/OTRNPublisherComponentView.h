@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @interface OTRNPublisherComponentView : UIView
 - (void)handleStreamCreated:(NSDictionary *)eventData;

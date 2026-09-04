@@ -9,8 +9,10 @@
 #import <React/RCTViewComponentView.h>
 #if __has_include(<OpentokReactNative/OpentokReactNative-Swift.h>)
 #import <OpentokReactNative/OpentokReactNative-Swift.h>
-#else
+#elif __has_include(<OpentokReactNative-Swift.h>)
 #import <OpentokReactNative-Swift.h>
+#else
+#import <OpentokReactNativeObjC/OpentokReactNativeSwift-Swift.h>
 #endif
 
 static inline std::string SafeStdStringFromValue(id value) {

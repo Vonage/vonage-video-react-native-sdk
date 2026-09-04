@@ -21,12 +21,13 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app',
-      build: 'xcodebuild -workspace ios/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
+      // SPM-only: build the .xcodeproj directly (CocoaPods .xcworkspace removed).
+      build: 'xcodebuild -project ios/ReactNativeTesApp.xcodeproj -scheme ReactNativeTesApp -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO'
     },
     'ios.release': {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Release-iphonesimulator/ReactNativeTesApp.app',
-      build: 'xcodebuild -workspace ios/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Release -sdk iphonesimulator -derivedDataPath ios/build'
+      build: 'xcodebuild -project ios/ReactNativeTesApp.xcodeproj -scheme ReactNativeTesApp -configuration Release -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO'
     },
     'android.debug': {
       type: 'android.apk',

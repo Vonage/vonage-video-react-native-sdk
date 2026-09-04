@@ -55,10 +55,8 @@ Both Fabric and TurboModules rely on **React Native's Codegen** system - a build
 
 **When Codegen Runs:**
 ```bash
-# Codegen executes during iOS build process
-npx pod-install  # Triggers codegen as part of Pod installation
-# OR
-cd ios && pod install  # Direct Pod installation also runs codegen
+# Codegen executes during the iOS build process
+cd ios && npx react-native spm --yes  # Sets up SPM integration and runs codegen
 ```
 
 **Build Flow:**
@@ -882,10 +880,10 @@ Ensure your `Info.plist` includes camera and microphone permissions:
 
 #### Video Transformers Support (Optional)
 
-If you plan to use `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()`, add this to your `Podfile`:
+If you plan to use `OTPublisher.setVideoTransformers()` or `OTPublisher.setAudioTransformers()`, add the transformers Swift Package to your app in Xcode (File → Add Package Dependencies), or declare it in your app's `Package.swift`:
 
-```ruby
-pod 'VonageClientSDKVideoTransformers'
+```swift
+.package(url: "https://github.com/vonage/vonage-video-transformers-client-sdk-swift", exact: "2.35.1")
 ```
 
 **Key Points:**

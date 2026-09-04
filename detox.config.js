@@ -17,12 +17,13 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app`,
-      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+      // SPM-only: build the .xcodeproj directly (CocoaPods .xcworkspace removed).
+      build: `xcodebuild -project ${iosAppRoot}/ReactNativeTesApp.xcodeproj -scheme ReactNativeTesApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO CODE_SIGNING_ALLOWED=NO`,
     },
     'ios.release': {
       type: 'ios.app',
       binaryPath: `${iosAppRoot}/build/Build/Products/Release-iphonesimulator/ReactNativeTesApp.app`,
-      build: `xcodebuild -workspace ${iosAppRoot}/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Release -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+      build: `xcodebuild -project ${iosAppRoot}/ReactNativeTesApp.xcodeproj -scheme ReactNativeTesApp -configuration Release -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO CODE_SIGNING_ALLOWED=NO`,
     },
     'android.debug': {
       type: 'android.apk',

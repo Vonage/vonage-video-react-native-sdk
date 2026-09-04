@@ -59,21 +59,24 @@ jobs:
           brew trust wix/brew
           brew install applesimutils
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: React-native-TestApp/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Install React-native-TestApp dependencies
         working-directory: React-native-TestApp
         run: npm install
 
-      - name: Install CocoaPods dependencies
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+            React-native-TestApp/ios/build/xcframeworks
+          key: ${{ runner.os }}-spm-${{ hashFiles('React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/.spm-injected.json', 'ios/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Set up iOS SPM integration
         working-directory: React-native-TestApp/ios
-        run: pod install
+        run: npx react-native spm --yes
 
       - name: Detect available iOS simulator
         id: detect-simulator

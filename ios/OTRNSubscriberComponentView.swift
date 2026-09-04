@@ -1,8 +1,14 @@
 import Foundation
 import OpenTok
 import React
+import OpentokReactNativeObjC
 
-@objc public class OTRNSubscriberImpl: NSObject {
+// SPM interop: the ObjC++ bridges consume this class through the hand-authored
+// mirror header ios/include/OpentokReactNativeObjC/OpentokReactNativeSwift-Swift.h
+// (SPM does not expose a Swift target's generated -Swift.h to a sibling ObjC++
+// target). If you change this class's @objc public API, update that header too.
+@objc(OTRNSubscriberImpl)
+public class OTRNSubscriberImpl: NSObject {
     private var sessionId: String?
     private var streamId: String?
     fileprivate weak var strictUIViewContainer:

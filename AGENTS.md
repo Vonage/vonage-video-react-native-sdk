@@ -14,11 +14,11 @@ The SDK uses exclusively the React Native **New Architecture** (TurboModules + F
 
 - **Languages:** TypeScript, JavaScript, Swift, Objective-C++, Kotlin, Java
 - **Framework:** React Native (New Architecture — TurboModules + Fabric)
-- **Build system:** react-native-builder-bob (JS), CocoaPods (iOS), Gradle (Android)
+- **Build system:** react-native-builder-bob (JS), Swift Package Manager (iOS), Gradle (Android)
 - **Test frameworks:** Jest (unit), Detox (E2E), Playwright (bot for E2E)
 - **Release tooling:** release-it, conventional-changelog
 - **Linting:** ESLint with `@react-native` config, Prettier
-- **Native SDK dependency:** VonageClientSDKVideo v2.34.0 (iOS CocoaPod, Android Maven)
+- **Native SDK dependency:** VonageClientSDKVideo v2.35.1 (iOS Swift Package, Android Maven)
 - **Node version:** v22.13.0 (see `.nvmrc`) — minimum required by React Native 0.87
 
 ## Architecture
@@ -91,7 +91,7 @@ For the test app:
 ```bash
 cd React-native-TestApp
 npm install
-cd ios && pod install && cd ..
+cd ios && npx react-native spm --yes && cd ..
 ```
 
 ### Common commands
@@ -151,7 +151,7 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 - **New event:** Add `BubblingEventHandler` (view-scoped) or `EventEmitter` (session-scoped) to spec → emit from native
 
 ### Important constraints
-- Always rebuild codegen after changing specs (`pod install` iOS, clean Gradle Android)
+- Always rebuild codegen after changing specs (`npx react-native spm` iOS, clean Gradle Android)
 - `@types/index.d.ts` is **legacy** — canonical types live in `src/types.ts`
 - The OTRN singleton holds strong references; be careful with cleanup in disconnect/unmount
 - iOS requires ObjC++ glue because Swift cannot implement C++ codegen protocols

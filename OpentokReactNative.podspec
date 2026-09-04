@@ -23,16 +23,12 @@ Pod::Spec.new do |s|
   ]
   # Exclude generated C++ headers from public headers - they should only be used internally
   s.public_header_files = [
-    "ios/OpentokReactNative.h",
-    "ios/OpentokReactNative-Bridging-Header.h",
-    "ios/OTRNPublisherComponentView.h",
-    "ios/OTRNSubscriberComponentView.h",
-    "ios/OTScreenCapture.h"
+    "ios/include/OpentokReactNativeObjC/OpentokReactNative.h",
+    "ios/include/OpentokReactNativeObjC/OTRNPublisherComponentView.h",
+    "ios/include/OpentokReactNativeObjC/OTRNSubscriberComponentView.h",
+    "ios/include/OpentokReactNativeObjC/OTScreenCapture.h"
   ]
 
-  # Add VonageClientSDKVideo dependency
-  s.dependency 'VonageClientSDKVideo', '2.35.1'
-  
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
   s.swift_version = "5.0"
