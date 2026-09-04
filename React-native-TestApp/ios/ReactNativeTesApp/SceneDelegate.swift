@@ -1,5 +1,4 @@
 import UIKit
-import React
 import React_RCTAppDelegate
 
 // The Info.plist references this class by name via

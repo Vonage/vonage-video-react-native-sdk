@@ -71,7 +71,7 @@ jobs:
 
           if [ -z "$DEVICE_NAME" ]; then
             echo "No iPhone simulators found, using default"
-            DEVICE_NAME="iPhone 17 Pro"
+            DEVICE_NAME="iPhone 15"
           fi
 
           echo "Selected simulator: $DEVICE_NAME"
