@@ -1,0 +1,24 @@
+.github/workflows/ci-ios27-validation.yml
+  s_cc487ee6e0a383::t_b9e2774471b5d6 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0f637364feeba1c25ca538980577c70868ca3430",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_cc487ee6e0a383": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_f45b5e2c-de7b-4d27-be6d-be5efe700269",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
