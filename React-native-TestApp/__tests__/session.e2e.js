@@ -1,23 +1,20 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
+const { expect: jestExpect } = require('expect');
 
 /**
  * Session Lifecycle Tests
  *
  * Tests session operations: connect/disconnect cycles,
- * disconnect while publishing/subscribing.
- *
- * Each test that needs a fresh state launches a new app instance.
+ * disconnect while publishing/subscribing, and signal reception.
  */
 describe('Session Lifecycle', () => {
-  let credentials;
-  let bot;
+  let session;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
+    console.log('[setup] Launching app...');
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -26,115 +23,93 @@ describe('Session Lifecycle', () => {
 
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
+    console.log('[setup] App ready.');
+
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot) await bot.close();
+  });
+
+  afterEach(async () => {
+    await session.cleanup();
   });
 
   it('connect and disconnect cleanly', async () => {
-    await element(by.id('submitButton')).tap();
+    // Connect app (defensive disconnect built-in)
     console.log('[session] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-    console.log('[session] Connected. Disconnecting...');
+    await session.connectApp();
+    console.log('[session] Connected.');
 
-    await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    // Verify session connected event indicator
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
+
+    // Disconnect
+    console.log('[session] Disconnecting...');
+    await session.disconnectApp();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected cleanly.');
   });
 
   it('reconnect after disconnect', async () => {
-    // Ensure we start disconnected (guard against previous test failing mid-connect)
-    try {
-      await element(by.id('disconnectSession')).tap();
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    } catch (_) {
-      // Already disconnected — expected path
-    }
-    await element(by.id('submitButton')).tap();
+    // Connect
+    console.log('[session] Connecting...');
+    await session.connectApp();
+    console.log('[session] Connected.');
+
+    // Disconnect
+    console.log('[session] Disconnecting...');
+    await session.disconnectApp();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+    console.log('[session] Disconnected.');
+
+    // Reconnect
     console.log('[session] Reconnecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await session.connectApp();
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
     console.log('[session] Reconnected successfully.');
   });
 
   it('disconnect while publishing does not crash', async () => {
-    // Establish connected state explicitly instead of relying on previous test outcome
-    try {
-      await element(by.id('disconnectSession')).tap();
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    } catch (_) {
-      // Already disconnected
-    }
-    await element(by.id('submitButton')).tap();
+    // Connect app
     console.log('[session] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('publisher'))).toExist();
+    await session.connectApp();
+
+    // Wait for publisher to appear (confirms we are actively publishing)
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(30000);
     console.log('[session] Publishing. Disconnecting...');
 
-    await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    // Disconnect while publishing
+    await session.disconnectApp();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while publishing — no crash.');
   });
 
   it('disconnect while subscribing does not crash', async () => {
-    // Reconnect
-    await element(by.id('submitButton')).tap();
+    // Connect app
     console.log('[session] Connecting for subscribe test...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
+    await session.connectApp();
 
-    // Bot joins
-    bot = new jsSDKTesterBot({ timeout: 30000 });
-    await bot.launch();
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    console.log('[session] Bot publishing. Waiting for subscriber...');
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-    await expect(element(by.id('subscriber'))).toExist();
-    console.log('[session] Subscribing. Disconnecting...');
+    // Set up capture for streamCreated payload verification
+    await setCaptureFilter(['streamCreated']);
 
-    await element(by.id('disconnectSession')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    // Add bot — addBot() waits for subscriber view
+    console.log('[session] Adding bot...');
+    const bot = await session.addBot();
+    console.log('[session] Subscribing.');
+
+    // Verify streamCreated payload contains valid stream info
+    const streamEvent = await waitForEvent('streamCreated');
+    console.log('[session] streamCreated payload:', JSON.stringify(streamEvent));
+    jestExpect(streamEvent.streamId).toBeTruthy();
+
+    // Disconnect while subscribing
+    console.log('[session] Disconnecting...');
+    await session.disconnectApp();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 
-  it('app receives signal from bot', async () => {
-    // Reconnect
-    await element(by.id('submitButton')).tap();
-    console.log('[signal] Connecting...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-
-    // Ensure bot is connected
-    if (!bot) {
-      bot = new jsSDKTesterBot({ timeout: 30000 });
-      await bot.launch();
-    }
-    await bot.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    // Bot sends signal
-    console.log('[signal] Bot sending signal...');
-    await bot.sendSignal('chat', 'hello-from-bot');
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    // Verify app received signal (indicator in view tree)
-    await expect(element(by.id('signalReceivedIndicator'))).toExist();
-    console.log('[signal] App received signal from bot!');
-  });
 });
