@@ -190,20 +190,20 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
         ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
         Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            // Release the camera/audio device immediately rather than waiting on GC —
-            // unpublish() is only ever called from the Publisher's final teardown path.
-            publisher.destroy();
-            publishers.remove(publisherId);
+        if (publisher == null) {
+            return;
         }
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+        Session mSession = mSessions.get(sessionId);
+        if (mSession != null) {
+            mSession.unpublish(publisher);
+        }
+        // Release the camera/audio device immediately rather than waiting on GC —
+        // unpublish() is only ever called from the Publisher's final teardown path.
+        publisher.destroy();
+        publishers.remove(publisherId);
     }
 
     @Override
