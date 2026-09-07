@@ -8,13 +8,23 @@
 import Foundation
 import OpenTok
 
+private extension ISO8601DateFormatter {
+    // Shared formatter with millisecond precision for cross-platform consistency.
+    // Using a static instance avoids repeated allocation on frequent callsites.
+    static let withMilliseconds: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions.insert(.withFractionalSeconds)
+        return f
+    }()
+}
+
 class EventUtils {
     
     static func prepareJSConnectionEventData(_ connection: OTConnection) -> Dictionary<String, Any> {
         var connectionInfo: Dictionary<String, Any> = [:];
         guard connection != nil else { return connectionInfo }
         connectionInfo["connectionId"] = connection.connectionId;
-        connectionInfo["creationTime"] = convertDateToString(connection.creationTime);
+        connectionInfo["creationTime"] = ISO8601DateFormatter.withMilliseconds.string(from: connection.creationTime);
         connectionInfo["data"] = connection.data;
         return connectionInfo;
     }
@@ -29,7 +39,8 @@ class EventUtils {
         streamInfo["hasAudio"] = stream.hasAudio;
         streamInfo["sessionId"] = stream.session.sessionId;
         streamInfo["hasVideo"] = stream.hasVideo;
-        streamInfo["creationTime"] = convertDateToString(stream.creationTime);
+        // ISO 8601 UTC format with millisecond precision for cross-platform consistency with Android.
+        streamInfo["creationTime"] = ISO8601DateFormatter.withMilliseconds.string(from: stream.creationTime);
         streamInfo["height"] = stream.videoDimensions.height;
         streamInfo["width"] = stream.videoDimensions.width;
         streamInfo["videoType"] = stream.videoType == OTStreamVideoType.screen ? "screen" : "camera"
@@ -130,13 +141,6 @@ class EventUtils {
         return sessionInfo;
     }
     
-    static func convertDateToString(_ creationTime: Date) -> String {
-        let dateFormatter: DateFormatter = DateFormatter();
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss";
-        dateFormatter.timeZone = TimeZone(abbreviation: "UTC");
-        return dateFormatter.string(from:creationTime);
-    }
-
     static func createErrorMessage(_ message: String) -> Dictionary<String, String> {
         var errorInfo: Dictionary<String, String> = [:]
         errorInfo["message"] = message

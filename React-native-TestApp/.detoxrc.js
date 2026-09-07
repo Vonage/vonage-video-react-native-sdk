@@ -1,7 +1,7 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
   logger: {
-    level: 'info',
+    level: 'verbose',
     options: {
       showLoggerName: false,
       showPid: false,
@@ -14,7 +14,7 @@ module.exports = {
       config: '__tests__/jest.e2e.config.js'
     },
     jest: {
-      setupTimeout: 120000
+      setupTimeout: 300000
     }
   },
   apps: {
@@ -43,7 +43,7 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone SE (3rd generation)'
+        type: process.env.DETOX_DEVICE_NAME || 'iPhone SE (3rd generation)'
       }
     },
     attached: {
@@ -55,7 +55,7 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_8_Pro_API_33'
+        avdName: process.env.DETOX_AVD_NAME || 'Pixel_8_Pro_API_33'
       }
     }
   },

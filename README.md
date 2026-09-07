@@ -30,8 +30,6 @@ npm install @vonage/client-sdk-video-react-native@<VERSION>
 **OpenTok Package:**
 ```bash
 npm install opentok-react-native@<VERSION>
-# or
-yarn add opentok-react-native@<VERSION>
 ```
 
 **Note:** Replace `<VERSION>` with the target version to use.
@@ -62,7 +60,7 @@ The packages are functionally identical. The only difference is their session pr
 
 **Starting from version 2.31.1**, this SDK is built with the [React Native new architecture](https://reactnative.dev/architecture/landing-page).
 
-- ✅ **Supported:** React Native 0.76+ (new architecture)
+- ✅ **Supported:** React Native 0.81+ (new architecture)
 - ❌ **Not supported:** Older React Native versions (legacy architecture)
 
 Applications using older SDK versions will need to migrate to React Native's new architecture before upgrading.
