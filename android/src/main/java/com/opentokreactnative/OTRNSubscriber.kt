@@ -249,6 +249,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     fun subscribeToStream(session: Session, stream: Stream) {
+        // Guard against re-attach: Android fires onAttachedToWindow again after any
+        // detach; without this a second attach builds a duplicate Subscriber and
+        // orphans the first in the shared map.
+        if (subscriber != null) return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         subscriber = Subscriber.Builder(context, stream)
@@ -256,7 +260,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         sharedState.getSubscribers().put(stream.getStreamId(), subscriber ?: return);
         subscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
+            (this.props?.get("scaleBehavior") as? String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -306,7 +310,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
         }
 
-        this.props?.clear()
+        // Note: do NOT clear `props` here. updateProperties() only assigns when the map
+        // is null, so a cleared map is never repopulated — and it is read again if the
+        // view re-attaches (previously crashed on the scaleBehavior cast above).
 
         session.subscribe(subscriber)
         if (subscriber?.view != null) {
