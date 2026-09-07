@@ -2,10 +2,7 @@ buildscript {
     ext {
         buildToolsVersion = "35.0.0"
         minSdkVersion = 24
-        // TODO: Bump to compileSdkVersion 37 (required by com.vonage:client-sdk-video:2.35.1).
-        // Full API level 37 support will be handled separately
-        // as part of https://jira.vonage.com/browse/VIDCS-4943
-        compileSdkVersion = 36
+        compileSdkVersion = 37
         targetSdkVersion = 34
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"

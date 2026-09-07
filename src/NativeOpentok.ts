@@ -1,6 +1,5 @@
-import type { TurboModule } from 'react-native';
+import type { CodegenTypes, TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { EventEmitter } from 'react-native/Libraries/Types/CodegenTypes';
 
 export type ArchiveEvent = {
   archiveId: string;
@@ -116,20 +115,20 @@ export type SessionErrorEvent = {
 };
 
 export interface Spec extends TurboModule {
-  readonly onArchiveStarted: EventEmitter<ArchiveEvent>;
-  readonly onArchiveStopped: EventEmitter<ArchiveEvent>;
-  readonly onConnectionCreated: EventEmitter<ConnectionEvent>;
-  readonly onConnectionDestroyed: EventEmitter<ConnectionEvent>;
-  readonly onMuteForced: EventEmitter<MuteForcedEvent>;
-  readonly onSessionConnected: EventEmitter<SessionConnectEvent>;
-  readonly onSessionDisconnected: EventEmitter<SessionDisconnectEvent>;
-  readonly onSessionReconnecting: EventEmitter<EmptyEvent>;
-  readonly onSessionReconnected: EventEmitter<EmptyEvent>;
-  readonly onStreamCreated: EventEmitter<StreamEvent>;
-  readonly onStreamDestroyed: EventEmitter<StreamEvent>;
-  readonly onStreamPropertyChanged: EventEmitter<StreamPropertyChangedEvent>;
-  readonly onSignalReceived: EventEmitter<SignalEvent>;
-  readonly onSessionError: EventEmitter<SessionErrorEvent>;
+  readonly onArchiveStarted: CodegenTypes.EventEmitter<ArchiveEvent>;
+  readonly onArchiveStopped: CodegenTypes.EventEmitter<ArchiveEvent>;
+  readonly onConnectionCreated: CodegenTypes.EventEmitter<ConnectionEvent>;
+  readonly onConnectionDestroyed: CodegenTypes.EventEmitter<ConnectionEvent>;
+  readonly onMuteForced: CodegenTypes.EventEmitter<MuteForcedEvent>;
+  readonly onSessionConnected: CodegenTypes.EventEmitter<SessionConnectEvent>;
+  readonly onSessionDisconnected: CodegenTypes.EventEmitter<SessionDisconnectEvent>;
+  readonly onSessionReconnecting: CodegenTypes.EventEmitter<EmptyEvent>;
+  readonly onSessionReconnected: CodegenTypes.EventEmitter<EmptyEvent>;
+  readonly onStreamCreated: CodegenTypes.EventEmitter<StreamEvent>;
+  readonly onStreamDestroyed: CodegenTypes.EventEmitter<StreamEvent>;
+  readonly onStreamPropertyChanged: CodegenTypes.EventEmitter<StreamPropertyChangedEvent>;
+  readonly onSignalReceived: CodegenTypes.EventEmitter<SignalEvent>;
+  readonly onSessionError: CodegenTypes.EventEmitter<SessionErrorEvent>;
   initSession(
     apiKey: string,
     sessionId: string,

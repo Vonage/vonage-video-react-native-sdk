@@ -1,12 +1,5 @@
-import type { HostComponent, ViewProps } from 'react-native';
-import type {
-  BubblingEventHandler,
-  Double,
-  Float,
-  Int32,
-  WithDefault,
-} from 'react-native/Libraries/Types/CodegenTypes';
-import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
+import type { CodegenTypes, HostComponent, ViewProps } from 'react-native';
+import { codegenNativeComponent } from 'react-native';
 
 export interface StreamEvent {
   stream: {
@@ -16,8 +9,8 @@ export interface StreamEvent {
     hasCaptions?: boolean;
     hasVideo: boolean;
     sessionId: string;
-    width: Double;
-    height: Double;
+    width: CodegenTypes.Double;
+    height: CodegenTypes.Double;
     videoType: string; //  "screen" | "camera";
     connection: {
       creationTime: string;
@@ -46,7 +39,7 @@ export interface SubscriberAudioStatsEvent extends StreamEvent {
 }
 
 export interface SubscriberAudioLevelEvent extends StreamEvent {
-  audioLevel: Float;
+  audioLevel: CodegenTypes.Float;
 }
 
 export interface SubscriberRTCStatsReportEvent extends StreamEvent {
@@ -69,29 +62,29 @@ export interface VideoEnabledEvent extends StreamEvent {
 export interface NativeProps extends ViewProps {
   sessionId: string;
   streamId: string;
-  subscribeToAudio?: WithDefault<boolean, true>;
-  subscribeToVideo?: WithDefault<boolean, true>;
+  subscribeToAudio?: CodegenTypes.WithDefault<boolean, true>;
+  subscribeToVideo?: CodegenTypes.WithDefault<boolean, true>;
   scaleBehavior?: string;
 
   subscribeToCaptions?: boolean;
-  audioVolume?: Float;
-  preferredFrameRate?: Int32;
+  audioVolume?: CodegenTypes.Float;
+  preferredFrameRate?: CodegenTypes.Int32;
   preferredResolution?: string;
 
-  onSubscriberConnected?: BubblingEventHandler<StreamEvent> | null;
-  onSubscriberDisconnected?: BubblingEventHandler<StreamEvent> | null;
-  onSubscriberError?: BubblingEventHandler<StreamErrorEvent> | null;
-  onRtcStatsReport?: BubblingEventHandler<SubscriberRTCStatsReportEvent> | null;
-  onAudioLevel?: BubblingEventHandler<SubscriberAudioLevelEvent> | null;
-  onAudioNetworkStats?: BubblingEventHandler<SubscriberAudioStatsEvent> | null;
-  onCaptionReceived?: BubblingEventHandler<SubscriberCaptionEvent> | null;
-  onVideoDataReceived?: BubblingEventHandler<StreamEvent> | null;
-  onVideoDisabled?: BubblingEventHandler<VideoDisabledEvent> | null;
-  onVideoDisableWarning?: BubblingEventHandler<StreamEvent> | null;
-  onVideoDisableWarningLifted?: BubblingEventHandler<StreamEvent> | null;
-  onVideoEnabled?: BubblingEventHandler<VideoEnabledEvent> | null;
-  onVideoNetworkStats?: BubblingEventHandler<SubscriberVideoNetworkStatsEvent> | null;
-  onReconnected?: BubblingEventHandler<StreamEvent> | null;
+  onSubscriberConnected?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
+  onSubscriberDisconnected?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
+  onSubscriberError?: CodegenTypes.BubblingEventHandler<StreamErrorEvent> | null;
+  onRtcStatsReport?: CodegenTypes.BubblingEventHandler<SubscriberRTCStatsReportEvent> | null;
+  onAudioLevel?: CodegenTypes.BubblingEventHandler<SubscriberAudioLevelEvent> | null;
+  onAudioNetworkStats?: CodegenTypes.BubblingEventHandler<SubscriberAudioStatsEvent> | null;
+  onCaptionReceived?: CodegenTypes.BubblingEventHandler<SubscriberCaptionEvent> | null;
+  onVideoDataReceived?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
+  onVideoDisabled?: CodegenTypes.BubblingEventHandler<VideoDisabledEvent> | null;
+  onVideoDisableWarning?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
+  onVideoDisableWarningLifted?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
+  onVideoEnabled?: CodegenTypes.BubblingEventHandler<VideoEnabledEvent> | null;
+  onVideoNetworkStats?: CodegenTypes.BubblingEventHandler<SubscriberVideoNetworkStatsEvent> | null;
+  onReconnected?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
 }
 
 export default codegenNativeComponent<NativeProps>(

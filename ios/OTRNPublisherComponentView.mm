@@ -70,6 +70,13 @@ using namespace facebook::react;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
+        // React Native 0.87 requires Fabric component-view subclasses to seed
+        // `_props` with a concrete default in the constructor; otherwise the
+        // first `updateProps:` (which reads `_props` as the old props) trips
+        // RCTViewComponentView's assertion and crashes with
+        // NSInternalInconsistencyException.
+        static const auto defaultProps = std::make_shared<const OTRNPublisherProps>();
+        _props = defaultProps;
         _impl = [[OTRNPublisherImpl alloc] initWithView:self];
         self.contentView = nil;
     }

@@ -1,5 +1,4 @@
 apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 /**
@@ -104,7 +103,7 @@ android {
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }
@@ -273,15 +272,5 @@ tasks.whenTaskAdded { task ->
         task.dependsOn startMetro, setupAdbReverse
         // Ensure adb reverse runs after metro starts
         setupAdbReverse.mustRunAfter startMetro
-    }
-}
-
-// TODO: Disable AAR metadata check until compileSdkVersion is bumped to 37.
-// com.vonage:client-sdk-video:2.35.1 requires compile SDK 37, but current AGP
-// does not officially support it yet. Full API level 37 support will be handled
-// as part of https://jira.vonage.com/browse/VIDCS-4943
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("AarMetadata")) {
-        task.enabled = false
     }
 }
