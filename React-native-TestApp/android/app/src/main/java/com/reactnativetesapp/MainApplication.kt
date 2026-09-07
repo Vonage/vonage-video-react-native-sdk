@@ -1,6 +1,8 @@
 package com.reactnativetesapp
 
 import android.app.Application
+import android.content.Context
+import androidx.multidex.MultiDex
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -18,7 +20,7 @@ import com.opentokreactnative.OpentokReactNativePackage;
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost =
-      object : DefaultReactNativeHost(this) {
+      object : DefaultReactNativeHost(this@MainApplication) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
@@ -37,6 +39,11 @@ class MainApplication : Application(), ReactApplication {
       }
   override val reactHost: ReactHost
     get() = getDefaultReactHost(applicationContext, reactNativeHost)
+
+  override fun attachBaseContext(base: Context) {
+    super.attachBaseContext(base)
+    MultiDex.install(this)
+  }
 
   override fun onCreate() {
     super.onCreate()

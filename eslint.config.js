@@ -1,5 +1,5 @@
 module.exports = {
-  ignores: ['node_modules/', 'e2e/E2ETestingApp/ios/Pods', 'lib/'],
+  ignores: ['node_modules/', 'lib/'],
   languageOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',

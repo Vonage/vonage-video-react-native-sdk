@@ -11,8 +11,8 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platforms    = { :ios => min_ios_version_supported }
-  s.source       = { :git => "https://github.com/opentok/opentok-react-native.git", :tag => "#{s.version}" }
+  s.platforms    = { :ios => '17.0' }
+  s.source       = { :git => "https://github.com/Vonage/vonage-video-react-native-sdk.git", :tag => "#{s.version}" }
 
   # Exclude the build directory -- generated codegen files are compiled by the ReactCodegen pod,
   # not by this pod. Headers are resolved at build time via HEADER_SEARCH_PATHS.
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   ]
 
   # Add VonageClientSDKVideo dependency
-  s.dependency 'VonageClientSDKVideo', '2.33.0'
+  s.dependency 'VonageClientSDKVideo', '2.35.1'
   
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
       "\"${PODS_ROOT}/../build/generated/ios\""
     ].join(" "),
     "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1",
-    "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
+    "CLANG_CXX_LANGUAGE_STANDARD" => "c++20"
   }
   
   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.

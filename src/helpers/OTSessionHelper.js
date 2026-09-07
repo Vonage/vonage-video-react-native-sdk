@@ -27,7 +27,10 @@ const setIsConnected = (sessionId, value) => {
 };
 
 const addStream = (sessionId, streamId) => {
-  if (streams[sessionId] && !streams[sessionId].includes(streamId)) {
+  if (!streams[sessionId]) {
+    streams[sessionId] = [];
+  }
+  if (!streams[sessionId].includes(streamId)) {
     streams[sessionId].push(streamId);
   }
 };

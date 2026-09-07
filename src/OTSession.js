@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { View } from 'react-native';
-import { ViewPropTypes } from 'deprecated-react-native-prop-types';
 import PropTypes from 'prop-types';
 import { OT } from './OT';
 import {
@@ -252,7 +251,7 @@ OTSession.propTypes = {
     PropTypes.element,
     PropTypes.arrayOf(PropTypes.element),
   ]),
-  style: ViewPropTypes.style,
+  style: PropTypes.any,
   eventHandlers: PropTypes.object,
   options: PropTypes.object,
   signal: PropTypes.object,
