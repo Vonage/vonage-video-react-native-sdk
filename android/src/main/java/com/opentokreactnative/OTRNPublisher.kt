@@ -221,6 +221,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         // detach; without this a second attach builds a duplicate Publisher, orphans
         // the first in the shared map, and contends for the camera.
         if (publisher != null) return
+        val publisherId = this.props?.get("publisherId") as? String ?: return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -324,10 +325,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
-        // Safe cast: if props haven't fully populated during attach, bail out instead
-        // of throwing on an unchecked `as String` (matches the prop-cast hardening in
-        // this PR); the pending-publish path retries once the view is attached.
-        val publisherId = this.props?.get("publisherId") as? String ?: return
         sharedState.getPublishers()
             .put(publisherId, publisher ?: return);
         if (publisher?.view != null) {
