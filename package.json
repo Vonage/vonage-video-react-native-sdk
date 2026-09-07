@@ -1,6 +1,6 @@
 {
   "name": "@vonage/client-sdk-video-react-native",
-  "version": "2.33.2-alpha",
+  "version": "2.35.0",
   "description": "Vonage Video client SDK for React Native",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
@@ -55,14 +55,21 @@
     "test": "jest",
     "test:unit": "jest --watch=false",
     "test:e2e:ios:build": "detox build-framework-cache && detox build -c ios.sim.debug",
-    "test:e2e:ios": "detox test -c ios.sim.debug",
+    "test:e2e:ios": "detox test -c ios.sim.debug --take-screenshots failing --record-logs failing",
+    "test:e2e:ios:suite": "detox test -c ios.sim.debug -- --testPathPattern",
+    "test:e2e:ios:build:release": "detox build-framework-cache && detox build -c ios.sim.release",
+    "test:e2e:ios:release": "detox test -c ios.sim.release",
+    "test:e2e:ios:suite:release": "detox test -c ios.sim.release -- --testPathPattern",
     "test:e2e:android:build": "detox build -c android.emu.debug",
     "test:e2e:android": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000",
+    "test:e2e:android:suite": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000 --testPathPattern",
+    "test:e2e:install-bot": "npx playwright install chromium",
+    "test:e2e:local": "sh scripts/run-e2e-local.sh",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint-fix": "eslint \"**/*.{js,ts,tsx}\" --fix",
     "generate:package-info": "node scripts/generate-package-info.js",
-    "clean": "del-cli android/build e2e/E2ETestingApp/android/build e2e/E2ETestingApp/android/app/build e2e/E2ETestingApp/ios/build lib",
+    "clean": "del-cli android/build lib",
     "prepare": "node scripts/generate-package-info.js && bob build && node build-expo.js",
     "release": "release-it",
     "version:local": "node -pe 'require(\"./package.json\").version'",
@@ -91,7 +98,7 @@
   "dependencies": {
     "axios": "^1.16.0",
     "react-native-uuid": "^2.0.3",
-    "underscore": "^1.13.7"
+    "underscore": "^1.13.8"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.8.1",
@@ -101,9 +108,9 @@
     "@evilmartians/lefthook": "^1.12.3",
     "@expo/config-plugins": "^54.0.4",
     "@react-native-community/cli": "20.1.0",
-    "@react-native/babel-preset": "0.86.0",
-    "@react-native/eslint-config": "0.86.0",
-    "@react-native/jest-preset": "0.86.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/eslint-config": "0.87.1",
+    "@react-native/jest-preset": "0.87.1",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.2.0",
@@ -116,9 +123,10 @@
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "^29.7.0",
     "mocha": "^11.7.5",
+    "playwright": "^1.61.1",
     "prettier": "^3.6.2",
     "react": "19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.87.1",
     "react-native-builder-bob": "^0.43.0",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
@@ -130,19 +138,21 @@
   },
   "react-native": "src/index.tsx",
   "engines": {
-    "node": ">= 22.11.0"
+    "node": ">= 22.13.0"
   },
-  "workspaces": [
-    "e2e/E2ETestingApp"
-  ],
+  "overrides": {
+    "form-data": "^4.0.6"
+  },
   "jest": {
     "preset": "@react-native/jest-preset",
     "clearMocks": true,
+    "testPathIgnorePatterns": [
+      "<rootDir>/React-native-TestApp/"
+    ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/e2e/E2ETestingApp/node_modules",
       "<rootDir>/lib/"
     ],
     "moduleNameMapper": {

@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url "../node_modules/detox/Detox-android" }
+        maven { url "../../node_modules/detox/Detox-android" }
     }
 }
 

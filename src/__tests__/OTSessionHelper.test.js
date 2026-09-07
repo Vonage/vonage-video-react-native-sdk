@@ -1,8 +1,10 @@
 import {
   addEventListener,
+  addStream,
   clearStreams,
   dispatchEvent,
   getPublisherStream,
+  getStreams,
   sanitizeSessionOptions,
 } from '../helpers/OTSessionHelper';
 
@@ -30,5 +32,28 @@ describe('OTSessionHelper', () => {
 
     expect(result.apiUrl).toBe('');
     expect(result.connectionEventsSuppressed).toBe(true);
+  });
+
+  describe('addStream', () => {
+    afterEach(() => {
+      clearStreams('test-session');
+    });
+
+    it('initializes array and stores the first stream of a session', () => {
+      addStream('test-session', 'stream-1');
+      expect(getStreams('test-session')).toEqual(['stream-1']);
+    });
+
+    it('does not duplicate an already-added stream', () => {
+      addStream('test-session', 'stream-1');
+      addStream('test-session', 'stream-1');
+      expect(getStreams('test-session')).toEqual(['stream-1']);
+    });
+
+    it('stores multiple distinct streams', () => {
+      addStream('test-session', 'stream-1');
+      addStream('test-session', 'stream-2');
+      expect(getStreams('test-session')).toEqual(['stream-1', 'stream-2']);
+    });
   });
 });
