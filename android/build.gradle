@@ -16,7 +16,6 @@ buildscript {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
@@ -71,16 +70,18 @@ android {
     targetCompatibility JavaVersion.VERSION_17
   }
 
-  kotlinOptions {
-    jvmTarget = "17"
-  }
-
   sourceSets {
     main {
       java.srcDirs += [
         "build/generated/source/codegen/java"
       ]
     }
+  }
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 
@@ -96,7 +97,7 @@ dependencies {
   // consumer app's React Native version, keeping this library in lockstep with it.
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.vonage:client-sdk-video:2.34.1'
+  implementation 'com.vonage:client-sdk-video:2.35.1'
 }
 
 react {

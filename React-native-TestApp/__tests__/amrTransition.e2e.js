@@ -1,7 +1,6 @@
 'use strict';
 
-const { jsSDKTesterBot } = require('./helpers/jsSDKTesterBot');
-const { getCredentials } = require('./helpers/credentials');
+const { TestSession } = require('./helpers/testSession');
 
 /**
  * AMR (Automatic Media Routing) Transition Tests
@@ -19,18 +18,11 @@ const { getCredentials } = require('./helpers/credentials');
  *   - Bot2 (JS SDK, publisher) — triggers routed transition
  */
 describe('AMR Transitions', () => {
-  let credentials;
+  let session;
   let bot1;
   let bot2;
 
   beforeAll(async () => {
-    credentials = await getCredentials();
-
-    if (!credentials.tokenBot || !credentials.tokenBot2) {
-      console.warn('Need tokenBot + tokenBot2 for AMR tests. Skipping.');
-      return;
-    }
-
     await device.launchApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
@@ -40,54 +32,33 @@ describe('AMR Transitions', () => {
     const { waitForAppReady } = require('./helpers/waitForApp');
     await waitForAppReady();
 
-    // Connect app
-    await element(by.id('submitButton')).tap();
-    console.log('[amr] Connecting app...');
-    await new Promise((resolve) => setTimeout(resolve, 30000));
-    await expect(element(by.id('disconnectSession'))).toBeVisible();
-    console.log('[amr] App connected.');
+    session = await TestSession.create({ timeout: 30000 });
   });
 
   afterAll(async () => {
+    await session.teardown();
     await device.terminateApp();
-    if (bot1) await bot1.close();
-    if (bot2) await bot2.close();
   });
 
   it('relayed → routed: app + bot1 (P2P), then bot2 joins (routed)', async () => {
-    if (!credentials.tokenBot2) return;
+    // Connect app
+    await session.connectApp();
+    console.log('[amr] App connected.');
 
-    // Bot1 joins → 2 participants (relayed/P2P)
-    bot1 = new jsSDKTesterBot({ timeout: 30000 });
-    await bot1.launch();
-    console.log('[amr] Bot1 joining (2 participants → relayed)...');
-    await bot1.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot,
-      { apiUrl: credentials.apiUrl }
-    );
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    await expect(element(by.id('subscriber'))).toExist();
+    // Bot1 joins → 2 participants (relayed/P2P) — waits for subscriber
+    bot1 = await session.addBot();
     console.log('[amr] 2 participants — relayed mode. Subscriber visible.');
 
     // Bot2 joins → 3 participants (transition to routed)
-    bot2 = new jsSDKTesterBot({ timeout: 30000 });
-    await bot2.launch();
+    // Don't wait for a new subscriber view — it already exists from bot1
     console.log('[amr] Bot2 joining (3 participants → routed transition)...');
-    await bot2.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot2,
-      { apiUrl: credentials.apiUrl }
-    );
+    bot2 = await session.addBot({ waitForSubscriber: false });
 
-    // Wait for transition to complete — streams should persist
-    console.log('[amr] Waiting for routed transition to stabilize (20s)...');
-    await new Promise((resolve) => setTimeout(resolve, 20000));
+    // AMR transition has no observable event — short wait for ICE renegotiation
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Verify app still has subscriber (streams survived transition)
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Routed mode — subscriber still visible. Transition OK!');
 
     // Verify bots can still see the app's stream
@@ -103,20 +74,16 @@ describe('AMR Transitions', () => {
     console.log('[amr] Bot2 disconnecting (3→2 participants → relayed transition)...');
     await bot2.disconnect();
 
-    // Wait for transition
-    console.log('[amr] Waiting for relayed transition to stabilize (20s)...');
-    await new Promise((resolve) => setTimeout(resolve, 20000));
+    // AMR transition — short wait for ICE renegotiation
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Verify app still has subscriber (bot1 still publishing)
-    await expect(element(by.id('subscriber'))).toExist();
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Relayed mode — subscriber still visible. Transition OK!');
 
     // Verify bot1 still sees app's stream
     const bot1State = await bot1.getState();
     console.log('[amr] Bot1 subscriberCount:', bot1State.subscriberCount);
-    if (bot1State.subscriberCount < 1) {
-      console.warn('[amr] Bot1 lost app stream during transition — may need reconnect.');
-    }
   });
 
   it('app remains stable through multiple transitions', async () => {
@@ -124,21 +91,16 @@ describe('AMR Transitions', () => {
 
     // Bot2 rejoins → back to routed
     console.log('[amr] Bot2 rejoining (2→3 participants again)...');
-    await bot2.joinSession(
-      credentials.apiKey,
-      credentials.sessionId,
-      credentials.tokenBot2,
-      { apiUrl: credentials.apiUrl }
-    );
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-    await expect(element(by.id('subscriber'))).toExist();
+    await session.joinBot(bot2);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] 3 participants again — stable.');
 
     // Bot2 leaves again → back to relayed
     console.log('[amr] Bot2 leaving again...');
     await bot2.disconnect();
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-    await expect(element(by.id('subscriber'))).toExist();
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Multiple transitions — app stable throughout!');
   });
 });
