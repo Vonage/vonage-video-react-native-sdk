@@ -337,6 +337,13 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             promise.reject("Session not found.");
             return;
         }
+        // The native getCapabilities() segfaults (SIGSEGV in libopentok) when the
+        // session is not yet connected. The connection is null until onConnected
+        // fires, so guard on it before touching capabilities.
+        if (mSession.getConnection() == null) {
+            promise.reject("Capabilities are unavailable until the session is connected.");
+            return;
+        }
         WritableMap sessionCapabilitiesMap = Arguments.createMap();
         Session.Capabilities sessionCapabilities = mSession.getCapabilities();
         sessionCapabilitiesMap.putBoolean("canForceMute", sessionCapabilities.canForceMute);
@@ -373,6 +380,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     @Override
     public void onConnected(Session session) {
         Connection connection = session.getConnection();
+        if (connection == null) {
+          return;
+        }
         sharedState.getConnections().put(connection.getConnectionId(), connection);
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionConnected(payload);

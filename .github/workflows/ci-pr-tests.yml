@@ -29,7 +29,7 @@ jobs:
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    runs-on: macos-latest
+    runs-on: macos-15-xlarge
     timeout-minutes: 60
 
     steps:
@@ -74,25 +74,6 @@ jobs:
       - name: Install CocoaPods dependencies
         working-directory: React-native-TestApp/ios
         run: pod install
-
-      - name: Install OpenTok SDK for credential generation
-        run: npm install --no-save opentok
-
-      - name: Generate E2E session credentials
-        env:
-          API_URL: ${{ secrets.API_URL }}
-          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
-          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
-        run: node scripts/generate-e2e-credentials.js
-
-      - name: Inject E2E credentials
-        env:
-          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
-          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
-          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
-          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
-          API_URL: ${{ secrets.API_URL }}
-        run: node scripts/inject-e2e-credentials.js
 
       - name: Detect available iOS simulator
         id: detect-simulator
@@ -145,7 +126,20 @@ jobs:
       - name: Run iOS Detox tests
         env:
           DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
         run: npm run test:e2e:ios
+
+      - name: Upload iOS E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-e2e-diagnostics
+          path: |
+            artifacts/
+            React-native-TestApp/metro.log
+          if-no-files-found: ignore
 
   e2e-android-tests:
     needs: unit-tests
@@ -187,25 +181,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpulse0
-
-      - name: Install OpenTok SDK for credential generation
-        run: npm install --no-save opentok
-
-      - name: Generate E2E session credentials
-        env:
-          API_URL: ${{ secrets.API_URL }}
-          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
-          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
-        run: node scripts/generate-e2e-credentials.js
-
-      - name: Inject E2E credentials
-        env:
-          TESTING_APPLICATION_ID: ${{ env.TESTING_APPLICATION_ID }}
-          TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
-          TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
-          TESTING_TOKEN_BOT: ${{ env.TESTING_TOKEN_BOT }}
-          API_URL: ${{ secrets.API_URL }}
-        run: node scripts/inject-e2e-credentials.js
 
       - name: Verify Detox Android setup
         run: |
@@ -268,6 +243,10 @@ jobs:
 
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
         with:
           api-level: 36
           arch: x86_64

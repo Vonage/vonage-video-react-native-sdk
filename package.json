@@ -1,6 +1,6 @@
 {
   "name": "@vonage/client-sdk-video-react-native",
-  "version": "2.33.2-alpha",
+  "version": "2.35.0",
   "description": "Vonage Video client SDK for React Native",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
@@ -55,8 +55,11 @@
     "test": "jest",
     "test:unit": "jest --watch=false",
     "test:e2e:ios:build": "detox build-framework-cache && detox build -c ios.sim.debug",
-    "test:e2e:ios": "detox test -c ios.sim.debug",
+    "test:e2e:ios": "detox test -c ios.sim.debug --take-screenshots failing --record-logs failing",
     "test:e2e:ios:suite": "detox test -c ios.sim.debug -- --testPathPattern",
+    "test:e2e:ios:build:release": "detox build-framework-cache && detox build -c ios.sim.release",
+    "test:e2e:ios:release": "detox test -c ios.sim.release",
+    "test:e2e:ios:suite:release": "detox test -c ios.sim.release -- --testPathPattern",
     "test:e2e:android:build": "detox build -c android.emu.debug",
     "test:e2e:android": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000",
     "test:e2e:android:suite": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000 --testPathPattern",
@@ -105,9 +108,9 @@
     "@evilmartians/lefthook": "^1.12.3",
     "@expo/config-plugins": "^54.0.4",
     "@react-native-community/cli": "20.1.0",
-    "@react-native/babel-preset": "0.86.0",
-    "@react-native/eslint-config": "0.86.0",
-    "@react-native/jest-preset": "0.86.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/eslint-config": "0.87.1",
+    "@react-native/jest-preset": "0.87.1",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.2.0",
@@ -123,7 +126,7 @@
     "playwright": "^1.61.1",
     "prettier": "^3.6.2",
     "react": "19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.87.1",
     "react-native-builder-bob": "^0.43.0",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
@@ -135,7 +138,7 @@
   },
   "react-native": "src/index.tsx",
   "engines": {
-    "node": ">= 22.11.0"
+    "node": ">= 22.13.0"
   },
   "overrides": {
     "form-data": "^4.0.6"

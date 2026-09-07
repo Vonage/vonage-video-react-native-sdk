@@ -23,49 +23,61 @@ export interface Input {
   apiKey: string;
   sessionId: string;
   token: string;
+  apiUrl: string;
   encryptionSecret: string;
-  signal: Signal;
+  signal?: Signal;
   meetRoomName: string;
   userInitials: string;
 }
 
 export interface SessionEvents {
-  archiveStart: boolean;
-  archiveStop: boolean;
-  connectionCreated: boolean;
-  connectionDestroyed: boolean;
-  error: boolean;
-  forceMute: boolean;
-  sessionConnected: boolean;
-  sessionDisconnected: boolean;
-  signalReceived: boolean;
-  streamCreated: boolean;
-  streamDestroyed: boolean;
-  streamPropertyChanged: boolean;
+  archiveStart: number;
+  archiveStop: number;
+  connectionCreated: number;
+  connectionDestroyed: number;
+  error: number;
+  forceMute: number;
+  sessionConnected: number;
+  sessionDisconnected: number;
+  sessionReconnecting: number;
+  sessionReconnected: number;
+  signalReceived: number;
+  streamCreated: number;
+  streamDestroyed: number;
+  streamPropertyChanged: number;
 }
 
 export interface PublisherEvents {
-  audioLevel: boolean;
-  audioNetworkStats: boolean;
-  forceMute: boolean;
-  rtcStatsReport: boolean;
-  streamCreated: boolean;
-  streamDestroyed: boolean;
-  videoNetworkStats: boolean;
+  audioLevel: number;
+  audioNetworkStats: number;
+  error: number;
+  forceMute: number;
+  rtcStatsReport: number;
+  streamCreated: number;
+  streamDestroyed: number;
+  videoDisabled: number;
+  videoDisableWarning: number;
+  videoDisableWarningLifted: number;
+  videoEnabled: number;
+  videoNetworkStats: number;
 }
 
 export interface SubscriberEvents {
-  audioLevel: boolean;
-  audioNetworkStats: boolean;
-  connected: boolean;
-  disconnected: boolean;
-  reconnected: boolean;
-  subscriberConnected: boolean;
-  rtcStatsReport: boolean;
-  videoDataReceived: boolean;
-  videoDisabled: boolean;
-  videoEnabled: boolean;
-  videoNetworkStats: boolean;
+  audioLevel: number;
+  audioNetworkStats: number;
+  captionReceived: number;
+  connected: number;
+  disconnected: number;
+  error: number;
+  reconnected: number;
+  subscriberConnected: number;
+  rtcStatsReport: number;
+  videoDataReceived: number;
+  videoDisabled: number;
+  videoDisableWarning: number;
+  videoDisableWarningLifted: number;
+  videoEnabled: number;
+  videoNetworkStats: number;
 }
 
 export interface PublisherProperties {
@@ -110,8 +122,11 @@ export interface VideoStats {
   height: number;
 }
 
+export type TabName = 'session' | 'publisher' | 'subscriber' | 'moderation' | 'settings';
+
 export interface State {
   connectedToSession: boolean;
+  connectionSettingsExpanded: boolean;
   showRecIndicator: boolean;
   forceDisconnect: boolean;
   publisherProps: string;
@@ -129,4 +144,11 @@ export interface State {
   isLoadingMeetCredentials: boolean;
   streams: Stream[];
   publisherVideoStats: VideoStats | null;
+  activeTab: TabName;
+  subscribedStreams: string[];
+  unsubscribedStreams: string[];
+  // Event capture system for E2E payload verification
+  captureFilter: string[];
+  capturedEvents: Record<string, string>;
+  captureFilterInput: string;
 }
