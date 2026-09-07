@@ -255,21 +255,30 @@ class OTCustomAudioDriver: NSObject {
         freeupAudioBuffers()
         
         let session = AVAudioSession.sharedInstance()
+        isAudioSessionSetup = false
         do {
-            guard let previousAVAudioSessionCategory = previousAVAudioSessionCategory else { return }
-            if #available(iOS 10.0, *) {
-                try session.setCategory(previousAVAudioSessionCategory, mode: .default)
-            } else {
-                try session.setCategory(previousAVAudioSessionCategory)
+            try session.setActive(false, options: .notifyOthersOnDeactivation)
+            if let previousAVAudioSessionCategory = previousAVAudioSessionCategory {
+                if #available(iOS 10.0, *) {
+                    try session.setCategory(previousAVAudioSessionCategory, mode: .default)
+                } else {
+                    try session.setCategory(previousAVAudioSessionCategory)
+                }
             }
-            guard let avAudioSessionMode = avAudioSessionMode else { return }
-            try session.setMode(avAudioSessionMode)
-            try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
-            try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
-            
-            isAudioSessionSetup = false
+            if let avAudioSessionMode = avAudioSessionMode {
+                try session.setMode(avAudioSessionMode)
+            }
+            // Only restore values we actually captured during setup; the defaults
+            // are 0, and setPreferred*(0) is invalid and throws (which would also
+            // skip the remaining restores in this do-block).
+            if avAudioSessionPreffSampleRate > 0 {
+                try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
+            }
+            if avAudioSessionChannels > 0 {
+                try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
+            }
         } catch {
-            print("Error reseting AVAudioSession")
+            print("Error resetting AVAudioSession: \(error)")
         }
     }
     
