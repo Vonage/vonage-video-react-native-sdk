@@ -12,11 +12,18 @@
 
 /**
  * Configures which event types the app should capture.
- * Always clears previously captured events first to avoid stale data.
+ * Clears previously captured events first (to avoid stale data), then applies
+ * the new filter. Must be called while connected to a session — the capture
+ * controls only exist on the connected screen.
  * Waits for the filter to propagate through React's setState before returning.
  * @param {string[]} eventTypes - e.g. ['signal', 'streamPropertyChanged']
  */
 async function setCaptureFilter(eventTypes) {
+  // The capture controls render after connection; wait for the first one to
+  // mount before tapping, so we don't race the connected-screen render.
+  await waitFor(element(by.id('clearCapturedEvents')))
+    .toBeVisible()
+    .withTimeout(15000);
   await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
   // Dismiss keyboard before tapping Set Filter — on iOS, replaceText leaves
@@ -26,14 +33,6 @@ async function setCaptureFilter(eventTypes) {
   } catch (_) {}
   await element(by.id('setCaptureFilter')).tap();
   await new Promise((resolve) => setTimeout(resolve, 2000));
-}
-
-/**
- * Clears all previously captured event payloads.
- */
-async function clearCapturedEvents() {
-  await element(by.id('clearCapturedEvents')).tap();
-  await new Promise((resolve) => setTimeout(resolve, 500));
 }
 
 /**
@@ -72,4 +71,4 @@ async function waitForEvent(eventType, timeout = 30000) {
   throw new Error(`Timed out waiting for event: ${eventType}`);
 }
 
-module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent };
+module.exports = { setCaptureFilter, getLastEvent, waitForEvent };

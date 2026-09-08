@@ -98,18 +98,48 @@ echo "Configuring adb reverse for Metro..."
 adb -s "$DEVICE_ID" reverse tcp:8081 tcp:8081
 
 adb -s "$DEVICE_ID" logcat -c || true
+
+# Full, unfiltered logcat (verbose, for deep debugging).
 adb -s "$DEVICE_ID" logcat -v time > android-logcat.txt 2>&1 &
 LOGCAT_PID=$!
 
-if ! npm run test:e2e:android; then
+# Scoped crash/app logcat: only the app's own tags plus crash/native-fault
+# channels. This is the file to read first — it isolates a real app crash
+# (FATAL EXCEPTION / native SIGSEGV) from a lost Detox<->app connection.
+#   AndroidRuntime:E  -> uncaught Java/Kotlin exceptions (FATAL EXCEPTION)
+#   DEBUG:V / libc:F  -> native crashes (tombstones, SIGSEGV/SIGABRT)
+#   ReactNativeJS / OTRN* / opentok -> app + SDK lifecycle
+adb -s "$DEVICE_ID" logcat -v threadtime \
+  AndroidRuntime:E DEBUG:V libc:F \
+  ReactNativeJS:V OTRN-LIFECYCLE:V OTRN-DIAG:V opentok:V \
+  '*:S' > android-crash-logcat.txt 2>&1 &
+CRASH_LOGCAT_PID=$!
+
+# Set FAST=1 to run the fail-fast variant (shorter hook timeout, no retries).
+# Useful for debugging a broken run without waiting out 240s-per-suite timeouts.
+E2E_NPM_SCRIPT="test:e2e:android"
+if [ "${FAST:-0}" = "1" ]; then
+  E2E_NPM_SCRIPT="test:e2e:android:fast"
+  echo "FAST=1 set — using $E2E_NPM_SCRIPT (90s hook timeout, no retries)"
+fi
+
+if ! npm run "$E2E_NPM_SCRIPT"; then
   echo "=== Detox failed: collecting Android diagnostics ==="
   adb -s "$DEVICE_ID" devices || true
   adb -s "$DEVICE_ID" shell getprop ro.build.version.release || true
-  adb -s "$DEVICE_ID" shell pidof com.reactnativetesapp || true
+  # Is the app process still alive? If pidof returns a PID, the app did NOT
+  # crash and the failure is a lost Detox<->app connection, not an app fault.
+  echo "--- app process (pidof com.reactnativetesapp) ---"
+  adb -s "$DEVICE_ID" shell pidof com.reactnativetesapp || echo "(no app process — app is not running)"
+  # Any tombstones (native crashes) recorded?
+  echo "--- tombstones ---"
+  adb -s "$DEVICE_ID" shell ls -la /data/tombstones 2>/dev/null || true
   adb -s "$DEVICE_ID" shell dumpsys activity activities > android-dumpsys-activities.txt 2>&1 || true
   adb -s "$DEVICE_ID" shell dumpsys package com.reactnativetesapp > android-dumpsys-package.txt 2>&1 || true
   kill "$LOGCAT_PID" 2>/dev/null || true
+  kill "$CRASH_LOGCAT_PID" 2>/dev/null || true
   exit 1
 fi
 
 kill "$LOGCAT_PID" 2>/dev/null || true
+kill "$CRASH_LOGCAT_PID" 2>/dev/null || true

@@ -44,12 +44,12 @@ describe('Session Lifecycle', () => {
     console.log('[session] Connected.');
 
     // Verify session connected event indicator
-    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(15000);
 
     // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     console.log('[session] Disconnected cleanly.');
   });
 
@@ -62,7 +62,7 @@ describe('Session Lifecycle', () => {
     // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     console.log('[session] Disconnected.');
 
     // Reconnect
@@ -83,7 +83,7 @@ describe('Session Lifecycle', () => {
 
     // Disconnect while publishing
     await session.disconnectApp();
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     console.log('[session] Disconnected while publishing — no crash.');
   });
 
@@ -108,7 +108,7 @@ describe('Session Lifecycle', () => {
     // Disconnect while subscribing
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 

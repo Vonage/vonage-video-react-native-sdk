@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 const { forceDisconnect, forceMuteStream, forceUnpublish } = require('./helpers/openTokRest');
 
@@ -64,7 +64,8 @@ describe('Moderation', () => {
 
     // Navigate to moderation tab and tap muteAll
     await element(by.id('tabModeration')).tap();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Wait for the control to mount after the tab switch (replaces a fixed sleep).
+    await waitFor(element(by.id('muteAll'))).toBeVisible().withTimeout(15000);
     await element(by.id('muteAll')).tap();
     console.log('[forceMute] muteAll tapped.');
 
@@ -84,8 +85,8 @@ describe('Moderation', () => {
     console.log('[forceMute] Bot was force-muted!');
 
     // Verify event indicators on the RN app side
-    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(5000);
+    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('publisher-forceMute'))).not.toHaveText('0').withTimeout(15000);
 
     // Verify muteForced payload (moderator may not always receive this callback)
     try {
@@ -190,7 +191,7 @@ describe('Moderation', () => {
     console.log('[muteStream] Bot muteForced:', muteReceived);
 
     // No crash
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
     console.log('[muteStream] forceMuteStream completed without crash.');
   });
 
@@ -231,8 +232,8 @@ describe('Moderation', () => {
     jestExpect(destroyedEvent.streamId).toBe(streamId);
     console.log('[forceUnpublish] streamDestroyed streamId matches.');
 
-    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(15000);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
     console.log('[forceUnpublish] Force-unpublish completed.');
   });
 

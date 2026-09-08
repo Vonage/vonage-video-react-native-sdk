@@ -1,7 +1,6 @@
 'use strict';
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
-const { clearCapturedEvents } = require('./eventCapture');
 
 /**
  * TestSession - Encapsulates session lifecycle for isolated E2E tests.
@@ -118,9 +117,12 @@ class TestSession {
   async connectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
+    // Wait for the connect form to render before filling it — avoids racing the
+    // screen render (e.g. right after launch or a defensive disconnect).
+    await waitFor(element(by.id('apiKeyInput'))).toBeVisible().withTimeout(15000);
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
     await element(by.id('sessionIdInput')).replaceText(this.credentials.sessionId);
     await element(by.id('tokenInput')).replaceText(this.credentials.tokenApp);
@@ -132,6 +134,7 @@ class TestSession {
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
@@ -139,12 +142,15 @@ class TestSession {
   async connectAppWithCredentials(apiKey, sessionId, token) {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
 
+    // Wait for the connect form to render before filling it.
+    await waitFor(element(by.id('apiKeyInput'))).toBeVisible().withTimeout(15000);
     await element(by.id('apiKeyInput')).replaceText(apiKey);
     await element(by.id('sessionIdInput')).replaceText(sessionId);
     await element(by.id('tokenInput')).replaceText(token);
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
@@ -152,15 +158,20 @@ class TestSession {
   async disconnectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(15000);
     } catch (_) {}
   }
 
   // --- Cleanup ---
 
   /**
-   * Per-test cleanup: close all bot browsers, disconnect app, clear events.
+   * Per-test cleanup: close all bot browsers and disconnect the app.
    * Bots are fully destroyed (browser closed) — no reuse.
+   *
+   * Note: captured events are NOT cleared here. The capture UI only exists while
+   * connected, and cleanup runs after disconnectApp() has unmounted it, so a clear
+   * here can never succeed. It's also unnecessary — every event-reading test calls
+   * setCaptureFilter() first, which clears captured events as its first step.
    */
   async cleanup() {
     for (const bot of this.activeBots) {
@@ -171,10 +182,6 @@ class TestSession {
     this.activeBots = [];
 
     await this.disconnectApp();
-
-    try {
-      await clearCapturedEvents();
-    } catch (_) {}
   }
 
   /**

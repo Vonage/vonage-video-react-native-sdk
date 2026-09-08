@@ -1,7 +1,7 @@
 'use strict';
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -112,6 +112,7 @@ describe('Moderation Advanced', () => {
 
       // forceMuteAll via moderation tab
       await element(by.id('tabModeration')).tap();
+      await waitFor(element(by.id('muteAll'))).toBeVisible().withTimeout(15000);
       await element(by.id('muteAll')).tap();
       console.log('[disableForceMute] forceMuteAll called.');
 
@@ -125,7 +126,7 @@ describe('Moderation Advanced', () => {
       console.log('[disableForceMute] Bot muteForced:', botState.muteForced);
 
       // Verify session stable
-      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
       console.log('[disableForceMute] Session stable after forceMuteAll.');
     });
   });
@@ -182,7 +183,7 @@ describe('Moderation Advanced', () => {
       jestExpect(botState.muteForced).toBe(true);
 
       // App stays connected
-      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
+      await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(15000);
       console.log('[forceMuteStream] forceMuteStream completed successfully.');
     });
 
