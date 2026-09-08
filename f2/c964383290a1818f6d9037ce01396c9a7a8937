@@ -1,0 +1,25 @@
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_b8f859cc3258fe::t_4530413d271f2d 148-164
+.gitignore
+  s_b8f859cc3258fe::t_e115a4cc2ef4f0 83,86
+React-native-TestApp/__tests__/cameraChurn.stress.js
+  s_b8f859cc3258fe::t_e03813d1f5cc18 145-206
+  s_b8f859cc3258fe::t_1714e7280a6481 14-15,17-21
+  s_b8f859cc3258fe::t_b138bc29f2f274 27-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "f2c964383290a1818f6d9037ce01396c9a7a8937",
+  "prompts": {},
+  "sessions": {
+    "s_b8f859cc3258fe": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_c6675b6d-ad9a-4543-b52c-65e4f6488c49",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
