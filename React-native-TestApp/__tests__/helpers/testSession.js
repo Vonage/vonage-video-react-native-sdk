@@ -145,6 +145,23 @@ class TestSession {
     );
   }
 
+  /**
+   * Disconnects the oldest `count` bots and adds `count` fresh ones, so streams
+   * are torn down and rebuilt while other peers keep publishing. Used to make
+   * lifecycle/stats callbacks (onDisconnected/onError/onAudioStats/onVideoStats)
+   * race stream teardown.
+   *
+   * @param {number} count - Number of bots to turn over
+   */
+  async replaceBots(count) {
+    const leaving = this.activeBots.slice(0, count);
+    await Promise.all(leaving.map((bot) => bot.close().catch(() => {})));
+    this.activeBots = this.activeBots.filter((bot) => !leaving.includes(bot));
+    for (let i = 0; i < count; i++) {
+      await this.addBot({ waitForSubscriber: false });
+    }
+  }
+
   // --- App connection ---
 
   async connectApp() {
