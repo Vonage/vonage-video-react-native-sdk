@@ -496,6 +496,9 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     {
         let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(
             stream)
+        // Release the KVO stream observers registered in session(_:streamCreated:)
+        // (mirrors the publisher's teardown) to avoid leaking NSKeyValueObservations.
+        OTRN.sharedState.streamObservers.removeValue(forKey: stream.streamId)
         OTRN.sharedState.subscriberStreams.removeValue(forKey: stream.streamId)
         OTRN.sharedState.subscribers.removeValue(forKey: stream.streamId)
         impl?.ot?.emit(onStreamDestroyed: streamInfo)
