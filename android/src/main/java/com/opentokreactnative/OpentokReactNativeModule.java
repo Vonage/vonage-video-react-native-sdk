@@ -481,7 +481,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasCaptions", !hasCaptions, hasCaptions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // hasCaptions is not part of the subscriber stream cache, so there is
+        // nothing to push. Previously this triggered a cache refresh that
+        // re-read the SDK for no reason, which was one of the paths into the
+        // otc_stream_copy crash.
     }
 
     @Override
@@ -489,7 +492,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Push the value we were handed into the subscriber cache. The
+        // subscriber must never re-read the SDK to discover it (see
+        // OTRNSubscriber cache design).
+        OTRNSubscriber.applyHasAudioChangeForStream(stream.getStreamId(),
+                                                    hasAudio);
     }
 
     @Override
@@ -497,7 +504,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyHasVideoChangeForStream(stream.getStreamId(),
+                                                    hasVideo);
     }
 
     @Override
@@ -515,7 +523,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyVideoDimensionsChangeForStream(stream.getStreamId(),
+                                                           width, height);
     }
 
     @Override
@@ -525,7 +534,15 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Normalise to the same "screen"/"camera" vocabulary buildCacheEntry
+        // uses, so the cached value stays consistent with the one primed at
+        // subscribe time.
+        String normalisedVideoType =
+            streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen
+                ? "screen"
+                : "camera";
+        OTRNSubscriber.applyVideoTypeChangeForStream(stream.getStreamId(),
+                                                     normalisedVideoType);
     }
 
     @Override
