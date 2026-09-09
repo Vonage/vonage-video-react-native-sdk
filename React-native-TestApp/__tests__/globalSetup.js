@@ -61,21 +61,23 @@ module.exports = async function globalSetup() {
       data,
     });
 
-  // Create routed session
+  // Number of publisher tokens generated per session. Tests take as many bots
+  // as they need from this pool. Override with E2E_BOT_POOL_SIZE.
+  const botPoolSize = parseInt(process.env.E2E_BOT_POOL_SIZE || '4', 10);
+
+  const generateBotTokens = (sessionId) =>
+    Array.from({ length: botPoolSize }, (_, i) =>
+      generateToken(sessionId, { role: 'publisher', data: `participant=bot${i + 1}` })
+    );
+
   const routedSession = await createSession({ mediaMode: 'routed' });
   const routedSessionId = routedSession.sessionId;
-
   const tokenApp = generateToken(routedSessionId, { role: 'moderator', data: 'participant=app' });
-  const tokenBot = generateToken(routedSessionId, { role: 'publisher', data: 'participant=bot1' });
-  const tokenBot2 = generateToken(routedSessionId, { role: 'publisher', data: 'participant=bot2' });
   const tokenSubscriber = generateToken(routedSessionId, { role: 'subscriber', data: 'participant=subscriber' });
 
-  // Create relayed session
   const relayedSession = await createSession({ mediaMode: 'relayed' });
   const relayedSessionId = relayedSession.sessionId;
-
   const relayedTokenApp = generateToken(relayedSessionId, { role: 'moderator', data: 'participant=app' });
-  const relayedTokenBot = generateToken(relayedSessionId, { role: 'publisher', data: 'participant=bot1' });
 
   // Write credentials to temp file (NOT to sdk-config.json)
   const credentials = {
@@ -86,8 +88,7 @@ module.exports = async function globalSetup() {
       jsSdkUrl,
       sessionId: routedSessionId,
       tokenApp,
-      tokenBot,
-      tokenBot2,
+      botTokens: generateBotTokens(routedSessionId),
       tokenSubscriber,
       mediaMode: 'routed',
     },
@@ -98,7 +99,7 @@ module.exports = async function globalSetup() {
       jsSdkUrl,
       sessionId: relayedSessionId,
       tokenApp: relayedTokenApp,
-      tokenBot: relayedTokenBot,
+      botTokens: generateBotTokens(relayedSessionId),
       mediaMode: 'relayed',
     },
   };
@@ -107,4 +108,5 @@ module.exports = async function globalSetup() {
   console.log('[globalSetup] Credentials written to', CREDENTIALS_PATH);
   console.log('[globalSetup] routedSession:', routedSessionId);
   console.log('[globalSetup] relayedSession:', relayedSessionId);
+  console.log('[globalSetup] bot tokens per session:', botPoolSize);
 };
