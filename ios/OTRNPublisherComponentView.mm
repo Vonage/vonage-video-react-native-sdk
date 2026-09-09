@@ -28,10 +28,6 @@ using namespace facebook::react;
 
 @implementation OTRNPublisherComponentView {
     OTRNPublisherImpl *_impl;
-    // Native emission gates for high-frequency events. Driven from JS by
-    // whether the corresponding eventHandler exists. When false, the handler
-    // returns before building any payload, so nothing is dispatched across the
-    // bridge.
     BOOL _emitAudioLevel;
     BOOL _emitAudioNetworkStats;
     BOOL _emitVideoNetworkStats;

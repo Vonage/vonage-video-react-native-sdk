@@ -50,10 +50,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
-    // Native emission gates for high-frequency events. Driven from JS by whether
-    // the corresponding eventHandler exists. When false, the callback returns
-    // before building any payload, so nothing is serialized or crosses the bridge.
-    // No throttling: when a handler is attached, every native event is forwarded.
     @Volatile private var emitAudioLevel: Boolean = false
     @Volatile private var emitAudioNetworkStats: Boolean = false
     @Volatile private var emitVideoNetworkStats: Boolean = false
@@ -415,7 +411,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
-        // Suppressed at emission when no JS handler is attached.
         if (!emitAudioLevel) return
 
         // High-frequency callback. Serve the stream map from cache, never the SDK.
@@ -442,7 +437,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberAudioStats?
     ) {
-        // Suppressed at emission when no JS handler is attached.
         if (!emitAudioNetworkStats) return
 
         val audioPacketsLost = stats?.audioPacketsLost?.toDouble() ?: 0.0
@@ -478,7 +472,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberVideoStats?
     ) {
-        // Suppressed at emission when no JS handler is attached.
         if (!emitVideoNetworkStats) return
 
         val videoPacketsLost = stats?.videoPacketsLost ?: 0
