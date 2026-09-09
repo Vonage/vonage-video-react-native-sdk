@@ -84,7 +84,7 @@ describe('Camera Churn Stress (Android repro)', () => {
   });
 
   // Single remote peer, rapid camera churn (routed).
-  xit('survives rapid camera churn from a single remote peer (routed)', async () => {
+  it('survives rapid camera churn from a single remote peer (routed)', async () => {
     session = await TestSession.create();
     await session.connectApp();
     await session.addBot();
@@ -116,7 +116,7 @@ describe('Camera Churn Stress (Android repro)', () => {
   });
 
   // Churn racing against peer join/leave teardown — the use-after-free window.
-  xit('survives camera churn interleaved with peer join/leave turnover (routed)', async () => {
+  it('survives camera churn interleaved with peer join/leave turnover (routed)', async () => {
     session = await TestSession.create();
     await session.connectApp();
 
@@ -146,7 +146,7 @@ describe('Camera Churn Stress (Android repro)', () => {
   // peers so stats flow continuously, then repeatedly turn peers over (disconnect
   // + add fresh) while stats are in flight. A stats/lifecycle callback delivered
   // just after the SDK freed the torn-down stream is the use-after-free window.
-  xit('survives stats/lifecycle callbacks racing peer turnover (routed, Route B)', async () => {
+  it('survives stats/lifecycle callbacks racing peer turnover (routed, Route B)', async () => {
     session = await TestSession.create();
     await session.connectApp();
 
@@ -178,7 +178,7 @@ describe('Camera Churn Stress (Android repro)', () => {
   // path. Mechanism: the app publishes locally (default) while remote peers churn
   // and are subscribed; combined with local unpublish/republish to exercise the
   // publisher stream lifecycle while events are flowing.
-  xit('survives local publisher churn alongside remote peers (routed, Route C)', async () => {
+  it('survives local publisher churn alongside remote peers (routed, Route C)', async () => {
     session = await TestSession.create();
     await session.connectApp();
 
@@ -202,7 +202,7 @@ describe('Camera Churn Stress (Android repro)', () => {
   });
 
   // Same churn under a relayed (P2P) topology — different media path.
-  xit('survives camera churn from a remote peer (relayed / P2P)', async () => {
+  it('survives camera churn from a remote peer (relayed / P2P)', async () => {
     session = await TestSession.createRelayed();
     await session.connectApp();
     await session.addBot();

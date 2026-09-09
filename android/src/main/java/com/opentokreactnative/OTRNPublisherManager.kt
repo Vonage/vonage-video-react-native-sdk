@@ -186,20 +186,20 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         view.setPreferredVideoCodecs(value)
     }
 
-@ReactProp(name = "emitAudioLevel")
-override public fun setEmitAudioLevel(view: OTRNPublisher, value: Boolean) {
-    view.setEmitAudioLevel(value)
-}
+    @ReactProp(name = "emitAudioLevel")
+    override public fun setEmitAudioLevel(view: OTRNPublisher, value: Boolean) {
+        view.setEmitAudioLevel(value)
+    }
 
-@ReactProp(name = "emitAudioNetworkStats")
-override public fun setEmitAudioNetworkStats(view: OTRNPublisher, value: Boolean) {
-    view.setEmitAudioNetworkStats(value)
-}
+    @ReactProp(name = "emitAudioNetworkStats")
+    override public fun setEmitAudioNetworkStats(view: OTRNPublisher, value: Boolean) {
+        view.setEmitAudioNetworkStats(value)
+    }
 
-@ReactProp(name = "emitVideoNetworkStats")
-override public fun setEmitVideoNetworkStats(view: OTRNPublisher, value: Boolean) {
-    view.setEmitVideoNetworkStats(value)
-}
+    @ReactProp(name = "emitVideoNetworkStats")
+    override public fun setEmitVideoNetworkStats(view: OTRNPublisher, value: Boolean) {
+        view.setEmitVideoNetworkStats(value)
+    }
 
     companion object {
         const val REACT_CLASS = "OTRNPublisher"

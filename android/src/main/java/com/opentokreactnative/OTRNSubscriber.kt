@@ -50,13 +50,13 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
-// Native emission gates for high-frequency events. Driven from JS by whether
-// the corresponding eventHandler exists. When false, the callback returns
-// before building any payload, so nothing is serialized or crosses the bridge.
-// No throttling: when a handler is attached, every native event is forwarded.
-@Volatile private var emitAudioLevel: Boolean = false
-@Volatile private var emitAudioNetworkStats: Boolean = false
-@Volatile private var emitVideoNetworkStats: Boolean = false
+    // Native emission gates for high-frequency events. Driven from JS by whether
+    // the corresponding eventHandler exists. When false, the callback returns
+    // before building any payload, so nothing is serialized or crosses the bridge.
+    // No throttling: when a handler is attached, every native event is forwarded.
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
 
     // Cached stream metadata. Written in exactly two ways, NEVER by reading the SDK
     // from an event callback:
@@ -229,17 +229,17 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         sessionId = str
     }
 
-public fun setEmitAudioLevel(value: Boolean) {
-    emitAudioLevel = value
-}
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
 
-public fun setEmitAudioNetworkStats(value: Boolean) {
-    emitAudioNetworkStats = value
-}
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
 
-public fun setEmitVideoNetworkStats(value: Boolean) {
-    emitVideoNetworkStats = value
-}
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
+    }
 
     public fun setSubscribeToAudio(value: Boolean) {
         subscriber?.subscribeToAudio = value

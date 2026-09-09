@@ -33,13 +33,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
 
-// Native emission gates for high-frequency events. Driven from JS by whether
-// the corresponding eventHandler exists. When false, the callback returns
-// before building any payload, so nothing is serialized or crosses the bridge.
-// No throttling: when a handler is attached, every native event is forwarded.
-@Volatile private var emitAudioLevel: Boolean = false
-@Volatile private var emitAudioNetworkStats: Boolean = false
-@Volatile private var emitVideoNetworkStats: Boolean = false
+    // Native emission gates for high-frequency events. Driven from JS by whether
+    // the corresponding eventHandler exists. When false, the callback returns
+    // before building any payload, so nothing is serialized or crosses the bridge.
+    // No throttling: when a handler is attached, every native event is forwarded.
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
 
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
@@ -98,17 +98,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisherId = str
     }
 
-public fun setEmitAudioLevel(value: Boolean) {
-    emitAudioLevel = value
-}
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
 
-public fun setEmitAudioNetworkStats(value: Boolean) {
-    emitAudioNetworkStats = value
-}
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
 
-public fun setEmitVideoNetworkStats(value: Boolean) {
-    emitVideoNetworkStats = value
-}
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
+    }
 
     public fun setPublishAudio(value: Boolean) {
         publisher?.setPublishAudio(value)
