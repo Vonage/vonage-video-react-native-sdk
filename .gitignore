@@ -72,16 +72,5 @@ android/src/main/java/com/facebook
 android/.gradle
 
 .kiro/
-.build/
 
 artifacts/
-
-# E2E / stress-test run artifacts (logs, device logcat dumps)
-android-logcat*.txt
-metro*.log
-churn-*.txt
-churn-*.log
-detox-*.txt
-detox-*.log
-trace-out.txt
-android-dumpsys-*.txt
