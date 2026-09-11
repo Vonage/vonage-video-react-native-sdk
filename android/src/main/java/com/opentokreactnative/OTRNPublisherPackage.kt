@@ -17,10 +17,10 @@ class OTRNPublisherPackage : BaseReactPackage() {
 
     override fun getModule(
         name: String,
-        reactApplicationContext: ReactApplicationContext
+        reactContext: ReactApplicationContext
     ): NativeModule? {
         return when (name) {
-            OpentokReactNativeModule.NAME -> OpentokReactNativeModule(reactApplicationContext)
+            OpentokReactNativeModule.NAME -> OpentokReactNativeModule(reactContext)
             else -> null
         }
     }
