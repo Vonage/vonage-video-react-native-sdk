@@ -54,18 +54,12 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     @Volatile private var emitAudioNetworkStats: Boolean = false
     @Volatile private var emitVideoNetworkStats: Boolean = false
 
-    // Cached stream metadata. Written in exactly two ways, NEVER by reading the SDK
-    // from an event callback:
-    //   PRIME  - once at subscribe time, from the Stream we were handed while it is
-    //            known alive (primeStreamCache).
-    //   PATCH  - when a session property callback delivers a new value (applyXChange).
-    // AtomicReference (not @Volatile) because a patch is a read-modify-write over the
-    // current snapshot: @Volatile would publish safely but could still drop one of two
-    // overlapping updates. updateAndGet keeps it lock-free and correct.
+    // Stream metadata cache. Written in two ways: primed once at subscribe time,
+    // then patched when a property callback delivers a new value. AtomicReference
+    // (not @Volatile) because a patch is a read-modify-write; updateAndGet keeps it
+    // lock-free and avoids dropping overlapping updates.
     private val streamCache = AtomicReference<StreamCache?>(null)
 
-    // Pure mapping from a live Stream into an immutable cache entry. The caller is
-    // responsible for only calling this while the Stream is known alive (subscribe time).
     private fun buildCacheEntry(stream: Stream, sessionId: String): StreamCache {
         return StreamCache(
             streamId = stream.streamId,
@@ -83,17 +77,11 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         )
     }
 
-    // Primes the cache from a Stream obtained while it is known alive (subscribe time).
-    // This is the ONLY place a Stream is read from the SDK. Every later change arrives as
-    // a plain value through applyXChange below, so no callback needs to touch the SDK.
     private fun primeStreamCache(stream: Stream, session: Session) {
         val sid = session.sessionId ?: return
         streamCache.set(buildCacheEntry(stream, sid))
     }
 
-    // Applies a single field change to the cached snapshot. See applyStreamPropertyChange
-    // for why this is push (values handed to us by the callback) rather than a live read.
-    // No-op until the cache has been primed.
     private fun patchStreamCache(update: (StreamCache) -> StreamCache) {
         streamCache.updateAndGet { current: StreamCache? -> current?.let(update) }
     }
@@ -110,7 +98,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private fun applyVideoTypeChange(videoType: String) =
         patchStreamCache { it.copy(videoType = videoType) }
 
-    // Converts an immutable cache entry into the event stream map shape.
     private fun buildStreamMapFromCacheEntry(cache: StreamCache): WritableMap {
         val connection = Arguments.createMap().apply {
             putString("connectionId", cache.connectionId)
@@ -132,13 +119,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         }
     }
 
-    // Builds the event `stream` payload purely from the cached snapshot.
-    // Deliberately takes NO SubscriberKit and performs NO live SDK read: a callback may be
-    // delivered after the native stream/connection have been freed, and
-    // SubscriberKit.getStream() deep-copies that native memory (SIGSEGV in
-    // otc_stream_copy / otc_connection_copy). Do not add a live fallback here.
-    // Returns an empty map if the cache was never primed, which matches the value
-    // EventUtils.prepareJSStreamMap already returns for a null stream.
     private fun buildStreamMapFromCache(): WritableMap {
         val cache = streamCache.get() ?: return Arguments.createMap()
         return buildStreamMapFromCacheEntry(cache)
@@ -170,15 +150,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     private fun findStream(streamId: String): Stream? {
-        // Remote streams, recorded by the session's onStreamReceived.
         sharedState.getSubscriberStreams()[streamId]?.let { return it }
-
-        // Own published streams, recorded by OTRNPublisher.onStreamCreated.
-        // Resolved from publisherStreams rather than iterating publishers and calling
-        // publisher.stream: PublisherKit.getStream() is a live SDK read that copies native
-        // memory, so looping meant several such reads per attach, any of which could touch
-        // a stream the SDK had already torn down. The Stream objects in this map are the
-        // ones the SDK handed to onStreamCreated, which are owned copies and safe to hold.
         return sharedState.getPublisherStreams()[streamId]
     }
 
@@ -256,10 +228,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         }
     }
 
-    // Applies a session-level property change to this view's cache, if this view is bound
-    // to the changed stream. Takes the already-resolved value: no SubscriberKit is touched
-    // and no Stream is read, so this is safe at any point in the stream's lifecycle,
-    // including after the native stream has been freed.
     private fun applyStreamPropertyChange(changedStreamId: String, change: StreamPropertyChange) {
         if (streamId != changedStreamId) return
         when (change) {
@@ -350,9 +318,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
         this.props?.clear()
 
-        // Prime the metadata cache once, here, from the live Stream we were handed while
-        // it is known alive. This is the only SDK Stream read; every event callback after
-        // this reads only from the cache (buildStreamMapFromCache), never the SDK.
         primeStreamCache(stream, session)
 
         session.subscribe(subscriber)
@@ -370,8 +335,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onConnected(subscriber: SubscriberKit) {
-        // No SDK read: the cache was primed in subscribeToStream immediately before
-        // session.subscribe(). Later changes arrive via applyStreamPropertyChange.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -413,7 +376,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
         if (!emitAudioLevel) return
 
-        // High-frequency callback. Serve the stream map from cache, never the SDK.
         val payload =
             Arguments.createMap().apply {
                 putDouble("audioLevel", audioLevel.toDouble())
@@ -514,7 +476,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDataReceived(subscriber: SubscriberKit?) {
-        // Fires when video data starts arriving. Serve from cache, never the SDK.
         val stream = buildStreamMapFromCache()
         val payload =
             Arguments.createMap().apply {
@@ -524,10 +485,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoDisabled(subscriber: SubscriberKit?, reason: String?) {
-        // No cache read. This reports subscriber-side video suspension (e.g.
-        // VIDEO_REASON_QUALITY), not stream.hasVideo (the publisher may still be sending).
-        // hasVideo is updated only from onStreamHasVideoChanged, which carries the real value.
-        // This is also where the SIGSEGV in otc_stream_copy used to originate.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -537,7 +494,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onVideoEnabled(subscriber: SubscriberKit?, reason: String?) {
-        // See onVideoDisabled: subscriber-side video state, not stream.hasVideo. No SDK read.
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -565,9 +521,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     override fun onReconnected(subscriber: SubscriberKit?) {
-        // No SDK read. Reconnect is one of the highest-risk moments for a live read since
-        // the native stream may have been torn down and rebuilt; changes during the window
-        // arrive via onStreamHasVideoChanged and friends (the safe channel).
         val payload =
             Arguments.createMap().apply {
                 putMap("stream", buildStreamMapFromCache())
@@ -575,10 +528,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         emitOpenTokEvent("onReconnected", payload)
     }
 
-    // A stream property change carrying its already-resolved new value. Mirrors
-    // Session.StreamPropertiesListener one-for-one: those four callbacks are the complete
-    // set of ways a stream's metadata can change, which is why a push-fed cache needs no
-    // fallback to reading the SDK.
     private sealed class StreamPropertyChange {
         data class HasAudio(val hasAudio: Boolean) : StreamPropertyChange()
         data class HasVideo(val hasVideo: Boolean) : StreamPropertyChange()
@@ -586,8 +535,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         data class VideoType(val videoType: String) : StreamPropertyChange()
     }
 
-    // Immutable snapshot of stream metadata. Held in an AtomicReference and replaced
-    // wholesale on every prime/patch, so readers never see a half-updated entry.
     private data class StreamCache(
         val streamId: String,
         val height: Int,
@@ -655,11 +602,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             }
         }
 
-        // Entry points for the session-level property callbacks in
-        // OpentokReactNativeModule. Each carries the new value the SDK handed us, so no
-        // subscriber view ever reads the SDK back. These replaced a single
-        // requestCacheRefreshForStream(streamId) that told views to re-read themselves via
-        // SubscriberKit.getStream(), which is what produced the SIGSEGV in otc_stream_copy.
         @JvmStatic
         fun applyHasAudioChangeForStream(streamId: String, hasAudio: Boolean) =
             dispatchStreamPropertyChange(streamId, StreamPropertyChange.HasAudio(hasAudio))
@@ -700,7 +642,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
                 refreshListenersByStreamId.remove(streamId, listeners)
             }
 
-            // Apply to every currently live subscriber view bound to this stream.
+
             for (view in liveViews) {
                 view.applyStreamPropertyChange(streamId, change)
             }
