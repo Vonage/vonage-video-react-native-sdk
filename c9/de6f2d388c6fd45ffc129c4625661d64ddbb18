@@ -1,0 +1,24 @@
+package.json
+  s_dbd03af25e4553::t_c5624ea6128f78 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c9de6f2d388c6fd45ffc129c4625661d64ddbb18",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_dbd03af25e4553": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_385c04a6-c994-4ccf-9ae9-49b0bfb9823c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
