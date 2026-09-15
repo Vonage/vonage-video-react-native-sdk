@@ -176,6 +176,13 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default packages list includes the legacy 'tools'
+          # package, which no longer exists in recent cmdline-tools; sdkmanager
+          # then fails with "Failed to find package 'tools'". Install only
+          # platform-tools (build-tools/platforms are resolved later by Gradle
+          # and the emulator runner).
+          packages: 'platform-tools'
 
       - name: Install Linux runtime deps for emulator tools
         run: |
