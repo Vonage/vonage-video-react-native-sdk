@@ -109,6 +109,16 @@ jobs:
           echo "Using simulator UDID: $UDID"
           echo "DETOX_IOS_UDID=$UDID" >> "$GITHUB_ENV"
 
+      - name: Clean stale Detox framework cache
+        run: |
+          # The runner image ships a prebuilt Detox.framework / XCUITest runner
+          # cached under ~/Library/Detox, linked against an iOS SDK (18.4) that
+          # Xcode 16.3 no longer provides (it ships 18.5). 'build-framework-cache'
+          # sees the cache and skips rebuilding, so xcodebuild inherits
+          # SDKROOT=iphonesimulator18.4 and fails. Remove the stale cache so it is
+          # rebuilt against the installed SDK.
+          npx detox clean-framework-cache || rm -rf "$HOME/Library/Detox"
+
       - name: Build iOS Detox app
         run: npm run test:e2e:ios:build
 
