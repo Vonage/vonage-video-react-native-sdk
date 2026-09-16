@@ -79,6 +79,32 @@ jobs:
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
         run: node scripts/inject-e2e-credentials.js
 
+      - name: Prepare iOS simulator
+        run: |
+          set -euo pipefail
+          echo "=== Available runtimes ==="
+          xcrun simctl list runtimes
+          echo "=== Available devices (before) ==="
+          xcrun simctl list devices available
+
+          # The runner image may ship no pre-created 'iPhone 16'. Create it on
+          # whatever iOS runtime is installed, resolving device-type and runtime
+          # by their identifiers so we do not depend on a pre-existing device.
+          if xcrun simctl list devices available | grep -q "iPhone 16 ("; then
+            echo "iPhone 16 simulator already present"
+          else
+            DEVICE_TYPE=$(xcrun simctl list devicetypes | sed -n 's/.*(\(com.apple.CoreSimulator.SimDeviceType.iPhone-16\))/\1/p' | head -n 1)
+            RUNTIME=$(xcrun simctl list runtimes ios -j | python3 -c "import sys,json; rs=[r for r in json.load(sys.stdin)['runtimes'] if r.get('isAvailable')]; print(rs[-1]['identifier'] if rs else '')")
+            echo "device-type: ${DEVICE_TYPE:-<none>} | runtime: ${RUNTIME:-<none>}"
+            if [ -z "${DEVICE_TYPE}" ] || [ -z "${RUNTIME}" ]; then
+              echo "Could not resolve an iPhone 16 device type or an available iOS runtime" >&2
+              exit 1
+            fi
+            xcrun simctl create "iPhone 16" "$DEVICE_TYPE" "$RUNTIME"
+          fi
+          echo "=== Available devices (after) ==="
+          xcrun simctl list devices available | grep "iPhone 16" || true
+
       - name: Build iOS Detox app
         run: npm run test:e2e:ios:build
 
