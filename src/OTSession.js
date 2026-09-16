@@ -22,6 +22,7 @@ export default class OTSession extends Component {
     super(props);
     this.validateProps();
     this.eventHandlers = props.eventHandlers;
+    this.state = { connectionId: null };
     this.initComponent();
   }
 
@@ -69,7 +70,14 @@ export default class OTSession extends Component {
     }
     OT.onSessionConnected((event) => {
       if (event.sessionId !== sessionId) return;
-      this.connectionId = event.connectionId;
+      // The sessionConnected event nests the id as event.connection.connectionId
+      // (event.connectionId is undefined). Keep an instance mirror for the
+      // synchronous read in onStreamCreated below, and put it in state so
+      // context consumers re-render with the connectionId.
+      // Normalize to null (not undefined) so the context value stays string|null.
+      const connectionId = event.connection?.connectionId ?? null;
+      this.connectionId = connectionId;
+      this.setState({ connectionId });
       setIsConnected(sessionId, true);
       this.eventHandlers?.sessionConnected?.(event);
       dispatchEvent(sessionId, 'sessionConnected', event);
@@ -198,14 +206,27 @@ export default class OTSession extends Component {
     const shouldUseDefault = (value, defaultValue) =>
       value === undefined ? defaultValue : value;
 
-    const shouldUpdate = (key, defaultValue) => {
+    const shouldUpdate = (key, defaultValue, deep = false) => {
       const previous = shouldUseDefault(previousProps[key], defaultValue);
       const current = shouldUseDefault(this.props[key], defaultValue);
+      // `signal` is object-shaped and is frequently passed as an inline literal,
+      // which changes reference every render. Compare by value so an unchanged
+      // payload is not re-sent on every parent re-render (would flood signaling).
+      // The signal contract is { type, data, to }; compare those fields directly
+      // rather than JSON.stringify, which can throw on cyclic/BigInt payloads and
+      // would crash componentDidUpdate.
+      if (deep) {
+        return (
+          previous?.type !== current?.type ||
+          previous?.data !== current?.data ||
+          previous?.to !== current?.to
+        );
+      }
       return previous !== current;
     };
 
-    const updateSessionProperty = (key, defaultValue) => {
-      if (shouldUpdate(key, defaultValue)) {
+    const updateSessionProperty = (key, defaultValue, deep = false) => {
+      if (shouldUpdate(key, defaultValue, deep)) {
         const value = shouldUseDefault(this.props[key], defaultValue);
         if (key === 'signal') {
           this.signal(value);
@@ -216,7 +237,7 @@ export default class OTSession extends Component {
       }
     };
 
-    updateSessionProperty('signal', {});
+    updateSessionProperty('signal', {}, true);
     updateSessionProperty('encryptionSecret', undefined);
   }
 
@@ -232,7 +253,7 @@ export default class OTSession extends Component {
     if (children && sessionId && apiKey && token) {
       return (
         <OTContext.Provider
-          value={{ sessionId, connectionId: this.connectionId }}
+          value={{ sessionId, connectionId: this.state.connectionId }}
         >
           <View style={style}>{children}</View>
         </OTContext.Provider>
