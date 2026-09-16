@@ -227,6 +227,49 @@ class jsSDKTesterBot {
   }
 
   /**
+   * Toggles the bot's outbound video (camera) on its publisher.
+   * @param {boolean} on
+   */
+  async setPublishVideo(on) {
+    await this.page.evaluate((value) => {
+      if (window.botPublisher) window.botPublisher.publishVideo(value);
+    }, on);
+  }
+
+  /**
+   * Toggles the bot's outbound audio (mic) on its publisher.
+   * @param {boolean} on
+   */
+  async setPublishAudio(on) {
+    await this.page.evaluate((value) => {
+      if (window.botPublisher) window.botPublisher.publishAudio(value);
+    }, on);
+  }
+
+  /**
+   * Repeatedly toggles the bot's camera off/on. The loop runs inside a single
+   * page.evaluate so timing is at browser speed, not gated by the CDP round-trip.
+   * @param {number} iterations - off→on cycles
+   * @param {number} [intervalMs=100]
+   */
+  async churnVideo(iterations, intervalMs = 100) {
+    await this.page.evaluate(
+      async ({ iterations, intervalMs }) => {
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+        for (let i = 0; i < iterations; i++) {
+          if (!window.botPublisher) break;
+          window.botPublisher.publishVideo(false);
+          await sleep(intervalMs);
+          if (!window.botPublisher) break;
+          window.botPublisher.publishVideo(true);
+          await sleep(intervalMs);
+        }
+      },
+      { iterations, intervalMs }
+    );
+  }
+
+  /**
    * Disconnects the bot from the session without closing the browser.
    * Unpublishes first to avoid "cannot publish" errors during teardown,
    * then waits for sessionDisconnected to confirm disconnect is complete.

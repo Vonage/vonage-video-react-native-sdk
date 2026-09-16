@@ -33,6 +33,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
 
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
+
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
     private var androidOnTopMap = sharedState.getAndroidOnTopMap();
@@ -88,6 +92,18 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
     }
 
     public fun setPublishAudio(value: Boolean) {
@@ -350,6 +366,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
+
+        if (!emitAudioLevel) return
+
         val publisherId = Utils.getPublisherId(publisher) // Do we need this?
         if (publisherId.isNotEmpty()) {
             val payload =
@@ -382,6 +401,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherAudioStats>?
     ) {
+
+        if (!emitAudioNetworkStats) return
+
         val statsArray: WritableArray = Arguments.createArray()
         for (stat in stats!!) {
             val audioStats: WritableMap = Arguments.createMap()
@@ -411,6 +433,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherVideoStats>?
     ) {
+
+        if (!emitVideoNetworkStats) return
+
         val publisherId = Utils.getPublisherId(publisher)
         if (publisherId.isNotEmpty()) {
             val statsArrayMap: WritableArray = Arguments.createArray()
