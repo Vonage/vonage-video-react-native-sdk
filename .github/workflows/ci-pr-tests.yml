@@ -84,26 +84,30 @@ jobs:
           set -euo pipefail
           echo "=== Available runtimes ==="
           xcrun simctl list runtimes
-          echo "=== Available devices (before) ==="
+          echo "=== Available devices ==="
           xcrun simctl list devices available
 
-          # The runner image may ship no pre-created 'iPhone 16'. Create it on
-          # whatever iOS runtime is installed, resolving device-type and runtime
-          # by their identifiers so we do not depend on a pre-existing device.
-          if xcrun simctl list devices available | grep -q "iPhone 16 ("; then
-            echo "iPhone 16 simulator already present"
-          else
-            DEVICE_TYPE=$(xcrun simctl list devicetypes | sed -n 's/.*(\(com.apple.CoreSimulator.SimDeviceType.iPhone-16\))/\1/p' | head -n 1)
-            RUNTIME=$(xcrun simctl list runtimes ios -j | python3 -c "import sys,json; rs=[r for r in json.load(sys.stdin)['runtimes'] if r.get('isAvailable')]; print(rs[-1]['identifier'] if rs else '')")
-            echo "device-type: ${DEVICE_TYPE:-<none>} | runtime: ${RUNTIME:-<none>}"
-            if [ -z "${DEVICE_TYPE}" ] || [ -z "${RUNTIME}" ]; then
-              echo "Could not resolve an iPhone 16 device type or an available iOS runtime" >&2
+          # Runner images ship several iOS runtimes (18.x and 26.x). Matching a
+          # simulator by name with implicit OS:latest is unreliable because
+          # iPhone 16 may only exist on an older runtime. Resolve a concrete
+          # UDID (creating the device if needed) and hand it to Detox/xcodebuild.
+          UDID=$(xcrun simctl list devices available -j \
+            | python3 -c "import sys,json; d=json.load(sys.stdin)['devices']; ids=[dev['udid'] for rt in d for dev in d[rt] if dev.get('isAvailable') and dev.get('name')=='iPhone 16']; print(ids[0] if ids else '')")
+
+          if [ -z "$UDID" ]; then
+            DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-16"
+            RUNTIME=$(xcrun simctl list runtimes ios -j \
+              | python3 -c "import sys,json; rs=[r for r in json.load(sys.stdin)['runtimes'] if r.get('isAvailable')]; print(rs[-1]['identifier'] if rs else '')")
+            echo "Creating iPhone 16 on runtime: ${RUNTIME:-<none>}"
+            if [ -z "$RUNTIME" ]; then
+              echo "No available iOS runtime found" >&2
               exit 1
             fi
-            xcrun simctl create "iPhone 16" "$DEVICE_TYPE" "$RUNTIME"
+            UDID=$(xcrun simctl create "iPhone 16" "$DEVICE_TYPE" "$RUNTIME")
           fi
-          echo "=== Available devices (after) ==="
-          xcrun simctl list devices available | grep "iPhone 16" || true
+
+          echo "Using simulator UDID: $UDID"
+          echo "DETOX_IOS_UDID=$UDID" >> "$GITHUB_ENV"
 
       - name: Build iOS Detox app
         run: npm run test:e2e:ios:build
