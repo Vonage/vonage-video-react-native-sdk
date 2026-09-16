@@ -14,9 +14,7 @@ jobs:
   e2e-ios-tests:
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    # Pinned image + Xcode: macos-latest moved to a newer Xcode whose Clang fails
-    # to compile fmt 11.0.2 (pulled in by RN 0.81). Pin to a known-good pair.
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 60
 
     steps:
@@ -26,7 +24,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.3'
+          xcode-version: latest-stable
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -43,8 +41,7 @@ jobs:
       - name: Install applesimutils
         run: |
           brew tap wix/brew
-          # GH runners now refuse to load formulae from third-party taps unless trusted.
-          brew install wix/brew/applesimutils
+          brew install applesimutils
 
       - name: Cache CocoaPods
         uses: actions/cache@v4
@@ -78,46 +75,6 @@ jobs:
           TESTING_SESSION_ID: ${{ env.TESTING_SESSION_ID }}
           TESTING_TOKEN: ${{ env.TESTING_TOKEN }}
         run: node scripts/inject-e2e-credentials.js
-
-      - name: Prepare iOS simulator
-        run: |
-          set -euo pipefail
-          echo "=== Available runtimes ==="
-          xcrun simctl list runtimes
-          echo "=== Available devices ==="
-          xcrun simctl list devices available
-
-          # Runner images ship several iOS runtimes (18.x and 26.x). Matching a
-          # simulator by name with implicit OS:latest is unreliable because
-          # iPhone 16 may only exist on an older runtime. Resolve a concrete
-          # UDID (creating the device if needed) and hand it to Detox/xcodebuild.
-          UDID=$(xcrun simctl list devices available -j \
-            | python3 -c "import sys,json; d=json.load(sys.stdin)['devices']; ids=[dev['udid'] for rt in d for dev in d[rt] if dev.get('isAvailable') and dev.get('name')=='iPhone 16']; print(ids[0] if ids else '')")
-
-          if [ -z "$UDID" ]; then
-            DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-16"
-            RUNTIME=$(xcrun simctl list runtimes ios -j \
-              | python3 -c "import sys,json; rs=[r for r in json.load(sys.stdin)['runtimes'] if r.get('isAvailable')]; print(rs[-1]['identifier'] if rs else '')")
-            echo "Creating iPhone 16 on runtime: ${RUNTIME:-<none>}"
-            if [ -z "$RUNTIME" ]; then
-              echo "No available iOS runtime found" >&2
-              exit 1
-            fi
-            UDID=$(xcrun simctl create "iPhone 16" "$DEVICE_TYPE" "$RUNTIME")
-          fi
-
-          echo "Using simulator UDID: $UDID"
-          echo "DETOX_IOS_UDID=$UDID" >> "$GITHUB_ENV"
-
-      - name: Clean stale Detox framework cache
-        run: |
-          # The runner image ships a prebuilt Detox.framework / XCUITest runner
-          # cached under ~/Library/Detox, linked against an iOS SDK (18.4) that
-          # Xcode 16.3 no longer provides (it ships 18.5). 'build-framework-cache'
-          # sees the cache and skips rebuilding, so xcodebuild inherits
-          # SDKROOT=iphonesimulator18.4 and fails. Remove the stale cache so it is
-          # rebuilt against the installed SDK.
-          npx detox clean-framework-cache || rm -rf "$HOME/Library/Detox"
 
       - name: Build iOS Detox app
         run: npm run test:e2e:ios:build
