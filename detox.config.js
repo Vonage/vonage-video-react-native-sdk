@@ -8,7 +8,7 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: `${iosAppRoot}/build/Build/Products/Debug-iphonesimulator/E2ETestingApp.app`,
-      build: `xcodebuild -workspace ${iosAppRoot}/E2ETestingApp.xcworkspace -scheme E2ETestingApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
+      build: `xcodebuild -workspace ${iosAppRoot}/E2ETestingApp.xcworkspace -scheme E2ETestingApp -configuration Debug -derivedDataPath ${iosAppRoot}/build -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES SWIFT_ENABLE_EXPLICIT_MODULES=NO`,
     },
     'android.debug': {
       type: 'android.apk',
@@ -21,7 +21,7 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 17',
+        type: 'iPhone 16',
       },
     },
     emulator: {
