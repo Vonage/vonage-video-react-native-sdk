@@ -5,6 +5,7 @@ import {
   dispatchEvent,
   getPublisherStream,
   getStreams,
+  removeEventListener,
   sanitizeSessionOptions,
 } from '../helpers/OTSessionHelper';
 
@@ -21,6 +22,43 @@ describe('OTSessionHelper', () => {
     expect(listener).toHaveBeenCalledWith({ streamId: 'stream-1' });
     expect(getPublisherStream(sessionId)).toBe('stream-1');
 
+    clearStreams(sessionId);
+  });
+
+  it('removeEventListener removes only the given listener, leaving others of the same type intact', () => {
+    // Two components (e.g. two OTSubscribers) registered on the same session/type.
+    const sessionId = 'session-remove';
+    const first = jest.fn();
+    const second = jest.fn();
+
+    addEventListener(sessionId, 'streamDestroyed', first);
+    addEventListener(sessionId, 'streamDestroyed', second);
+
+    // First component unmounts and removes its own listener.
+    removeEventListener(sessionId, 'streamDestroyed', first);
+
+    dispatchEvent(sessionId, 'streamDestroyed', { streamId: 'stream-2' });
+
+    // The removed listener must not fire...
+    expect(first).not.toHaveBeenCalled();
+    // ...but the surviving component's listener MUST still receive the event.
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledWith({ streamId: 'stream-2' });
+
+    clearStreams(sessionId);
+  });
+
+  it('removeEventListener is a no-op for a listener that was never registered', () => {
+    const sessionId = 'session-remove-noop';
+    const only = jest.fn();
+    const other = jest.fn();
+
+    addEventListener(sessionId, 'streamDestroyed', only);
+    removeEventListener(sessionId, 'streamDestroyed', other);
+
+    dispatchEvent(sessionId, 'streamDestroyed', { streamId: 'stream-3' });
+
+    expect(only).toHaveBeenCalledTimes(1);
     clearStreams(sessionId);
   });
 
