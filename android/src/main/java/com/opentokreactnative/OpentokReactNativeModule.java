@@ -199,7 +199,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         Publisher publisher = publishers.get(publisherId);
         if (publisher != null) {
             mSession.unpublish(publisher);
-            publishers.remove(publisher);
+            // Leak fix: publishers is keyed by publisherId, not by Publisher.
+            // remove(publisher) removes by value and is a no-op here, leaking the entry.
+            publishers.remove(publisherId);
         }
     }
 
@@ -217,7 +219,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 Subscriber subscriber = subscribers.get(streamId);
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    // Leak fix: subscribers is keyed by streamId, not by Subscriber.
+                    // remove(subscriber) removes by value and is a no-op here, leaking the entry.
+                    subscribers.remove(streamId);
                 }
             };
         });
@@ -391,6 +395,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onStreamDropped(Session session, Stream stream) {
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
+        // Leak fix: subscriberStreams is populated on onStreamReceived but was never
+        // cleared on drop, so the map grows unbounded. Remove the dropped stream by streamId.
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
     }
 
     @Override
@@ -475,6 +482,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        // Push the value into the subscriber cache (no SDK re-read) to keep the read-once invariant.
+        OTRNSubscriber.applyHasAudioChangeForStream(stream.getStreamId(), hasAudio);
     }
 
     @Override
@@ -482,6 +491,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        // Push the value into the subscriber cache (no SDK re-read) to keep the read-once invariant.
+        OTRNSubscriber.applyHasVideoChangeForStream(stream.getStreamId(), hasVideo);
     }
 
     @Override
@@ -499,6 +510,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        // Push the values into the subscriber cache (no SDK re-read) to keep the read-once invariant.
+        OTRNSubscriber.applyVideoDimensionsChangeForStream(stream.getStreamId(), width, height);
     }
 
     @Override
@@ -508,6 +521,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
+        // Normalize the same way EventUtils.prepareJSStreamMap does, then push the value into the
+        // subscriber cache (no SDK re-read) to keep the read-once invariant.
+        String normalizedVideoType =
+                streamVideoType.equals(Stream.StreamVideoType.StreamVideoTypeScreen) ? "screen" : "camera";
+        OTRNSubscriber.applyVideoTypeChangeForStream(stream.getStreamId(), normalizedVideoType);
     }
 
     @Override
