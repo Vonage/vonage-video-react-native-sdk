@@ -35,7 +35,7 @@ describe.skip('Screen Sharing', () => {
     await session.cleanup();
   });
 
-  it('screen share toggle publishes a new stream that the bot receives', async () => {
+  it.skip('screen share toggle publishes a new stream that the bot receives', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[screenShare] Connected and publishing with camera.');
@@ -65,7 +65,7 @@ describe.skip('Screen Sharing', () => {
     // so subscriberCount drops to 0 briefly before going back to 1.
     console.log('[screenShare] Waiting for bot to receive screen share stream...');
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewStream(30000);
     } catch (e) {
       const state = await bot.getState();
       console.log('[screenShare] Bot state at timeout:', JSON.stringify(state));
@@ -81,7 +81,7 @@ describe.skip('Screen Sharing', () => {
     jestExpect(stateAfterToggle.streamCreated).toBe(true);
   });
 
-  it('toggling screen share off restores camera publishing to bot', async () => {
+  it.skip('toggling screen share off restores camera publishing to bot', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
@@ -116,7 +116,7 @@ describe.skip('Screen Sharing', () => {
 
     // Bot should receive the new camera stream
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForNewStream(30000);
     } catch (e) {
       const state = await bot.getState();
       throw new Error(

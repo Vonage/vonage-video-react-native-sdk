@@ -208,6 +208,18 @@ class jsSDKTesterBot {
   }
 
   /**
+   * Waits until the bot receives a NEW stream (both subscriber count > 0 AND streamCreated flag is true).
+   * Use this after resetting window.botState.streamCreated = false to detect a new stream event.
+   * @param {number} [timeout] - Max wait time in ms (defaults to constructor timeout)
+   */
+  async waitForNewStream(timeout) {
+    await this.page.waitForFunction(
+      () => window.botState.subscriberCount > 0 && window.botState.streamCreated,
+      { timeout: timeout || this.options.timeout }
+    );
+  }
+
+  /**
    * Sends a signal to the session.
    * @param {string} type - Signal type
    * @param {string} data - Signal data
