@@ -43,6 +43,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    @Volatile private var released: Boolean = false
+
     constructor(context: Context) : super(context) {
         configureComponent()
     }
@@ -506,6 +508,37 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         } else {
             PublisherKit.PreferredVideoCodecs.manual(preferredVideoCodecs)
         }
+    }
+
+    // Releases the publisher deterministically when the view is dropped: detaches
+    // listeners, removes the render view, unpublishes, and stops the capturer so the
+    // camera is freed immediately instead of waiting for the GC/finalizer. Repeated
+    // publish/unpublish otherwise leaves capturers running and the feed turns laggy.
+    // Idempotent.
+    fun cleanup() {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        if (pub != null) {
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+            runCatching { removeAllViews() }
+            runCatching { pub.session?.unpublish(pub) }
+            runCatching { pub.capturer?.stopCapture() }
+        }
+
+        publisher = null
+        publisherId?.let { sharedState.getPublishers().remove(it) }
     }
 
     inner class OpenTokEvent(
