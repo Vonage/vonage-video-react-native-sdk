@@ -16,6 +16,7 @@ android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
   s_b8f859cc3258fe::t_c42e099a101605 243-247,249-255
   s_b8f859cc3258fe::t_b780b2449ae231 337-341
   s_b8f859cc3258fe::t_66bc638577d561 397,401,407
+  s_dbd03af25e4553::t_95f045ac2c1620 26
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -35,6 +36,14 @@ android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
         "model": "auto"
       },
       "human_author": null
+    },
+    "s_dbd03af25e4553": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_385c04a6-c994-4ccf-9ae9-49b0bfb9823c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
     }
   }
 }
