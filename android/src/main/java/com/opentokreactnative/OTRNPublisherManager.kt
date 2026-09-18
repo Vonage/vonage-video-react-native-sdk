@@ -30,6 +30,11 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         return OTRNPublisher(context)
     }
 
+    override fun onDropViewInstance(view: OTRNPublisher) {
+        view.cleanUpMemory()
+        super.onDropViewInstance(view)
+    }
+
     override fun getNativeProps(): Map<String?, String?>? {
         return super.getNativeProps()
     }

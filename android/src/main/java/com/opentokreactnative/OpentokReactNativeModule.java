@@ -403,6 +403,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     @Override
     public void onStreamDropped(Session session, Stream stream) {
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
+        // The stream was put into subscriberStreams on onStreamReceived; remove it here
+        // so ended remote streams don't accumulate for the process lifetime.
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
         emitOnStreamDestroyed(payload);
         sharedState.getSubscriberStreams().remove(stream.getStreamId());
     }
