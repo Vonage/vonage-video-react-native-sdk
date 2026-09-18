@@ -479,10 +479,20 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         }
     }
 
-    // Releases the publisher deterministically when the view is dropped: detaches
-    // listeners, removes the render view, unpublishes, and stops the capturer so the
-    // camera is freed immediately instead of waiting for the GC/finalizer. Repeated
-    // publish/unpublish otherwise leaves capturers running and the feed turns laggy.
+    // Detaches this view from the publisher when the Fabric view is dropped: it removes
+    // the listeners (which reference this view) and the render view so the view can be
+    // garbage-collected.
+    //
+    // It intentionally does NOT call Session.unpublish() nor Capturer.stopCapture(). The
+    // publisher lifecycle (unpublish + deterministic capturer release + shared-state
+    // removal) is owned by OpentokReactNativeModule.unpublish(), invoked from
+    // OTPublisher.componentWillUnmount() before the view is dropped. Doing it here as
+    // well triggered a second unpublish on the same Publisher from the UI thread, racing
+    // the module's unpublish on the native-modules thread, plus a manual stopCapture() on
+    // the SDK-owned Camera2 capturer while the SDK was already tearing it down. That is a
+    // native crash which runCatching cannot intercept, and it took the whole app down on
+    // repeated unpublish/republish.
+    //
     // Idempotent.
     fun cleanup() {
         if (released) {
@@ -502,12 +512,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 pub.setRtcStatsReportListener(null)
             }
             runCatching { removeAllViews() }
-            runCatching { pub.session?.unpublish(pub) }
-            runCatching { pub.capturer?.stopCapture() }
         }
 
         publisher = null
-        publisherId?.let { sharedState.getPublishers().remove(it) }
     }
 
     inner class OpenTokEvent(
