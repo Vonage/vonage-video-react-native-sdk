@@ -43,6 +43,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    private var registeredPublisherId: String? = null
+
     @Volatile private var released: Boolean = false
 
     constructor(context: Context) : super(context) {
@@ -337,8 +339,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
+        val resolvedPublisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String, publisher ?: return);
+            .put(resolvedPublisherId, publisher ?: return);
+        registeredPublisherId = resolvedPublisherId
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
@@ -365,7 +369,23 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
+        if (isFatalPublisherError(opentokError.errorCode)) {
+            Utils.releasePublisher(registeredPublisherId, "fatalError:" + opentokError.errorCode)
+        }
     }
+
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherWebRTCError,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.CameraFailed,
+            OpentokError.ErrorCode.VideoCaptureFailed -> true
+            else -> false
+        }
 
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
 
@@ -510,21 +530,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         }
     }
 
-    // Detaches this view from the publisher when the Fabric view is dropped: it removes
-    // the listeners (which reference this view) and the render view so the view can be
-    // garbage-collected.
-    //
-    // It intentionally does NOT call Session.unpublish() nor Capturer.stopCapture(). The
-    // publisher lifecycle (unpublish + deterministic capturer release + shared-state
-    // removal) is owned by OpentokReactNativeModule.unpublish(), invoked from
-    // OTPublisher.componentWillUnmount() before the view is dropped. Doing it here as
-    // well triggered a second unpublish on the same Publisher from the UI thread, racing
-    // the module's unpublish on the native-modules thread, plus a manual stopCapture() on
-    // the SDK-owned Camera2 capturer while the SDK was already tearing it down. That is a
-    // native crash which runCatching cannot intercept, and it took the whole app down on
-    // repeated unpublish/republish.
-    //
-    // Idempotent.
     fun cleanup() {
         if (released) {
             return
@@ -546,6 +551,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         }
 
         publisher = null
+        Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
     }
 
     inner class OpenTokEvent(

@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -19,7 +20,6 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
-import com.opentok.android.BaseVideoCapturer;
 import com.opentok.android.Connection;
 import com.opentok.android.MuteForcedInfo;
 import com.opentok.android.OpentokError;
@@ -191,44 +191,19 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        // Owns the full publisher teardown so it happens on a single thread and in a
-        // deterministic order: unpublish from the session, then release the camera
-        // capturer so the camera is freed immediately instead of waiting for the GC to
-        // reclaim the old Publisher. Repeated unpublish/republish otherwise leaves
-        // capturers running and competing for the camera, which makes the feed laggy.
-        //
-        // Runs on the UI thread (like removeSubscriber) so it can't race the view being
-        // dropped on the UI thread, and stopCapture() is guarded because the SDK may
-        // already have stopped the capturer as part of unpublish().
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-                Session mSession = mSessions.get(sessionId);
-                if (mSession == null) {
-                    return;
-                }
                 ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
                 Publisher publisher = publishers.get(publisherId);
                 if (publisher == null) {
                     return;
                 }
-                mSession.unpublish(publisher);
-                publishers.remove(publisherId);
-
-                // Release the capturer after unpublish so the camera is freed
-                // immediately. Guarded because the SDK may already have stopped the
-                // capturer as part of unpublish(); stopCapture() on the camera
-                // (Camera2) capturer is otherwise a known crash source. The screen
-                // capturer's stopCapture() is idempotent, so calling it here is safe.
-                try {
-                    BaseVideoCapturer capturer = publisher.getCapturer();
-                    if (capturer != null) {
-                        capturer.stopCapture();
-                    }
-                } catch (Exception e) {
-                    // The SDK may already have released the capturer during unpublish().
+                Session mSession = sharedState.getSessions().get(sessionId);
+                if (mSession != null) {
+                    mSession.unpublish(publisher);
                 }
+                Utils.releasePublisherIfSame(publisherId, publisher, "unpublish");
             }
         });
     }
@@ -419,8 +394,22 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+        String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
+
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
+
+        Connection localConnection = session.getConnection();
+        if (localConnection != null && localConnection.getConnectionId() != null) {
+            sharedState.getConnections().remove(localConnection.getConnectionId());
+        }
     }
 
     @Override
