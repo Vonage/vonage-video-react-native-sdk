@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -190,17 +191,21 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisherId);
-        }
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher == null) {
+                    return;
+                }
+                Session mSession = sharedState.getSessions().get(sessionId);
+                if (mSession != null) {
+                    mSession.unpublish(publisher);
+                }
+                Utils.releasePublisherIfSame(publisherId, publisher, "unpublish");
+            }
+        });
     }
 
     @Override
@@ -389,8 +394,22 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+        String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
+
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
+
+        Connection localConnection = session.getConnection();
+        if (localConnection != null && localConnection.getConnectionId() != null) {
+            sharedState.getConnections().remove(localConnection.getConnectionId());
+        }
     }
 
     @Override
