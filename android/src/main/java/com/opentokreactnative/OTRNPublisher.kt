@@ -335,11 +335,16 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
+        val publisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String, publisher ?: return);
+            .put(publisherId, publisher ?: return);
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
+        }
+        // Complete a publish() that arrived before this view attached (see module contract).
+        if (sharedState.getPendingPublishers().remove(publisherId) != null) {
+            sharedState.getSessions().get(sessionId)?.publish(publisher)
         }
     }
 
