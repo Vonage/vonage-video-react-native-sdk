@@ -331,6 +331,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.addView(publisher?.view)
             requestLayout()
         }
+        // Complete a publish() that arrived before this view attached (see module contract).
+        if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
+            sharedState.getSessions().get(sessionId)?.publish(publisher)
+        }
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
