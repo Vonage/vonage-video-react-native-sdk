@@ -1,0 +1,28 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_bbcb1ea695756a::t_311d8cc1a66fca 513-526
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_bbcb1ea695756a::t_cdffaf3facc84b 22
+  s_bbcb1ea695756a::t_e668152a00c3c0 219-223,225-227
+  s_bbcb1ea695756a::t_6fd88a27db1eaa 194-218,224,228-233
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "283e41d7a67591ef0c54a4f09d68992672734794",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_bbcb1ea695756a": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_13b5a259-820d-42f0-bd77-2a9d421db75a",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
