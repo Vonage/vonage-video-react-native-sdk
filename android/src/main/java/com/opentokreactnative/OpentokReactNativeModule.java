@@ -37,6 +37,14 @@ import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
 
+/**
+ * Publisher lifecycle threading contract:
+ * publish()/unpublish() (TurboModule thread) and OTRNPublisher.publishStream()
+ * (UI thread) race over the publishers/pendingPublishers maps. Run every mutation
+ * on the UI thread so these check-then-act sequences stay atomic and keep JS call
+ * order. Session.publish()/unpublish() must also run there (they touch the view).
+ * Keep UI-thread bodies to cheap map ops + the SDK call — no blocking work (ANR).
+ */
 @ReactModule(name = OpentokReactNativeModule.NAME)
 public class OpentokReactNativeModule extends NativeOpentokSpec implements
         SessionListener,
@@ -176,31 +184,49 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.publish(publisher);
-        }
+        // See class threading contract. UI thread coordinates with publishStream().
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                Session mSession = mSessions.get(sessionId);
+                if (mSession == null) {
+                    return;
+                }
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher != null) {
+                    sharedState.getPendingPublishers().remove(publisherId);
+                    mSession.publish(publisher);
+                } else {
+                    // View not attached yet; publishStream() completes this on attach.
+                    sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
+                }
+            }
+        });
     }
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisherId);
-        }
+        // See class threading contract. UI thread keeps ordering with publish().
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                Session mSession = mSessions.get(sessionId);
+                if (mSession == null) {
+                    return;
+                }
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                // Cancel any pending publish so a late-attaching view won't republish.
+                sharedState.getPendingPublishers().remove(publisherId);
+                if (publisher != null) {
+                    mSession.unpublish(publisher);
+                    publishers.remove(publisherId);
+                }
+            }
+        });
     }
 
     @Override
