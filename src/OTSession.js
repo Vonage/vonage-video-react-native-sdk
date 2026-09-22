@@ -70,7 +70,7 @@ export default class OTSession extends Component {
     }
     this._eventSubscriptions.push(
       OT.onSessionConnected((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.connectionId = event.connectionId;
         setIsConnected(sessionId, true);
         this.eventHandlers?.sessionConnected?.(event);
@@ -90,7 +90,7 @@ export default class OTSession extends Component {
     }
     this._eventSubscriptions.push(
       OT.onStreamCreated((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.streamCreated?.(event);
         if (event.connectionId !== this.connectionId) {
           addStream(sessionId, event.streamId);
@@ -101,7 +101,7 @@ export default class OTSession extends Component {
 
     this._eventSubscriptions.push(
       OT.onStreamDestroyed((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.streamDestroyed?.(event);
         removeStream(sessionId, event.streamId);
         dispatchEvent(sessionId, 'streamDestroyed', event);
@@ -110,69 +110,69 @@ export default class OTSession extends Component {
 
     this._eventSubscriptions.push(
       OT.onSignalReceived((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.signal?.(event);
       })
     );
 
     this._eventSubscriptions.push(
       OT.onSessionError((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.error?.(event);
       })
     );
 
     this._eventSubscriptions.push(
       OT.onConnectionCreated((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.connectionCreated?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onConnectionDestroyed((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.connectionDestroyed?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onArchiveStarted((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.archiveStarted?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onArchiveStopped((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.archiveStopped?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onMuteForced((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.muteForced?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onSessionReconnecting((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.sessionReconnecting?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onSessionReconnected((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.sessionReconnected?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onStreamPropertyChanged((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         this.eventHandlers?.streamPropertyChanged?.(event);
       })
     );
     this._eventSubscriptions.push(
       OT.onSessionDisconnected((event) => {
-        if (event.sessionId !== sessionId) return;
+        if (event?.sessionId !== sessionId) return;
         setIsConnected(sessionId, false);
         this.eventHandlers?.sessionDisconnected?.(event);
       })

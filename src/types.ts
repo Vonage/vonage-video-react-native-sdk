@@ -11,6 +11,7 @@ import type {
   SessionDisconnectEvent,
   SessionErrorEvent,
   SessionOptions,
+  SessionReconnectEvent,
   SignalEvent,
   Stream,
   StreamEvent,
@@ -42,6 +43,7 @@ export type {
   SessionDisconnectEvent,
   SessionErrorEvent,
   SessionOptions,
+  SessionReconnectEvent,
   SignalEvent,
   Stream,
   StreamEvent,
@@ -98,6 +100,7 @@ export type StreamPropertyChangedEvent = {
   oldValue: StreamPropertyChangedValue;
   newValue: StreamPropertyChangedValue;
   stream: Stream;
+  sessionId: string;
 };
 
 export type PublisherAudioNetworkStats = {
@@ -188,8 +191,8 @@ export type OTSessionEventHandlers = {
   otrnError?: CallbackWithParam<unknown>;
   sessionConnected?: CallbackWithParam<SessionConnectEvent>;
   sessionDisconnected?: CallbackWithParam<SessionDisconnectEvent>;
-  sessionReconnected?: CallbackWithParam<unknown>;
-  sessionReconnecting?: CallbackWithParam<unknown>;
+  sessionReconnected?: CallbackWithParam<SessionReconnectEvent>;
+  sessionReconnecting?: CallbackWithParam<SessionReconnectEvent>;
   signal?: CallbackWithParam<SignalEvent>;
   streamCreated?: CallbackWithParam<StreamCreatedEvent>;
   streamDestroyed?: CallbackWithParam<StreamDestroyedEvent>;
