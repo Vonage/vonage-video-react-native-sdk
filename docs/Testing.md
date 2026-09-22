@@ -110,6 +110,7 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | P2P | `p2p.e2e.js` | Publish/subscribe in relayed sessions, unpublish/republish, audio/video toggles |
 | DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
 | Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
+| muteForced repro | `muteForcedRepro.e2e.js` | **Opt-in** (`E2E_MUTEFORCED_REPRO=1`): inbound `muteForced` from a remote moderator — see [repro-306-ios-muteforced.md](repro-306-ios-muteforced.md) |
 
 ## Architecture
 
