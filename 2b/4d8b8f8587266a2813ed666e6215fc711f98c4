@@ -1,0 +1,23 @@
+package.json
+  s_d34cb1a085c9a7::t_2b27d455ebf9ed 58
+.github/workflows/ci-pr-tests.yml
+  s_d34cb1a085c9a7::t_eee843594b9d60 134-143
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_d34cb1a085c9a7::t_3936a0885afa6f 130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "2b4d8b8f8587266a2813ed666e6215fc711f98c4",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

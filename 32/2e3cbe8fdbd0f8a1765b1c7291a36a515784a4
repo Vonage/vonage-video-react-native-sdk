@@ -1,0 +1,19 @@
+android/build.gradle
+  s_dbd03af25e4553::t_69d8ba8afaa9a1 93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "322e3cbe8fdbd0f8a1765b1c7291a36a515784a4",
+  "prompts": {},
+  "sessions": {
+    "s_dbd03af25e4553": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_385c04a6-c994-4ccf-9ae9-49b0bfb9823c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

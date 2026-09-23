@@ -1,0 +1,19 @@
+React-native-TestApp/__tests__/globalSetup.js
+  s_4f1ec41b0aa468::t_885508421ebe75 22-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9f2aa9234dcea8362b19bcf9b02c43c7613f9f6d",
+  "prompts": {},
+  "sessions": {
+    "s_4f1ec41b0aa468": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_a6a1af4e-9a7a-4297-8490-60b6042bb816",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_dbd03af25e4553::t_d77588931cf877 494-495
+  s_dbd03af25e4553::t_7cfc60d3b6aa65 222-224
+  s_dbd03af25e4553::t_ae93ce1d7aa7bf 398-400
+  s_dbd03af25e4553::t_3b9bc4f92b269f 485-486
+  s_dbd03af25e4553::t_3e9d6d034c7145 524-528
+  s_dbd03af25e4553::t_68d9053b4e3165 202-204
+  h_25a96a0890a0d0 513-514
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_dbd03af25e4553::t_67b49b39ca5919 25-28
+  s_dbd03af25e4553::t_3a19195e51b777 540-621
+  s_dbd03af25e4553::t_9fc938e96e38f1 201-214,221-222
+  s_dbd03af25e4553::t_63c14351c45cb5 361-367
+  s_dbd03af25e4553::t_07550b7395dc9c 51-136
+  s_dbd03af25e4553::t_4dddee34ad2077 244-251
+  s_dbd03af25e4553::t_1814ac7423112d 383-384,393-394,403-404,415-416,426-427,437-438,470-471,480-481,491-492,502-503,512-513,522-523
+  s_dbd03af25e4553::t_12b3b6eef0e417 137-174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0e2c282219ba76d1257a6002349f026b32fc43c5",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_dbd03af25e4553": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_385c04a6-c994-4ccf-9ae9-49b0bfb9823c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

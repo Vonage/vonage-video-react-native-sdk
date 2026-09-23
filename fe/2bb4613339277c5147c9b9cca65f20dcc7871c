@@ -1,0 +1,21 @@
+package.json
+  s_c120eaa4347663::t_9096848c1d2d90 3
+React-native-TestApp/sdk-config.json
+  s_c120eaa4347663::t_4c884a7b8158f4 5,10,15,20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "fe2bb4613339277c5147c9b9cca65f20dcc7871c",
+  "prompts": {},
+  "sessions": {
+    "s_c120eaa4347663": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_f98948bc-0fdc-4c92-907d-0602fde25300",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

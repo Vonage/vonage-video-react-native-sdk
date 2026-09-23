@@ -1,0 +1,37 @@
+React-native-TestApp/__tests__/mute.e2e.js
+  s_fa4016929f3e39::t_659e09db6246be 22,32,38-43,46,51,58,61,65,67,72-73,76-82,88-89,91-92,94,105,108,112-161
+  s_fa4016929f3e39::t_36c811ecf2ff57 19-21
+  s_fa4016929f3e39::t_44443526ba4b9e 23-25,29-31
+  s_fa4016929f3e39::t_87d9b089e2c2c5 33-37
+  s_fa4016929f3e39::t_e78bd51bcc6b87 44-45
+  s_fa4016929f3e39::t_5bf6055d2ac142 47-50
+  s_fa4016929f3e39::t_d3cdfe1fea2706 52-57
+  s_fa4016929f3e39::t_c67a0e19780e79 59-60
+  s_fa4016929f3e39::t_a7da7e964450ca 62-64
+  s_fa4016929f3e39::t_3ab5ffa3119959 66
+  s_fa4016929f3e39::t_e6cec5ff2e1db8 68-71
+  s_fa4016929f3e39::t_66ea5ef54f1116 74-75
+  s_fa4016929f3e39::t_19d4772f105a3e 83-87
+  s_fa4016929f3e39::t_7d55b704e30566 90
+  s_fa4016929f3e39::t_5bb76e09114c30 93
+  s_fa4016929f3e39::t_45436f656db11e 95-97,102-104
+  s_fa4016929f3e39::t_1fb216f7b1b172 106-107
+  s_fa4016929f3e39::t_a094457d90a8f6 109-111
+  s_fa4016929f3e39::t_882b50a396131b 162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "09dfd17678ab504f813d30e6e8622843caa7cb5b",
+  "prompts": {},
+  "sessions": {
+    "s_fa4016929f3e39": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "d6552e1d-cb41-4fe3-9180-d0c8dd75625c",
+        "model": "unknown"
+      },
+      "human_author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}

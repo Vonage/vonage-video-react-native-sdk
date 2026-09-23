@@ -1,0 +1,19 @@
+React-native-TestApp/package.json
+  s_4f1ec41b0aa468::t_51febc488a64b4 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "200cee140124df7259fef95109d64d44998fd68e",
+  "prompts": {},
+  "sessions": {
+    "s_4f1ec41b0aa468": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_a6a1af4e-9a7a-4297-8490-60b6042bb816",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

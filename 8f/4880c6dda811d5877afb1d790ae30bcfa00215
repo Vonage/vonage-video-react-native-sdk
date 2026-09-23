@@ -1,0 +1,29 @@
+src/types.ts
+  s_654a013ed908b8::t_e56bb67a15d06c 327-328
+src/__tests__/OTPublisher.preservation.test.js
+  s_654a013ed908b8::t_d335ddb0cba46e 353-361
+  s_654a013ed908b8::t_236ad6e5aa28c7 83
+  s_654a013ed908b8::t_89d88e0d01244d 1-82,84-352,362-364
+src/OTPublisher.js
+  s_654a013ed908b8::t_24c67386521bea 146
+  s_654a013ed908b8::t_1eaf6c45a8b119 138-145,147-154
+  s_654a013ed908b8::t_f886d4987d25c4 137
+src/__tests__/OTPublisher.transformers.test.js
+  s_654a013ed908b8::t_78324145df22eb 1-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "8f4880c6dda811d5877afb1d790ae30bcfa00215",
+  "prompts": {},
+  "sessions": {
+    "s_654a013ed908b8": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_18202fe1-5d4a-4324-a10e-bd653a6448fb",
+        "model": "auto"
+      },
+      "human_author": null
+    }
+  }
+}

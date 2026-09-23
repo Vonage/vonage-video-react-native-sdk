@@ -1,0 +1,29 @@
+React-native-TestApp/ios/ReactNativeTesApp/SceneDelegate.swift
+  s_cc487ee6e0a383::t_bdad51a9ae3e30 1-39,41-43,45-58
+  s_cc487ee6e0a383::t_66c4b0d01cffa6 40,44
+React-native-TestApp/ios/ReactNativeTesApp/AppDelegate.swift
+  s_cc487ee6e0a383::t_d15463c00d6f2c 16-23
+React-native-TestApp/ios/ReactNativeTesApp/Info.plist
+  s_cc487ee6e0a383::t_3b19a7d54259e4 42-58
+React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/project.pbxproj
+  s_cc487ee6e0a383::t_593880f2339653 71
+  s_cc487ee6e0a383::t_f3a186918ea880 45
+  s_cc487ee6e0a383::t_d5f341e0a16d0f 279
+  s_cc487ee6e0a383::t_00b0211d2b2386 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "9b1c1e02aa0bf0584ff1d869703cd7f9656ac0c1",
+  "prompts": {},
+  "sessions": {
+    "s_cc487ee6e0a383": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_f45b5e2c-de7b-4d27-be6d-be5efe700269",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

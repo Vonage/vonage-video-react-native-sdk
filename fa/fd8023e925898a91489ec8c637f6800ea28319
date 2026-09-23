@@ -1,0 +1,16 @@
+.github/workflows/ci-pr-tests.yml
+  h_25a96a0890a0d0 87,90-103,106,108-110
+detox.config.js
+  h_25a96a0890a0d0 6-20,26,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fafd8023e925898a91489ec8c637f6800ea28319",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

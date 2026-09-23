@@ -1,0 +1,21 @@
+android/build.gradle
+  s_c120eaa4347663::t_a5aadce0fddcbc 99
+OpentokReactNative.podspec
+  s_c120eaa4347663::t_0e27b462530ac6 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "333c25b4613d717adf1e739072cf56e00118b1af",
+  "prompts": {},
+  "sessions": {
+    "s_c120eaa4347663": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_f98948bc-0fdc-4c92-907d-0602fde25300",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

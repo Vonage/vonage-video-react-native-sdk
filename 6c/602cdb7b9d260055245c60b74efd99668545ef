@@ -1,0 +1,49 @@
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  s_d47b7ff10ee53b::t_9176df7a636782 1-63
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_d47b7ff10ee53b::t_76543ba906130f 1-6,11-97,99-200,202-211,213-239,242-243,245-246,248-277,281-313,316,318-321
+  s_d47b7ff10ee53b::t_c58e43992521aa 9
+  s_d47b7ff10ee53b::t_9a0bff8d2bdfc6 278-280
+  s_d47b7ff10ee53b::t_11b33f630bf6e0 98
+  s_d47b7ff10ee53b::t_8e88d950541c8e 314-315,317
+  s_d47b7ff10ee53b::t_772c078103f1e0 212
+  s_d47b7ff10ee53b::t_4b3a7b1ba34852 240-241,244,247
+  s_d47b7ff10ee53b::t_2995503871b24e 201
+  s_d47b7ff10ee53b::t_d9563c8a768d88 7-8,10
+React-native-TestApp/__tests__/encryption.e2e.js
+  s_d47b7ff10ee53b::t_9677af70803e6b 1-99
+React-native-TestApp/src/handlers/subscriberHandlers.ts
+  s_d47b7ff10ee53b::t_01c898e899698c 4-5,12,32,43,50-54
+React-native-TestApp/src/types/index.ts
+  s_d47b7ff10ee53b::t_0e3dbafb55b6fb 149-152
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_d47b7ff10ee53b::t_eec6f1d45eb65c 187-197
+  s_d47b7ff10ee53b::t_cb3928e1fd2121 338-339
+  s_d47b7ff10ee53b::t_9662369c958cd9 285
+  s_d47b7ff10ee53b::t_bf5d75caa0a72d 2
+  s_d47b7ff10ee53b::t_6b4d6a01d81e25 1104-1150
+  s_d47b7ff10ee53b::t_f036171aaa8096 115-117
+  s_d47b7ff10ee53b::t_769ed0dbc8b868 240-241
+  s_d47b7ff10ee53b::t_0472020d069a50 1158
+  s_d47b7ff10ee53b::t_1dadc56442aef4 294-295
+React-native-TestApp/src/handlers/sessionHandlers.ts
+  s_d47b7ff10ee53b::t_0a49f467cff6d3 6-7,12-16,21-25,43-50,56,59,64-69,73-78,82-87,91-96,106,110-113
+React-native-TestApp/src/handlers/publisherHandlers.ts
+  s_d47b7ff10ee53b::t_788c7382edd4af 4-5,12,16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "6c602cdb7b9d260055245c60b74efd99668545ef",
+  "prompts": {},
+  "sessions": {
+    "s_d47b7ff10ee53b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_9ee328c4-a1af-4f4b-96ef-5e3761b45f5d",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

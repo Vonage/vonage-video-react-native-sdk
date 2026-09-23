@@ -1,0 +1,38 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_ce55cec5e89d7f::t_35f56075872a50 44-45
+  s_ce55cec5e89d7f::t_1d116596fb358e 506-523,524-526,528-529
+  s_acc28e2110d17a::t_d0e2c8d915487c 335
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  s_ce55cec5e89d7f::t_d130897eb96ce0 33-37
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_acc28e2110d17a::t_d0e2c8d915487c 212,216-217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7dce30f66319976ecb6ac6276e4d436a6cbfa475",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_acc28e2110d17a": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ca47ece3-30a4-480c-85df-b29fcfb98b1d",
+        "model": "copilot/claude-sonnet-5"
+      },
+      "human_author": "Test <test@test.com>"
+    },
+    "s_ce55cec5e89d7f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_fed30d36-383b-449f-9743-d76fc0216985",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

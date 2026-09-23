@@ -1,0 +1,34 @@
+whitespace.txt
+  8fee6fbc0bb51187 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "1b87ab7a6cac7790a4f80b3905bea9fc90387ffc",
+  "prompts": {
+    "8fee6fbc0bb51187": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "09e8142e-f01e-499c-adf7-5e8bfd72d4c8",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-07-21T08:39:53.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot-cli/gpt-4o).",
+          "timestamp": "2026-07-21T08:39:53.000Z"
+        }
+      ],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

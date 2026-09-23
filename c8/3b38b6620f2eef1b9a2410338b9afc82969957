@@ -1,0 +1,19 @@
+React-native-TestApp/__tests__/encryption.e2e.js
+  s_4f1ec41b0aa468::t_3122dd5c95196c 3,15,26-27,31,36-37,41,45,50-51,54-55,58,63,69,73,77-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c83b38b6620f2eef1b9a2410338b9afc82969957",
+  "prompts": {},
+  "sessions": {
+    "s_4f1ec41b0aa468": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_a6a1af4e-9a7a-4297-8490-60b6042bb816",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,102 @@
+React-native-TestApp/.gitignore
+  s_4f1ec41b0aa468::t_b89007a233b6e2 79-81
+React-native-TestApp/__tests__/p2p.e2e.js
+  s_d47b7ff10ee53b::t_3e09fb97122649 40
+  s_4f1ec41b0aa468::t_4ee5df4c27c13a 43-44,62,65-66,68,73,76,78,91,94,106,111,114,117,126
+  s_d47b7ff10ee53b::t_d6c167dc2d2140 3,13,16,25,27,31,33-36,41,45,63-64,67,74-75,77,83,92-93,95-96,100-101,104,112-113,115-116,120-121,124
+.github/workflows/ci-pr-tests.yml
+  s_4f1ec41b0aa468::t_5fe6127c034cbd 236-239
+  s_4f1ec41b0aa468::t_6e901928f1c70b 129-131
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_d47b7ff10ee53b::t_627589463d8e50 1-8,13,23-25,29,31-33,35-36,46-48,51,81,88-89,114-116,151-163,170-171,176,180-181,183-189,194-213,216-220,231,234-235,237-239,241-245,248-249,251,254-257
+  s_4f1ec41b0aa468::t_318f68fd5b976e 19-20,102,120-128,132-137,139-144,150,164
+  s_d47b7ff10ee53b::t_8b27d331ed5067 149,165-167,173-175
+  s_d47b7ff10ee53b::t_56c7103dde0ae5 9-12,14-18,21-22,26-28,30,34,37-45,49-50,52-80,82-87,90-101,103-111,113,117-119,129-131,138,145-148,214-215,221-230,232-233,236,240,246-247,250,252-253
+  s_4f1ec41b0aa468::t_1a39d2f245b0c1 112
+  s_d47b7ff10ee53b::t_63b06f598d522a 168-169
+  s_d47b7ff10ee53b::t_29bfefc61b59a4 172
+  s_d47b7ff10ee53b::t_8e535d0abea466 177-179
+  s_d47b7ff10ee53b::t_6b0924b69be815 182
+  s_d47b7ff10ee53b::t_b27262082777b2 190-193
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  s_4f1ec41b0aa468::t_34e355757ad5db 103-105
+  s_4f1ec41b0aa468::t_542ff5be675f5f 106
+docs/Testing.md
+  s_4f1ec41b0aa468::t_432e286875cd75 12,14,16,18-22,24,26-33,51,54-61,64,71-72,75,81-82,85,87,90-92,107-108,110,112,114,116,118,121-122,124-125,131-133,137,139-142,146-148,153-198,200
+  s_4f1ec41b0aa468::t_5a97619d95da47 93-94
+  s_4f1ec41b0aa468::t_9ee306ef2006f4 62-63
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_d47b7ff10ee53b::t_3f986ada0365b3 3,8,11,20-22,26,30-32,34-37,39,43-44,65-67,69,73-74,85-86,98
+  s_4f1ec41b0aa468::t_b921370794873e 103
+  s_4f1ec41b0aa468::t_b8f98ff384bda6 72
+  s_4f1ec41b0aa468::t_2bd24f3dd5622d 42
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_d47b7ff10ee53b::t_d76970a7b289b3 1141,1143
+  s_4f1ec41b0aa468::t_8150a43c49886a 574
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_d47b7ff10ee53b::t_9b23ad6b299877 3,12,26,30,32-35,39-54,65,68,75-86,91
+React-native-TestApp/__tests__/helpers/credentials.js
+  s_4f1ec41b0aa468::t_7f54b81c658bdc 37,47
+  s_4f1ec41b0aa468::t_ced273ee2efffd 6-9,15,18-19,21,23-24,26-28,31,35,40-41,45,50-51
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  s_4f1ec41b0aa468::t_7e429f94cf2c22 41-45
+  s_4f1ec41b0aa468::t_c866e2030ec66c 54,57,62
+React-native-TestApp/__tests__/session.e2e.js
+  s_4f1ec41b0aa468::t_687e82c83a7bb8 98
+  s_4f1ec41b0aa468::t_5f1e65b819b43f 123
+  s_d47b7ff10ee53b::t_32741ea4836c2b 3-4,11,14,17,26-28,32,34-37,41,43,49,51,57-68,70,76,78-80,84-85,91,93,99-100,108,110,116,118,124-125
+React-native-TestApp/__tests__/dtx.e2e.js
+  s_4f1ec41b0aa468::t_46c26ab0d319e4 3,9,12,24,28,30-33,37-42,44,46,49,52,56-77,79,82,85
+React-native-TestApp/__tests__/globalSetup.js
+  s_4f1ec41b0aa468::t_15533fd5a6963e 12-17,22,27,30-31,41-53,55-60,62-74,76-77,79,82-91,94-100,107-108
+  s_4f1ec41b0aa468::t_13d3edf6d6e615 1-11,18-21,23-26,28-29,32-40,54,61,75,78,80-81,92-93,101-106,109
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_4f1ec41b0aa468::t_33b29c70db7a76 55-56,58-67,78,115-116,118-128,130,164-177
+  s_d47b7ff10ee53b::t_b600463242ec9b 3,6,11-13,16,19,28,30,34,38-44,49-52,76-77,79-83,97-99,114,144-146,163,192,195,212,226-228,233-235
+  s_4f1ec41b0aa468::t_4fea3e54a19eec 48,57,84,101,113,117,131,162,178,196,211,213,215,218
+  s_d47b7ff10ee53b::t_cdd9a8af69707e 45
+React-native-TestApp/__tests__/amrTransition.e2e.js
+  s_4f1ec41b0aa468::t_d9dc90bfb7528f 3,21,35,39,44-49,53,55,94
+  s_4f1ec41b0aa468::t_c0265406666007 57-58,77-78,95,102
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  s_4f1ec41b0aa468::t_3cd26b1c0fcdef 3,15,17,27-28,31-33,36-39,45-46,50,58,62,74,82,87,93,98
+  s_4f1ec41b0aa468::t_789e60bc3e13ba 67,71,80
+  s_4f1ec41b0aa468::t_eaec41771902b4 57
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_d47b7ff10ee53b::t_4c253346955b6f 3,14-15,17,21,24,33,35,39,43-44,57-59,62,64-65,82,101-104,107,109-110,113,118,124,127,143-145,148,175,190-192,195-196,198-201,207-208,220-221,223,225,238-240,243-247,257
+React-native-TestApp/__tests__/jest.e2e.config.js
+  s_4f1ec41b0aa468::t_f90cd0bf837932 7
+  s_4f1ec41b0aa468::t_3f9d6eb94b4642 8
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d47b7ff10ee53b::t_09957e1329d83a 3,10-14,19,22,31,33,37,41-42,45-47,49,53,55-57,59,61-62,64,66-68,70-72,75-79,81-84,86-92,94-96,98-101,103-109,111-128,130-140,143-145,147-153,155-157,159-160,163-169,172-173,175-183,185-186,188-191,194-204,206-207,209-210,212,214-217,219-221,223-224,227-228
+  s_4f1ec41b0aa468::t_4ecdffb189223a 15-16,60,65,80,85,97,102,146,158,174,193,218,222
+  s_4f1ec41b0aa468::t_2bb2c538c8bf44 51-52,74,93,110,129,142,154,170-171,184,187,192,205,208,213,225
+  s_4f1ec41b0aa468::t_4e5deb4a65f48d 211
+  s_4f1ec41b0aa468::t_644e41f9ceb3cc 226
+scripts/generate-e2e-credentials.js
+  s_4f1ec41b0aa468::t_7f59621ec003dd 68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5bb598ccfd1e20669290d78fcb0f9af1b4f2b6b0",
+  "prompts": {},
+  "sessions": {
+    "s_4f1ec41b0aa468": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_a6a1af4e-9a7a-4297-8490-60b6042bb816",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    },
+    "s_d47b7ff10ee53b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_9ee328c4-a1af-4f4b-96ef-5e3761b45f5d",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

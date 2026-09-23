@@ -1,0 +1,23 @@
+src/__tests__/OTPublisherHelper.test.js
+  s_30a08209d6ed08::t_902dc02e5142ba 20-72
+React-native-TestApp/__tests__/screenShare.e2e.js
+  s_30a08209d6ed08::t_a8194eefae3a5e 1-95
+android/src/main/java/com/opentokreactnative/OTScreenCapturer.java
+  s_30a08209d6ed08::t_c324f43746aa87 67-71,73,75-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "cbdd85a303151f0cc42ad4b8c72ea6fb2cfeba0b",
+  "prompts": {},
+  "sessions": {
+    "s_30a08209d6ed08": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_08f6da35-52e0-42d9-802b-faf604270a61",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

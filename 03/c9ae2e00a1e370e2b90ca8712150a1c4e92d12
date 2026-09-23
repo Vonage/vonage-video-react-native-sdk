@@ -1,0 +1,67 @@
+ios/OTRNPublisherComponentView.mm
+  s_ce55cec5e89d7f::t_c2296df5867199 31-37
+  s_ce55cec5e89d7f::t_0381930fe409ac 159-162
+  s_ce55cec5e89d7f::t_7e2834fed954c3 221
+  s_ce55cec5e89d7f::t_ec4fb9d44accd6 211
+  s_ce55cec5e89d7f::t_bd7d7e42ffc39a 231
+src/OTSubscriberNativeComponent.ts
+  s_ce55cec5e89d7f::t_16691fc74d591a 73-79
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  s_ce55cec5e89d7f::t_55d6c964a68c4a 85-96
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_ce55cec5e89d7f::t_b82291408c09f7 445-447
+  s_ce55cec5e89d7f::t_3154996175cd88 418-420
+  s_ce55cec5e89d7f::t_5f1154ab9f891e 53-60
+  s_ce55cec5e89d7f::t_9cfe6591b9967b 481-483
+  s_ce55cec5e89d7f::t_7ae1668c49ed2a 232-243
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  s_ce55cec5e89d7f::t_00eb9d4b57dce1 189-203
+src/OTSubscriberView.js
+  s_ce55cec5e89d7f::t_c7f33f3a9e8f78 157-165
+  s_ce55cec5e89d7f::t_e17ed3c88abdb0 91-93
+  s_ce55cec5e89d7f::t_35988bbc464b2b 101-116
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_ce55cec5e89d7f::t_29a15c2406e11e 36-43
+  s_ce55cec5e89d7f::t_e6b1acf420e316 373-375
+  s_ce55cec5e89d7f::t_ba1a8a60b470b8 408-410
+  s_ce55cec5e89d7f::t_d25130b186ff7e 440-442
+  s_ce55cec5e89d7f::t_9d5235c7a1b367 101-112
+ios/OTRNSubscriberComponentView.mm
+  s_ce55cec5e89d7f::t_6793c3deb67a1c 93-98
+  s_ce55cec5e89d7f::t_2a39ff023e9dd1 270
+  s_ce55cec5e89d7f::t_cfb10ad9e75f58 288
+  s_ce55cec5e89d7f::t_b3313b4fa9676c 252
+  s_ce55cec5e89d7f::t_8f2e5eaf927c37 159-162
+React-native-TestApp/__tests__/cameraChurn.stress.js
+  h_25a96a0890a0d0 87,119,149,181,205
+  h_25a96a0890a0d0 111-113
+src/OTPublisherNativeComponent.ts
+  s_ce55cec5e89d7f::t_14718829138c64 63-69
+src/OTPublisher.js
+  s_ce55cec5e89d7f::t_c71e1c83b20664 219-221
+  s_ce55cec5e89d7f::t_5f17a7fe4d74fa 234-240,244-251
+  s_ce55cec5e89d7f::t_d3b86f7a5ff106 271-278
+.gitignore
+  h_25a96a0890a0d0 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "03c9ae2e00a1e370e2b90ca8712150a1c4e92d12",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_ce55cec5e89d7f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_fed30d36-383b-449f-9743-d76fc0216985",
+        "model": "auto"
+      },
+      "human_author": null
+    }
+  }
+}

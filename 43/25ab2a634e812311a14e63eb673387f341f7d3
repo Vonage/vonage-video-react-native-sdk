@@ -1,0 +1,19 @@
+src/helpers/OTSessionHelper.js
+  s_4af5b4080a72e4::t_e929720771f4fc 30-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "4325ab2a634e812311a14e63eb673387f341f7d3",
+  "prompts": {},
+  "sessions": {
+    "s_4af5b4080a72e4": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_b4d7e2cd-7052-4b96-aed0-e202df67c315",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_acc28e2110d17a::t_587a1b27fda99d 335
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_acc28e2110d17a::t_587a1b27fda99d 212,216-218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e6b5f4f33a6464a7e6c4183183eb18055b61a9a7",
+  "prompts": {},
+  "sessions": {
+    "s_acc28e2110d17a": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ca47ece3-30a4-480c-85df-b29fcfb98b1d",
+        "model": "copilot/claude-sonnet-5"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
