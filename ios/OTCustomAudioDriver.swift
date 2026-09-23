@@ -254,10 +254,15 @@ class OTCustomAudioDriver: NSObject {
         disposeAudioUnit(audioUnit: &recordingVoiceUnit)
         freeupAudioBuffers()
         
+        guard isAudioSessionSetup else { return }
         let session = AVAudioSession.sharedInstance()
         isAudioSessionSetup = false
         do {
             try session.setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            print("Error deactivating AVAudioSession: \(error)")
+        }
+        do {
             if let previousAVAudioSessionCategory = previousAVAudioSessionCategory {
                 if #available(iOS 10.0, *) {
                     try session.setCategory(previousAVAudioSessionCategory, mode: .default)
