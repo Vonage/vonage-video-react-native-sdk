@@ -1,0 +1,36 @@
+android/src/main/java/com/opentokreactnative/OTRN.java
+  s_acc28e2110d17a::t_bb9262e4159fd3 20,61-62
+  s_acc28e2110d17a::t_d9ca69f27d5c7b 63-64
+android/src/main/java/com/opentokreactnative/utils/Utils.java
+  s_acc28e2110d17a::t_bf98b0cd215910 19-21,26,30-59
+  s_acc28e2110d17a::t_bfd2889bf63008 60
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_acc28e2110d17a::t_0e4c070911254d 42-45,327,329-330,335-337,358-360,363-374
+  s_acc28e2110d17a::t_e26641c7c3613e 504-527
+  s_acc28e2110d17a::t_7f708c6a2d43af 375
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_acc28e2110d17a::t_0762679fc3c164 12,180-197,202-218,394,396-409
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  s_acc28e2110d17a::t_e91f055c5238dc 33-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5f2d29a71f0befc41a4477c0f8142b4f339a2d7c",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_acc28e2110d17a": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ca47ece3-30a4-480c-85df-b29fcfb98b1d",
+        "model": "copilot/claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
