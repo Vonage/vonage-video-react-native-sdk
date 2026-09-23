@@ -1,0 +1,24 @@
+e2e/E2ETestingApp/ios/Podfile
+  s_477549ed352985::t_61e9358815c1cc 28-52,61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c8b9b78cb971e37d1937009b9873c12b5426b005",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_477549ed352985": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_bb714a12-70f3-4fa1-bc18-e2ecdb665d01",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
