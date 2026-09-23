@@ -1,0 +1,40 @@
+src/__tests__/OTHelper.test.js
+  d0b5b272fd2f507e 1-150
+src/__tests__/OTPublisherHelper.test.js
+  d0b5b272fd2f507e 1-233
+src/__tests__/OTSessionHelper.test.js
+  d0b5b272fd2f507e 1-168
+src/__tests__/OTSubscriberHelper.test.js
+  d0b5b272fd2f507e 1-263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "c6e017db4405676f4c849a733541e611b77b7195",
+  "prompts": {
+    "d0b5b272fd2f507e": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "eadd8a4d-5303-42b0-938d-80de46bf24ff",
+        "model": "gpt-4o"
+      },
+      "human_author": "igorperunovicvonage <igor.perunovic@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-09-23T10:40:56.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-09-23T10:40:56.000Z"
+        }
+      ],
+      "total_additions": 814,
+      "total_deletions": 0,
+      "accepted_lines": 814,
+      "overriden_lines": 0
+    }
+  }
+}
