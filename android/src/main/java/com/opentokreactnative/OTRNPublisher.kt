@@ -43,6 +43,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    private var registeredPublisherId: String? = null
+
+    @Volatile private var released: Boolean = false
+
     constructor(context: Context) : super(context) {
         configureComponent()
     }
@@ -335,15 +339,16 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
-        val publisherId = this.props?.get("publisherId") as String
+        val resolvedPublisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
-            .put(publisherId, publisher ?: return);
+            .put(resolvedPublisherId, publisher ?: return);
+        registeredPublisherId = resolvedPublisherId
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
         }
         // Complete a publish() that arrived before this view attached (see module contract).
-        if (sharedState.getPendingPublishers().remove(publisherId) != null) {
+        if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
             sharedState.getSessions().get(sessionId)?.publish(publisher)
         }
     }
@@ -368,7 +373,23 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
+        if (isFatalPublisherError(opentokError.errorCode)) {
+            Utils.releasePublisher(registeredPublisherId, "fatalError:" + opentokError.errorCode)
+        }
     }
+
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherWebRTCError,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.CameraFailed,
+            OpentokError.ErrorCode.VideoCaptureFailed -> true
+            else -> false
+        }
 
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
 
@@ -511,6 +532,30 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         } else {
             PublisherKit.PreferredVideoCodecs.manual(preferredVideoCodecs)
         }
+    }
+
+    fun cleanup() {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        if (pub != null) {
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+            runCatching { removeAllViews() }
+        }
+
+        publisher = null
+        Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
     }
 
     inner class OpenTokEvent(
