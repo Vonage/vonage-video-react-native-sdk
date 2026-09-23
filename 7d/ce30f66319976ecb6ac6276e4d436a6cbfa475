@@ -1,8 +1,11 @@
 android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
   s_ce55cec5e89d7f::t_35f56075872a50 44-45
   s_ce55cec5e89d7f::t_1d116596fb358e 506-523,524-526,528-529
+  s_acc28e2110d17a::t_d0e2c8d915487c 335
 android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
   s_ce55cec5e89d7f::t_d130897eb96ce0 33-37
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_acc28e2110d17a::t_d0e2c8d915487c 212,216-217
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -15,6 +18,14 @@ android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
     }
   },
   "sessions": {
+    "s_acc28e2110d17a": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ca47ece3-30a4-480c-85df-b29fcfb98b1d",
+        "model": "copilot/claude-sonnet-5"
+      },
+      "human_author": "Test <test@test.com>"
+    },
     "s_ce55cec5e89d7f": {
       "agent_id": {
         "tool": "kiro",
