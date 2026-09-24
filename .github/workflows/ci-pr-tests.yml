@@ -47,7 +47,8 @@ jobs:
           script: |
             const fs = require('fs');
             const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')).total;
-            const row = (label, metric) => `| ${label} | ${metric.pct}% | ${metric.covered}/${metric.total} |`;
+            const icon = (pct) => (pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴');
+            const row = (label, metric) => `| ${label} | ${icon(metric.pct)} ${metric.pct}% | ${metric.covered}/${metric.total} |`;
             const prNumber = context.payload.pull_request.number;
             const reportUrl = `https://vonage.github.io/vonage-video-react-native-sdk/coverage/pr-${prNumber}/`;
             const marker = '<!-- coverage-report-comment -->';
