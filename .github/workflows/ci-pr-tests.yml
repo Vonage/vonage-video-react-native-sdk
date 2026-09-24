@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - name: Unit tests with coverage report
+        id: coverage
         uses: ArtiomTr/jest-coverage-report-action@v2
         env:
           NODE_OPTIONS: --experimental-require-module
@@ -34,6 +35,28 @@ jobs:
           test-script: npm run test:unit
           skip-step: install
           annotations: none
+          output: report-markdown
+
+      - name: Publish full coverage report to GitHub Pages
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./coverage/lcov-report
+          destination_dir: coverage/pr-${{ github.event.pull_request.number }}
+          keep_files: true
+
+      - name: Comment coverage summary with report link
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          header: coverage
+          message: |
+            📊 [View full coverage report](https://vonage.github.io/vonage-video-react-native-sdk/coverage/pr-${{ github.event.pull_request.number }}/)
+
+            ${{ steps.coverage.outputs.report }}
 
   e2e-ios-tests:
     needs: unit-tests
