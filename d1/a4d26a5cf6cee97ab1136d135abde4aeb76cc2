@@ -1,0 +1,26 @@
+.gitignore
+  s_ff26be56308641::t_3753d17b6c61a4 76-79
+.github/workflows/ci-pr-tests.yml
+  s_ff26be56308641::t_5a28a4e6d28815 17-19,29-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d1a4d26a5cf6cee97ab1136d135abde4aeb76cc2",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_ff26be56308641": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "512061ea-fc18-4bce-9a43-ade8a988012c",
+        "model": "copilot/claude-sonnet-5"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
