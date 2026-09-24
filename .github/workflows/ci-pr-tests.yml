@@ -142,6 +142,13 @@ jobs:
           kill $METRO_PID 2>/dev/null || true
           exit 1
 
+      - name: Warm iOS Metro bundle
+        run: |
+          # /status only checks the server; compile the cold bundle before launch.
+          curl --fail --silent --show-error --max-time 240 \
+            'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false' \
+            --output /dev/null
+
       - name: Run iOS Detox tests
         env:
           DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
