@@ -157,7 +157,11 @@
     ],
     "moduleNameMapper": {
       "^react-native-uuid$": "<rootDir>/src/__mocks__/react-native-uuid.js"
-    }
+    },
+    "coverageReporters": [
+      "lcov",
+      "json-summary"
+    ]
   },
   "commitlint": {
     "extends": [
