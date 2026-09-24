@@ -14,6 +14,9 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -23,7 +26,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: NODE_OPTIONS=--experimental-require-module npm test
+      - name: Unit tests with coverage report
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        env:
+          NODE_OPTIONS: --experimental-require-module
+        with:
+          test-script: npm run test:unit
+          skip-step: install
+          annotations: none
 
   e2e-ios-tests:
     needs: unit-tests
