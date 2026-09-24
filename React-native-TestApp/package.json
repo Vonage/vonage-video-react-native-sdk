@@ -40,5 +40,10 @@
   },
   "engines": {
     "node": ">= 22.13.0"
+  },
+  "overrides": {
+    "image-size": "^2.0.4",
+    "fast-xml-parser": "^5.7.0",
+    "qs": "^6.16.0"
   }
 }
