@@ -74,6 +74,4 @@ android/.gradle
 .kiro/
 
 artifacts/
-
-# jest --coverage output
 coverage/
