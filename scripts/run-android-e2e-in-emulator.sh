@@ -97,6 +97,8 @@ unlock_emulator
 echo "Configuring adb reverse for Metro..."
 adb -s "$DEVICE_ID" reverse tcp:8081 tcp:8081
 
+# Capture logcat once on the host. Detox per-test log collection caused ADB
+# transport drops between tests; test:e2e:android disables that duplicate recorder.
 adb -s "$DEVICE_ID" logcat -c || true
 adb -s "$DEVICE_ID" logcat -v time > android-logcat.txt 2>&1 &
 LOGCAT_PID=$!
