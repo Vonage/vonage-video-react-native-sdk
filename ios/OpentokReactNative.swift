@@ -543,7 +543,7 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
         signalData["sessionId"] = session.sessionId;
         impl?.ot?.emit(onSignalReceived:  signalData)
     }
-    public func session(_ session: OTSession, info muteForced: OTMuteForcedInfo)
+    public func session(_ session: OTSession, muteForced: OTMuteForcedInfo)
     {
         var muteForcedInfo: [String: Any] = [:]
         muteForcedInfo["active"] = muteForced.active
