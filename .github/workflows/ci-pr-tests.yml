@@ -147,6 +147,8 @@ jobs:
     environment: prod
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      DETOX_AVD_NAME: Pixel_8_API_36
 
     steps:
       - name: Checkout repository
