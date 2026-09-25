@@ -88,8 +88,11 @@ const addEventListener = (sessionId, type, listener) => {
 };
 
 const removeEventListener = (sessionId, type, listener) => {
-  if (eventHandlers[sessionId] && eventHandlers[sessionId][type]) {
-    delete eventHandlers[sessionId][type];
+  const typeMap = eventHandlers[sessionId];
+  if (!typeMap || !typeMap[type]) return;
+  typeMap[type] = typeMap[type].filter((l) => l !== listener);
+  if (typeMap[type].length === 0) {
+    delete typeMap[type];
   }
 };
 

@@ -32,12 +32,19 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     private var sessionId: String? = ""
     private var publisherId: String? = ""
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
 
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
     private var androidOnTopMap = sharedState.getAndroidOnTopMap();
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
+
+    private var registeredPublisherId: String? = null
+
+    @Volatile private var released: Boolean = false
 
     constructor(context: Context) : super(context) {
         configureComponent()
@@ -89,6 +96,18 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
     }
 
     public fun setPublishAudio(value: Boolean) {
@@ -320,11 +339,16 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
+        val resolvedPublisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
-            .put(this.props?.get("publisherId") as String, publisher ?: return);
+            .put(resolvedPublisherId, publisher ?: return);
+        registeredPublisherId = resolvedPublisherId
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
+        }
+        if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
+            sharedState.getSessions().get(sessionId)?.publish(publisher)
         }
     }
 
@@ -346,9 +370,27 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
+        if (isFatalPublisherError(opentokError.errorCode)) {
+            Utils.releasePublisher(registeredPublisherId, "fatalError:" + opentokError.errorCode)
+        }
     }
 
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherWebRTCError,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.CameraFailed,
+            OpentokError.ErrorCode.VideoCaptureFailed -> true
+            else -> false
+        }
+
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
+        if (!emitAudioLevel) return
+
         val publisherId = Utils.getPublisherId(publisher) // Do we need this?
         if (publisherId.isNotEmpty()) {
             val payload =
@@ -381,6 +423,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherAudioStats>?
     ) {
+        if (!emitAudioNetworkStats) return
+
         val statsArray: WritableArray = Arguments.createArray()
         for (stat in stats!!) {
             val audioStats: WritableMap = Arguments.createMap()
@@ -389,12 +433,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
-            audioStats.putDouble("startTime", stat.startTime)
+            audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
+            audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
             statsArray.pushMap(audioStats)
         }
+        val serializedStats = statsArray.toString()
         val payload =
             Arguments.createMap().apply {
-                putString("stats", statsArray.toString())
+                putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
+                putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
             }
         emitOpenTokEvent("onAudioNetworkStats", payload)
     }
@@ -407,6 +454,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherVideoStats>?
     ) {
+        if (!emitVideoNetworkStats) return
+
         val publisherId = Utils.getPublisherId(publisher)
         if (publisherId.isNotEmpty()) {
             val statsArrayMap: WritableArray = Arguments.createArray()
@@ -417,12 +466,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("startTime", stat.startTime)
+                audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
+                audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
                 statsArrayMap.pushMap(audioStats)
             }
+            val serializedStats = statsArrayMap.toString()
             val payload =
                 Arguments.createMap().apply {
-                    putString("stats", statsArrayMap.toString())
+                    putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
+                    putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
                 }
             emitOpenTokEvent("onVideoNetworkStats", payload)
         }
@@ -474,6 +526,30 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         } else {
             PublisherKit.PreferredVideoCodecs.manual(preferredVideoCodecs)
         }
+    }
+
+    fun cleanup() {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        if (pub != null) {
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+            runCatching { removeAllViews() }
+        }
+
+        publisher = null
+        Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
     }
 
     inner class OpenTokEvent(

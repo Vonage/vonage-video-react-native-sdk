@@ -41,6 +41,7 @@ jobs:
       - name: Install applesimutils
         run: |
           brew tap wix/brew
+          brew trust --formula wix/brew/applesimutils
           brew install applesimutils
 
       - name: Cache CocoaPods
@@ -142,6 +143,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Newer GH runner images ship cmdline-tools that no longer include the
+          # deprecated 'tools' package the action installs by default, which makes
+          # sdkmanager exit 1. Skip the default package install; the emulator-runner
+          # step below provisions the packages it needs.
+          packages: ''
 
       - name: Install Linux runtime deps for emulator tools
         run: |

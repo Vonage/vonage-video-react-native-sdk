@@ -25,6 +25,31 @@ target 'E2ETestingApp' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Workaround for Xcode 26 / Apple Clang 21 rejecting fmt's consteval
+  # FMT_STRING call sites (e.g. format-inl.h) as non-constant expressions.
+  # fmt/base.h enables FMT_USE_CONSTEVAL for Apple Clang >= 14; force it off
+  # so fmt falls back to constexpr handling. See:
+  #   https://github.com/fmtlib/fmt/issues/4740
+  #   https://github.com/expo/expo/issues/44229
+  def apply_fmt_consteval_workaround(installer)
+    fmt_base = File.join(installer.sandbox.root, 'fmt', 'include', 'fmt', 'base.h')
+    return unless File.exist?(fmt_base)
+
+    content = File.read(fmt_base)
+    return if content.include?('Xcode 26 workaround: disable consteval')
+
+    patched = content.gsub(
+      /^(#\s*define\s+FMT_USE_CONSTEVAL)\s+1\s*$/,
+      "// Xcode 26 workaround: disable consteval\n\\1 0"
+    )
+
+    return if patched == content
+
+    File.chmod(0o644, fmt_base)
+    File.write(fmt_base, patched)
+    Pod::UI.puts('Applied Xcode 26 fmt workaround (FMT_USE_CONSTEVAL=0)'.yellow)
+  end
+
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
@@ -33,5 +58,7 @@ target 'E2ETestingApp' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    apply_fmt_consteval_workaround(installer)
   end
 end

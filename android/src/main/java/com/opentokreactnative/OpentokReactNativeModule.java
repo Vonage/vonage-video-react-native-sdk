@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -176,31 +177,45 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.publish(publisher);
-        }
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                Session mSession = mSessions.get(sessionId);
+                if (mSession == null) {
+                    return;
+                }
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher != null) {
+                    sharedState.getPendingPublishers().remove(publisherId);
+                    mSession.publish(publisher);
+                } else {
+                    sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
+                }
+            }
+        });
     }
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisher);
-        }
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                sharedState.getPendingPublishers().remove(publisherId);
+
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher == null) {
+                    return;
+                }
+                Session mSession = sharedState.getSessions().get(sessionId);
+                if (mSession != null) {
+                    mSession.unpublish(publisher);
+                }
+                Utils.releasePublisherIfSame(publisherId, publisher, "unpublish");
+            }
+        });
     }
 
     @Override
@@ -217,7 +232,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 Subscriber subscriber = subscribers.get(streamId);
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    subscribers.remove(streamId);
                 }
             };
         });
@@ -331,6 +346,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             promise.reject("Session not found.");
             return;
         }
+
+        if (mSession.getConnection() == null) {
+            promise.reject("Capabilities are unavailable until the session is connected.");
+            return;
+        }
         WritableMap sessionCapabilitiesMap = Arguments.createMap();
         Session.Capabilities sessionCapabilities = mSession.getCapabilities();
         sessionCapabilitiesMap.putBoolean("canForceMute", sessionCapabilities.canForceMute);
@@ -376,8 +396,22 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+        String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
+
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
+
+        Connection localConnection = session.getConnection();
+        if (localConnection != null && localConnection.getConnectionId() != null) {
+            sharedState.getConnections().remove(localConnection.getConnectionId());
+        }
     }
 
     @Override
@@ -391,6 +425,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onStreamDropped(Session session, Stream stream) {
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
     }
 
     @Override
@@ -475,6 +510,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.applyHasAudioChangeForStream(stream.getStreamId(), hasAudio);
     }
 
     @Override
@@ -482,6 +518,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.applyHasVideoChangeForStream(stream.getStreamId(), hasVideo);
     }
 
     @Override
@@ -499,6 +536,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
+        OTRNSubscriber.applyVideoDimensionsChangeForStream(stream.getStreamId(), width, height);
     }
 
     @Override
@@ -508,6 +546,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
+        String normalizedVideoType =
+                streamVideoType.equals(Stream.StreamVideoType.StreamVideoTypeScreen) ? "screen" : "camera";
+        OTRNSubscriber.applyVideoTypeChangeForStream(stream.getStreamId(), normalizedVideoType);
     }
 
     @Override
