@@ -13,12 +13,12 @@ class OTRNSubscriberPackage : BaseReactPackage() {
     }
 
     override fun getModule(
-        s: String,
-        reactApplicationContext: ReactApplicationContext
+        name: String,
+        reactContext: ReactApplicationContext
     ): NativeModule? {
-        when (s) {
+        when (name) {
             OTRNSubscriberManager.REACT_CLASS -> OTRNSubscriberManager(
-                reactApplicationContext
+                reactContext
             )
         }
         return null
