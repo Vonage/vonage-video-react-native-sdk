@@ -48,6 +48,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
 
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
+
     /**
      * Immutable snapshot of a native Stream's properties, mirroring exactly the shape
      * EventUtils.prepareJSStreamMap produces so the cached payload stays byte-for-byte
@@ -88,10 +92,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             streamId = stream.getStreamId(),
             height = stream.getVideoHeight(),
             width = stream.getVideoWidth(),
-            creationTime = stream.getCreationTime().toString(),
+            creationTime = EventUtils.formatIso8601(stream.getCreationTime()),
             connectionId = connection.getConnectionId(),
             sessionId = sessionId,
-            connectionCreationTime = connection.getCreationTime().toString(),
+            connectionCreationTime = EventUtils.formatIso8601(connection.getCreationTime()),
             connectionData = connection.getData(),
             name = stream.getName(),
             hasAudio = stream.hasAudio(),
@@ -267,6 +271,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         sessionId = str
     }
 
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
+    }
+
     public fun setSubscribeToAudio(value: Boolean) {
         subscriber?.subscribeToAudio = value
     }
@@ -416,13 +432,16 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val stream = buildStreamMapFromCache()
         val payload =
             Arguments.createMap().apply {
-                putString("jsonArrayOfReports", jsonArrayOfReports)
+                putString("jsonArrayOfReports", jsonArrayOfReports) // deprecated: use jsonStats
+                putString("jsonStats", jsonArrayOfReports) // matches iOS key and TS spec
                 putMap("stream", stream)
             }
         emitOpenTokEvent("onRtcStatsReport", payload)
     }
 
     override fun onAudioLevelUpdated(subscriber: SubscriberKit?, audioLevel: Float) {
+        if (!emitAudioLevel) return
+
         // No live SDK read; served from the primed snapshot to avoid a use-after-free.
         val stream = buildStreamMapFromCache()
         val payload =
@@ -449,6 +468,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberAudioStats?
     ) {
+        if (!emitAudioNetworkStats) return
+
         val audioStats: WritableMap = Arguments.createMap()
         audioStats.putDouble("audioPacketsLost", stats?.audioPacketsLost?.toDouble() ?: 0.0)
         audioStats.putDouble("audioPacketsReceived", stats?.audioPacketsReceived?.toDouble() ?: 0.0)
@@ -461,6 +482,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber: SubscriberKit?,
         stats: SubscriberKit.SubscriberVideoStats?
     ) {
+        if (!emitVideoNetworkStats) return
+
         val videoStats: WritableMap = EventUtils.prepareSubscriberVideoNetworkStats(stats)
         
         emitOpenTokEvent("onVideoNetworkStats", videoStats)

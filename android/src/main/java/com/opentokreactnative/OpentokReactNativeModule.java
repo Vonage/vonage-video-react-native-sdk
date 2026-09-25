@@ -346,6 +346,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             promise.reject("Session not found.");
             return;
         }
+
+        if (mSession.getConnection() == null) {
+            promise.reject("Capabilities are unavailable until the session is connected.");
+            return;
+        }
         WritableMap sessionCapabilitiesMap = Arguments.createMap();
         Session.Capabilities sessionCapabilities = mSession.getCapabilities();
         sessionCapabilitiesMap.putBoolean("canForceMute", sessionCapabilities.canForceMute);
