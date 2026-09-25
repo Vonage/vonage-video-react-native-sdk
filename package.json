@@ -159,7 +159,8 @@
       "^react-native-uuid$": "<rootDir>/src/__mocks__/react-native-uuid.js"
     },
     "coverageReporters": [
-      "json-summary"
+      "json-summary",
+      "text"
     ]
   },
   "commitlint": {
