@@ -34,7 +34,7 @@ function readCredentials() {
 /**
  * Returns routed session credentials.
  *
- * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, tokenBot: string, tokenBot2: string, tokenSubscriber: string, mediaMode: string}>}
+ * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], tokenSubscriber: string, mediaMode: string}>}
  */
 async function getCredentials() {
   const creds = readCredentials();
@@ -44,7 +44,7 @@ async function getCredentials() {
 /**
  * Returns relayed (P2P) session credentials.
  *
- * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, tokenBot: string, mediaMode: string}>}
+ * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], mediaMode: string}>}
  */
 async function getRelayedCredentials() {
   const creds = readCredentials();

@@ -90,11 +90,10 @@ export default class OTSubscriber extends Component {
 
   streamCreatedHandler = (stream) => {
     this.setState((prevState) => {
-      const modifiedStreams = prevState.streams;
-      if (!modifiedStreams.includes(stream.streamId)) {
-        modifiedStreams.push(stream.streamId);
+      if (prevState.streams.includes(stream.streamId)) {
+        return null;
       }
-      return { streams: modifiedStreams };
+      return { streams: [...prevState.streams, stream.streamId] };
     });
   };
   streamDestroyedHandler = (stream) => {
@@ -117,7 +116,11 @@ export default class OTSubscriber extends Component {
   }
 
   componentWillUnmount() {
-    removeEventListener('streamCreated', this.streamCreatedHandler);
+    removeEventListener(
+      this.context.sessionId,
+      'streamCreated',
+      this.streamCreatedHandler
+    );
     removeEventListener(
       this.context.sessionId,
       'publisherStreamCreated',

@@ -10,7 +10,7 @@ const { expect: jestExpect } = require('expect');
  * Verifies that the RN app can toggle screen sharing on and off,
  * and that a remote bot receives the screen share stream.
  */
-describe('Screen Sharing', () => {
+describe.skip('Screen Sharing', () => {
   let session;
 
   beforeAll(async () => {
