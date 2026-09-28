@@ -33,6 +33,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
     private var previewOnly: Boolean = false
+    private var ownsPreview = false
     private var pendingBackCameraCycle = false
     private var isPublished = false
     private var isDropped = false
@@ -349,6 +350,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             // preview-to-publish transition happens through OT.publish from
             // JS when the previewOnly prop is set to false.
             publisher?.startPreview()
+            ownsPreview = true
         }
     }
 
@@ -370,12 +372,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             sharedState.getPublishers().remove(pubId, publisher)
         }
         publisher.view?.let { removeView(it) }
-        // Required after startPreview(), and releases the capturer for
-        // publishers that were never published.
-        publisher.destroy()
+        // Only explicitly destroy a preview we started and never published.
+        // Session teardown handles published capturers; destroying an ordinary
+        // publisher whose camera never initialized can crash Camera2VideoCapturer.
+        if (ownsPreview) {
+            ownsPreview = false
+            publisher.destroy()
+        }
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
+        ownsPreview = false
         isPublished = true
         if (pendingBackCameraCycle) {
             pendingBackCameraCycle = false
