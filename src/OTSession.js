@@ -17,6 +17,7 @@ import { OTRN_PACKAGE_INFO } from './generated/packageInfo';
 
 export default class OTSession extends Component {
   eventHandlers = {};
+  _eventSubscriptions = [];
 
   constructor(props) {
     super(props);
@@ -74,18 +75,7 @@ export default class OTSession extends Component {
     } else {
       handleError('Please check your credentials.');
     }
-    OT.initSession(
-      apiKey,
-      sessionId,
-      sanitizeSessionOptions(this.props.options)
-    );
-    if (this.props.encryptionSecret) {
-      this.setEncryptionSecret(this.props.encryptionSecret);
-    }
-    // Capture every native subscription so componentWillUnmount can remove them.
-    // Discarded/remounted instances (StrictMode / concurrent rendering) would
-    // otherwise leak listeners, seen as duplicate events.
-    this.subscriptions = [
+    this._eventSubscriptions.push(
       OT.onSessionConnected((event) => {
         if (event.sessionId !== sessionId) return;
         this.connectionId = event.connectionId;
@@ -95,7 +85,17 @@ export default class OTSession extends Component {
         if (Object.keys(this.props.signal).length > 0) {
           this.signal(this.props.signal);
         }
-      }),
+      })
+    );
+    OT.initSession(
+      apiKey,
+      sessionId,
+      sanitizeSessionOptions(this.props.options)
+    );
+    if (this.props.encryptionSecret) {
+      this.setEncryptionSecret(this.props.encryptionSecret);
+    }
+    this._eventSubscriptions.push(
       OT.onStreamCreated((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.streamCreated?.(event);
@@ -103,54 +103,87 @@ export default class OTSession extends Component {
           addStream(sessionId, event.streamId);
         }
         dispatchEvent(sessionId, 'streamCreated', event);
-      }),
+      })
+    );
+
+    this._eventSubscriptions.push(
       OT.onStreamDestroyed((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.streamDestroyed?.(event);
         removeStream(sessionId, event.streamId);
         dispatchEvent(sessionId, 'streamDestroyed', event);
-      }),
+      })
+    );
+
+    this._eventSubscriptions.push(
       OT.onSignalReceived((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.signal?.(event);
-      }),
+      })
+    );
+
+    this._eventSubscriptions.push(
       OT.onSessionError((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.error?.(event);
-      }),
+      })
+    );
+
+    this._eventSubscriptions.push(
       OT.onConnectionCreated((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.connectionCreated?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onConnectionDestroyed((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.connectionDestroyed?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onArchiveStarted((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.archiveStarted?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onArchiveStopped((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.archiveStopped?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onMuteForced((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.muteForced?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onSessionReconnecting((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.sessionReconnecting?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onSessionReconnected((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.sessionReconnected?.(event);
-      }),
+      })
+    );
+    this._eventSubscriptions.push(
       OT.onStreamPropertyChanged((event) => {
         if (event.sessionId !== sessionId) return;
         this.eventHandlers?.streamPropertyChanged?.(event);
-      }),
-    ];
+      })
+    );
+    this._eventSubscriptions.push(
+      OT.onSessionDisconnected((event) => {
+        if (event.sessionId !== sessionId) return;
+        setIsConnected(sessionId, false);
+        this.eventHandlers?.sessionDisconnected?.(event);
+      })
+    );
 
     // OT.connect is typed as a Promise, but its rejection behaviour can differ
     // across architectures. Handle it defensively so a native rejection can't
@@ -238,11 +271,13 @@ export default class OTSession extends Component {
   }
 
   componentWillUnmount() {
-    // Remove native listeners first so a discarded/remounted instance cannot
-    // keep firing events (StrictMode / concurrent rendering safety).
-    this.subscriptions?.forEach((sub) => sub?.remove?.());
-    this.subscriptions = [];
     this.disconnectSession(this.props.sessionId);
+    this._eventSubscriptions.forEach((sub) => {
+      if (sub && typeof sub.remove === 'function') {
+        sub.remove();
+      }
+    });
+    this._eventSubscriptions = [];
     clearStreams(this.props.sessionId);
   }
 
