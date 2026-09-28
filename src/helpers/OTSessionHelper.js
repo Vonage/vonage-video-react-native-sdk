@@ -88,16 +88,13 @@ const addEventListener = (sessionId, type, listener) => {
 };
 
 const removeEventListener = (sessionId, type, listener) => {
-  const listeners = eventHandlers[sessionId] && eventHandlers[sessionId][type];
-  if (!listeners) {
-    return;
-  }
-  const index = listeners.indexOf(listener);
-  if (index !== -1) {
-    listeners.splice(index, 1);
-  }
-  if (listeners.length === 0) {
-    delete eventHandlers[sessionId][type];
+  if (eventHandlers[sessionId] && eventHandlers[sessionId][type]) {
+    eventHandlers[sessionId][type] = eventHandlers[sessionId][type].filter(
+      (l) => l !== listener
+    );
+    if (eventHandlers[sessionId][type].length === 0) {
+      delete eventHandlers[sessionId][type];
+    }
   }
 };
 
