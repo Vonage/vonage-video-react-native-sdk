@@ -5,7 +5,6 @@ import {
   dispatchEvent,
   getPublisherStream,
   getStreams,
-  removeEventListener,
   sanitizeSessionOptions,
 } from '../helpers/OTSessionHelper';
 
