@@ -188,15 +188,12 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
     // Releases the subscriber's native resources (decoder, renderer) and detaches its
     // view on final teardown. Called from OTRNSubscriberManager.onDropViewInstance
-    // (fires on real destruction, not recycling), mirroring the publisher cleanup so
-    // an un-destroyed Subscriber + its subscriberStreams/subscribers map entries are
-    // not retained for the process lifetime.
+    // (fires on real destruction, not recycling). subscriberStreams is left alone: it
+    // tracks the remote stream, which may still be live and re-subscribed by a remount;
+    // streamDropped removes it.
     fun cleanUpMemory() {
         removeAllViews()
-        streamId?.let {
-            sharedState.getSubscribers().remove(it)
-            sharedState.getSubscriberStreams().remove(it)
-        }
+        streamId?.let { sharedState.getSubscribers().remove(it) }
         subscriber?.destroy()
         subscriber = null
     }
