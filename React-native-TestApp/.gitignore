@@ -76,4 +76,7 @@ Podfile.lock
 # testing
 /coverage
 
+# Generated E2E credentials (contains tokens, never commit)
+__tests__/.e2e-credentials.json
+
 
