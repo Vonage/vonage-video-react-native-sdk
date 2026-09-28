@@ -27,7 +27,10 @@ const setIsConnected = (sessionId, value) => {
 };
 
 const addStream = (sessionId, streamId) => {
-  if (streams[sessionId] && !streams[sessionId].includes(streamId)) {
+  if (!streams[sessionId]) {
+    streams[sessionId] = [];
+  }
+  if (!streams[sessionId].includes(streamId)) {
     streams[sessionId].push(streamId);
   }
 };
@@ -86,7 +89,12 @@ const addEventListener = (sessionId, type, listener) => {
 
 const removeEventListener = (sessionId, type, listener) => {
   if (eventHandlers[sessionId] && eventHandlers[sessionId][type]) {
-    delete eventHandlers[sessionId][type];
+    eventHandlers[sessionId][type] = eventHandlers[sessionId][type].filter(
+      (l) => l !== listener
+    );
+    if (eventHandlers[sessionId][type].length === 0) {
+      delete eventHandlers[sessionId][type];
+    }
   }
 };
 

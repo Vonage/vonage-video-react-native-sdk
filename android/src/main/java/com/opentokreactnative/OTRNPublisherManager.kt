@@ -30,6 +30,11 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         return OTRNPublisher(context)
     }
 
+    override fun onDropViewInstance(view: OTRNPublisher) {
+        view.cleanup()
+        super.onDropViewInstance(view)
+    }
+
     override fun getNativeProps(): Map<String?, String?>? {
         return super.getNativeProps()
     }
@@ -63,11 +68,6 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
     @ReactProp(name = "previewOnly")
     override public fun setPreviewOnly(view: OTRNPublisher, value: Boolean) {
         view.setPreviewOnly(value)
-    }
-
-    override fun onDropViewInstance(view: OTRNPublisher) {
-        super.onDropViewInstance(view)
-        view.cleanup()
     }
 
     @ReactProp(name = "publishAudio")
@@ -194,6 +194,21 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
     @ReactProp(name = "preferredVideoCodecs")
     override public fun setPreferredVideoCodecs(view: OTRNPublisher, value: String?) {
         view.setPreferredVideoCodecs(value)
+    }
+
+    @ReactProp(name = "emitAudioLevel")
+    override public fun setEmitAudioLevel(view: OTRNPublisher, value: Boolean) {
+        view.setEmitAudioLevel(value)
+    }
+
+    @ReactProp(name = "emitAudioNetworkStats")
+    override public fun setEmitAudioNetworkStats(view: OTRNPublisher, value: Boolean) {
+        view.setEmitAudioNetworkStats(value)
+    }
+
+    @ReactProp(name = "emitVideoNetworkStats")
+    override public fun setEmitVideoNetworkStats(view: OTRNPublisher, value: Boolean) {
+        view.setEmitVideoNetworkStats(value)
     }
 
     companion object {
