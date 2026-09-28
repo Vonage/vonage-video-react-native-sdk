@@ -6,7 +6,7 @@ jest.mock('../OT', () => {
     'onSessionConnected', 'onSessionError', 'onStreamCreated', 'onStreamDestroyed',
     'onSignalReceived', 'onConnectionCreated', 'onConnectionDestroyed', 'onArchiveStarted',
     'onArchiveStopped', 'onMuteForced', 'onSessionReconnecting', 'onSessionReconnected',
-    'onStreamPropertyChanged',
+    'onStreamPropertyChanged', 'onSessionDisconnected',
   ];
   const OT = { initSession: jest.fn(), setEncryptionSecret: jest.fn() };
   for (const n of emitterNames) OT[n] = jest.fn(() => ({ remove: jest.fn() }));
