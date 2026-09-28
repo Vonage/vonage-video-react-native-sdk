@@ -1,4 +1,6 @@
 {
   "extends": "./tsconfig",
-  "exclude": ["e2e/E2ETestingApp", "lib"]
+  "exclude": [
+    "lib"
+  ]
 }

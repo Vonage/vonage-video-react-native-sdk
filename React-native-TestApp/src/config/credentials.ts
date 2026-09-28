@@ -6,4 +6,5 @@ export const credentials = {
   apiKey: sdkConfig.credentials.video.apiKey,
   sessionId: sdkConfig.credentials.video.sessionId,
   token: sdkConfig.credentials.video.token,
+  apiUrl: sdkConfig.credentials.video.apiUrl || '',
 };

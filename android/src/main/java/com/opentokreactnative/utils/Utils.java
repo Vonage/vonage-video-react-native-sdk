@@ -16,12 +16,47 @@ import com.opentok.android.BaseVideoCapturer.VideoContentHint;
 import com.opentokreactnative.OTRN;
 
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.UiThreadUtil;
+
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class Utils {
+
+    private static final String LIFECYCLE_TAG = "OTRN-LIFECYCLE";
+
+    public static void releasePublisher(final String publisherId, final String reason) {
+        releasePublisherIfSame(publisherId, null, reason);
+    }
+
+    public static void releasePublisherIfSame(final String publisherId, final Publisher expected, final String reason) {
+        if (publisherId == null || publisherId.isEmpty()) {
+            return;
+        }
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Publisher> publishers = OTRN.sharedState.getPublishers();
+                boolean removed;
+                if (expected != null) {
+                    removed = publishers.remove(publisherId, expected);
+                } else {
+                    removed = publishers.remove(publisherId) != null;
+                }
+                Log.i(
+                    LIFECYCLE_TAG,
+                    "releasePublisher publisherId=" + publisherId
+                        + " reason=" + reason
+                        + " removed=" + removed
+                        + " publishersInState=" + publishers.size()
+                );
+            }
+        });
+    }
 
     public static boolean didConnectionFail(OpentokError errorCode) {
 

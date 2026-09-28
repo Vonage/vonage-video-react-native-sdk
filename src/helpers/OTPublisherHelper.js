@@ -198,7 +198,7 @@ const sanitizeProperties = (properties) => {
       properties.allowAudioCaptureWhileMuted
     ),
     publishSenderStats: Boolean(properties.publishSenderStats),
-    maxVideoBitrate: sanitizeMaxVideoBitrate(properties.videoBitratePreset),
+    maxVideoBitrate: sanitizeMaxVideoBitrate(properties.maxVideoBitrate),
     videoBitratePreset: sanitizeVideoBitratePreset(
       properties.videoBitratePreset,
       properties.maxVideoBitrate
