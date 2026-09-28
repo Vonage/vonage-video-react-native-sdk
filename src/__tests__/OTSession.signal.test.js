@@ -7,7 +7,7 @@ jest.mock('../OT', () => {
     'onSessionConnected', 'onSessionError', 'onStreamCreated', 'onStreamDestroyed',
     'onSignalReceived', 'onConnectionCreated', 'onConnectionDestroyed', 'onArchiveStarted',
     'onArchiveStopped', 'onMuteForced', 'onSessionReconnecting', 'onSessionReconnected',
-    'onStreamPropertyChanged',
+    'onStreamPropertyChanged', 'onSessionDisconnected',
   ];
   const methodNames = [
     'initSession', 'connect', 'disconnect', 'sendSignal', 'setEncryptionSecret',
