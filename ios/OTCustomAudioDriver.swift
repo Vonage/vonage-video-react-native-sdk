@@ -58,6 +58,7 @@ class OTCustomAudioDriver: NSObject {
     fileprivate var avAudioSessionPreffSampleRate = Double(0)
     fileprivate var avAudioSessionChannels = 0
     fileprivate var isAudioSessionSetup = false
+    fileprivate var didActivateAudioSession = false
     
     var areListenerBlocksSetup = false
     var streamFormat = AudioStreamBasicDescription()
@@ -257,10 +258,13 @@ class OTCustomAudioDriver: NSObject {
         guard isAudioSessionSetup else { return }
         let session = AVAudioSession.sharedInstance()
         isAudioSessionSetup = false
-        do {
-            try session.setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            print("Error deactivating AVAudioSession: \(error)")
+        if didActivateAudioSession {
+            didActivateAudioSession = false
+            do {
+                try session.setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                print("Error deactivating AVAudioSession: \(error)")
+            }
         }
         do {
             if let previousAVAudioSessionCategory = previousAVAudioSessionCategory {
@@ -561,6 +565,7 @@ extension OTCustomAudioDriver {
             setupListenerBlocks()
             
             try session.setActive(true)
+            didActivateAudioSession = true
             try session.setPreferredOutputNumberOfChannels(2)
         } catch let err as NSError {
             print("Error setting up audio session \(err)")
