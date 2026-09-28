@@ -70,6 +70,9 @@ export interface NativeProps extends ViewProps {
   audioVolume?: CodegenTypes.Float;
   preferredFrameRate?: CodegenTypes.Int32;
   preferredResolution?: string;
+  emitAudioLevel?: boolean;
+  emitAudioNetworkStats?: boolean;
+  emitVideoNetworkStats?: boolean;
 
   onSubscriberConnected?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
   onSubscriberDisconnected?: CodegenTypes.BubblingEventHandler<StreamEvent> | null;
