@@ -11,14 +11,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OTRN {
     public static OTRN sharedState;
     private ConcurrentHashMap<String, Stream> subscriberStreams = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Stream> publisherStreams = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Subscriber> subscribers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Publisher> publishers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> androidOnTopMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> androidZOrderMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
-    // Publish requests that arrived before the publisher view attached
-    // (completed by OTRNPublisher.publishStream once the publisher exists)
+    // publish() requests made before the publisher view attached; completed by
+    // OTRNPublisher.publishStream() once the Publisher exists.
     private ConcurrentHashMap<String, Boolean> pendingPublishers = new ConcurrentHashMap<>();
 
     public static synchronized OTRN getSharedState() {
@@ -40,6 +41,10 @@ public class OTRN {
 
     public ConcurrentHashMap<String, Stream> getSubscriberStreams() {
         return this.subscriberStreams;
+    }
+
+    public ConcurrentHashMap<String, Stream> getPublisherStreams() {
+        return this.publisherStreams;
     }
 
 

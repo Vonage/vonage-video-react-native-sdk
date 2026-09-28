@@ -5,12 +5,12 @@ import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.uimanager.ReactStylesDiffMap
-
+import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
+import com.facebook.react.uimanager.common.UIManagerType
 import com.facebook.react.uimanager.events.Event
 import com.opentok.android.BaseVideoRenderer
 import com.opentok.android.OpentokError
@@ -33,11 +33,19 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
 
+    @Volatile private var emitAudioLevel: Boolean = false
+    @Volatile private var emitAudioNetworkStats: Boolean = false
+    @Volatile private var emitVideoNetworkStats: Boolean = false
+
     private var publisher: Publisher? = null
     private var sharedState = OTRN.getSharedState();
     private var androidOnTopMap = sharedState.getAndroidOnTopMap();
     private var androidZOrderMap = sharedState.getAndroidZOrderMap();
     private var props: MutableMap<String, Any>? = null
+
+    private var registeredPublisherId: String? = null
+
+    @Volatile private var released: Boolean = false
 
     constructor(context: Context) : super(context) {
         configureComponent()
@@ -76,10 +84,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
-        val reactContext = context as ReactContext
-        val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
-        val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(reactContext, id)
-        val event = OpenTokEvent(surfaceId, id, name, payload)
+        val reactContext = context as ThemedReactContext
+        val eventDispatcher = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)?.eventDispatcher
+        val event = OpenTokEvent(reactContext.surfaceId, id, name, payload)
         eventDispatcher?.dispatchEvent(event)
     }
 
@@ -89,6 +96,18 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setEmitAudioLevel(value: Boolean) {
+        emitAudioLevel = value
+    }
+
+    public fun setEmitAudioNetworkStats(value: Boolean) {
+        emitAudioNetworkStats = value
+    }
+
+    public fun setEmitVideoNetworkStats(value: Boolean) {
+        emitVideoNetworkStats = value
     }
 
     public fun setPublishAudio(value: Boolean) {
@@ -217,11 +236,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
-        // Guard against re-attach: Android fires onAttachedToWindow again after any
-        // detach; without this a second attach builds a duplicate Publisher, orphans
-        // the first in the shared map, and contends for the camera.
+        // onAttachedToWindow fires again after every detach; a second Publisher would
+        // orphan the first in the shared map and contend for the camera.
         if (publisher != null) return
-        val publisherId = this.props?.get("publisherId") as? String ?: return
+        val resolvedPublisherId = this.props?.get("publisherId") as? String ?: return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -326,15 +344,14 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
         sharedState.getPublishers()
-            .put(publisherId, publisher ?: return);
+            .put(resolvedPublisherId, publisher ?: return);
+        registeredPublisherId = resolvedPublisherId
         if (publisher?.view != null) {
             this.addView(publisher?.view)
             requestLayout()
         }
-        // Complete a publish request that arrived from JS before this view attached
-        // (OpentokReactNativeModule.publish records it when the publisher is not yet
-        // registered). Whichever side arrives second performs the actual publish.
-        if (sharedState.getPendingPublishers().remove(publisherId) != null) {
+        // Complete a publish() that arrived before this view attached (see module contract).
+        if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
             sharedState.getSessions().get(sessionId)?.publish(publisher)
         }
     }
@@ -345,11 +362,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
+        OTRN.sharedState.getPublisherStreams()[stream.streamId] = stream
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamCreated", payload)
     }
 
     override fun onStreamDestroyed(publisher: PublisherKit, stream: Stream) {
+        OTRN.sharedState.getPublisherStreams().remove(stream.streamId)
         val payload = EventUtils.prepareJSStreamMap(stream, publisher.getSession())
         emitOpenTokEvent("onStreamDestroyed", payload)
     }
@@ -357,9 +376,28 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     override fun onError(publisher: PublisherKit, opentokError: OpentokError) {
         val payload = EventUtils.prepareJSErrorMap(opentokError);
         emitOpenTokEvent("onError", payload)
+        if (isFatalPublisherError(opentokError.errorCode)) {
+            Utils.releasePublisher(registeredPublisherId, "fatalError:" + opentokError.errorCode)
+        }
     }
 
+    private fun isFatalPublisherError(code: OpentokError.ErrorCode): Boolean =
+        when (code) {
+            OpentokError.ErrorCode.PublisherInternalError,
+            OpentokError.ErrorCode.PublisherWebRTCError,
+            OpentokError.ErrorCode.PublisherUnableToPublish,
+            OpentokError.ErrorCode.PublisherCannotAccessCamera,
+            OpentokError.ErrorCode.PublisherCameraAccessDenied,
+            OpentokError.ErrorCode.PublisherTimeout,
+            OpentokError.ErrorCode.CameraFailed,
+            OpentokError.ErrorCode.VideoCaptureFailed -> true
+            else -> false
+        }
+
     override fun onAudioLevelUpdated(publisher: PublisherKit?, audioLevel: Float) {
+
+        if (!emitAudioLevel) return
+
         val publisherId = Utils.getPublisherId(publisher) // Do we need this?
         if (publisherId.isNotEmpty()) {
             val payload =
@@ -392,6 +430,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherAudioStats>?
     ) {
+
+        if (!emitAudioNetworkStats) return
+
         val statsArray: WritableArray = Arguments.createArray()
         for (stat in stats!!) {
             val audioStats: WritableMap = Arguments.createMap()
@@ -400,12 +441,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
-            audioStats.putDouble("startTime", stat.startTime)
+            audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
+            audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
             statsArray.pushMap(audioStats)
         }
+        val serializedStats = statsArray.toString()
         val payload =
             Arguments.createMap().apply {
-                putString("stats", statsArray.toString())
+                putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
+                putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
             }
         emitOpenTokEvent("onAudioNetworkStats", payload)
     }
@@ -418,6 +462,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher: PublisherKit?,
         stats: Array<out PublisherKit.PublisherVideoStats>?
     ) {
+
+        if (!emitVideoNetworkStats) return
+
         val publisherId = Utils.getPublisherId(publisher)
         if (publisherId.isNotEmpty()) {
             val statsArrayMap: WritableArray = Arguments.createArray()
@@ -428,12 +475,15 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("startTime", stat.startTime)
+                audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
+                audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
                 statsArrayMap.pushMap(audioStats)
             }
+            val serializedStats = statsArrayMap.toString()
             val payload =
                 Arguments.createMap().apply {
-                    putString("stats", statsArrayMap.toString())
+                    putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
+                    putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
                 }
             emitOpenTokEvent("onVideoNetworkStats", payload)
         }
@@ -485,6 +535,30 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         } else {
             PublisherKit.PreferredVideoCodecs.manual(preferredVideoCodecs)
         }
+    }
+
+    fun cleanup() {
+        if (released) {
+            return
+        }
+        released = true
+
+        val pub = publisher
+        if (pub != null) {
+            runCatching {
+                pub.setPublisherListener(null)
+                pub.setAudioLevelListener(null)
+                pub.setAudioStatsListener(null)
+                pub.setMuteListener(null)
+                pub.setVideoListener(null)
+                pub.setVideoStatsListener(null)
+                pub.setRtcStatsReportListener(null)
+            }
+            runCatching { removeAllViews() }
+        }
+
+        publisher = null
+        Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
     }
 
     inner class OpenTokEvent(
