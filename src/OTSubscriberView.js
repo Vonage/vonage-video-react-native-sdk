@@ -31,6 +31,17 @@ const withParsedJsonStats = (nativeEvent) => {
   }
 };
 
+// Keep the transport fields and parsed stats added by develop, and expose
+// network counters at the top level for the typed network-stats callbacks.
+const withParsedNetworkStats = (nativeEvent) => {
+  const eventData = withParsedJsonStats(nativeEvent);
+  const stats = eventData?.stats;
+  if (stats && typeof stats === 'object' && !Array.isArray(stats)) {
+    return { ...stats, ...eventData };
+  }
+  return eventData;
+};
+
 export default class OTSubscriberView extends React.Component {
   static defaultProps = {
     subscribeToAudio: true,
@@ -109,7 +120,7 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.audioNetworkStats
             ? (event) => {
                 eventHandlers.audioNetworkStats(
-                  withParsedJsonStats(event.nativeEvent)
+                  withParsedNetworkStats(event.nativeEvent)
                 );
               }
             : undefined
@@ -158,7 +169,7 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.videoNetworkStats
             ? (event) => {
                 eventHandlers.videoNetworkStats(
-                  withParsedJsonStats(event.nativeEvent)
+                  withParsedNetworkStats(event.nativeEvent)
                 );
               }
             : undefined
