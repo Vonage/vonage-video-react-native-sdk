@@ -58,6 +58,7 @@ class OTCustomAudioDriver: NSObject {
     fileprivate var avAudioSessionPreffSampleRate = Double(0)
     fileprivate var avAudioSessionChannels = 0
     fileprivate var isAudioSessionSetup = false
+    fileprivate var didActivateAudioSession = false
     
     var areListenerBlocksSetup = false
     var streamFormat = AudioStreamBasicDescription()
@@ -254,22 +255,39 @@ class OTCustomAudioDriver: NSObject {
         disposeAudioUnit(audioUnit: &recordingVoiceUnit)
         freeupAudioBuffers()
         
+        guard isAudioSessionSetup else { return }
         let session = AVAudioSession.sharedInstance()
-        do {
-            guard let previousAVAudioSessionCategory = previousAVAudioSessionCategory else { return }
-            if #available(iOS 10.0, *) {
-                try session.setCategory(previousAVAudioSessionCategory, mode: .default)
-            } else {
-                try session.setCategory(previousAVAudioSessionCategory)
+        isAudioSessionSetup = false
+        if didActivateAudioSession {
+            didActivateAudioSession = false
+            do {
+                try session.setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                print("Error deactivating AVAudioSession: \(error)")
             }
-            guard let avAudioSessionMode = avAudioSessionMode else { return }
-            try session.setMode(avAudioSessionMode)
-            try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
-            try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
-            
-            isAudioSessionSetup = false
+        }
+        do {
+            if let previousAVAudioSessionCategory = previousAVAudioSessionCategory {
+                if #available(iOS 10.0, *) {
+                    try session.setCategory(previousAVAudioSessionCategory, mode: .default)
+                } else {
+                    try session.setCategory(previousAVAudioSessionCategory)
+                }
+            }
+            if let avAudioSessionMode = avAudioSessionMode {
+                try session.setMode(avAudioSessionMode)
+            }
+            // Only restore values we actually captured during setup; the defaults
+            // are 0, and setPreferred*(0) is invalid and throws (which would also
+            // skip the remaining restores in this do-block).
+            if avAudioSessionPreffSampleRate > 0 {
+                try session.setPreferredSampleRate(avAudioSessionPreffSampleRate)
+            }
+            if avAudioSessionChannels > 0 {
+                try session.setPreferredInputNumberOfChannels(avAudioSessionChannels)
+            }
         } catch {
-            print("Error reseting AVAudioSession")
+            print("Error resetting AVAudioSession: \(error)")
         }
     }
     
@@ -547,6 +565,7 @@ extension OTCustomAudioDriver {
             setupListenerBlocks()
             
             try session.setActive(true)
+            didActivateAudioSession = true
             try session.setPreferredOutputNumberOfChannels(2)
         } catch let err as NSError {
             print("Error setting up audio session \(err)")
