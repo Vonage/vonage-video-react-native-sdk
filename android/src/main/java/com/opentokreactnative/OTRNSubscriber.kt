@@ -186,6 +186,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         this.setLayoutParams(params)
     }
 
+    // Releases the subscriber's native resources (decoder, renderer) and detaches its
+    // view on final teardown. Called from OTRNSubscriberManager.onDropViewInstance
+    // (fires on real destruction, not recycling). subscriberStreams is left alone: it
+    // tracks the remote stream, which may still be live and re-subscribed by a remount;
+    // streamDropped removes it.
+    fun cleanUpMemory() {
+        removeAllViews()
+        streamId?.let { sharedState.getSubscribers().remove(it) }
+        subscriber?.destroy()
+        subscriber = null
+    }
+
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
         val reactContext = context as ThemedReactContext
         val eventDispatcher = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)?.eventDispatcher
