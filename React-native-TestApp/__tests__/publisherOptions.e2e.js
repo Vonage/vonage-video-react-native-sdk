@@ -40,6 +40,7 @@ describe('Publisher Options', () => {
 
   it('toggle audio off then on (mute/unmute)', async () => {
     await element(by.id('tabPublisher')).tap();
+    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Muted.');
 
