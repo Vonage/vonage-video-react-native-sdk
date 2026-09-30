@@ -32,6 +32,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     private var sessionId: String? = ""
     private var publisherId: String? = ""
+    private var previewOnly: Boolean = false
+    private var ownsPreview = false
+    private var pendingBackCameraCycle = false
 
     @Volatile private var emitAudioLevel: Boolean = false
     @Volatile private var emitAudioNetworkStats: Boolean = false
@@ -96,6 +99,12 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setPreviewOnly(value: Boolean) {
+        // Only the value present when the view attaches matters natively;
+        // the preview-to-publish transition is driven from JS via OT.publish.
+        previewOnly = value
     }
 
     public fun setEmitAudioLevel(value: Boolean) {
@@ -291,9 +300,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 )
             }
             if (this.props?.get("cameraPosition") as String == "back") {
-                // Do not set publishVideo here, start when stream is created
-                // to avoid front camera preview flash
-                publisher?.setPublishVideo(false)
+                if (previewOnly) {
+                    // No stream is created while previewing, so switch the
+                    // camera right away before the preview starts.
+                    publisher?.cycleCamera()
+                    publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
+                } else {
+                    // Do not set publishVideo here, start when stream is created
+                    // to avoid front camera preview flash
+                    publisher?.setPublishVideo(false)
+                    pendingBackCameraCycle = true
+                }
             } else {
                 publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
             }
@@ -347,6 +364,14 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.addView(publisher?.view)
             requestLayout()
         }
+
+        if (previewOnly) {
+            // Render the local camera preview without publishing. The
+            // preview-to-publish transition happens through OT.publish from
+            // JS when the previewOnly prop is set to false.
+            publisher?.startPreview()
+            ownsPreview = true
+        }
         // Complete a publish() that arrived before this view attached (see module contract).
         if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
             sharedState.getSessions().get(sessionId)?.publish(publisher)
@@ -354,8 +379,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
-        val cameraPosition = this.props?.get("cameraPosition") as? String ?: "front"
-        if (cameraPosition == "back") {
+        ownsPreview = false
+        if (pendingBackCameraCycle) {
+            pendingBackCameraCycle = false
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
@@ -541,6 +567,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         released = true
 
         val pub = publisher
+        val destroyPreview = ownsPreview
+        ownsPreview = false
+        pendingBackCameraCycle = false
         if (pub != null) {
             runCatching {
                 pub.setPublisherListener(null)
@@ -556,6 +585,12 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         publisher = null
         Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
+        // Only destroy a preview this view started and never published; session
+        // teardown handles published capturers, and destroying a publisher whose
+        // camera never initialized can crash Camera2VideoCapturer.
+        if (destroyPreview) {
+            runCatching { pub?.destroy() }
+        }
     }
 
     inner class OpenTokEvent(
