@@ -13,6 +13,7 @@ const TABS: { key: TabName; label: string; testID: string }[] = [
   { key: 'subscriber', label: 'Subscriber', testID: 'tabSubscriber' },
   { key: 'moderation', label: 'Moderation', testID: 'tabModeration' },
   { key: 'settings', label: 'Settings', testID: 'tabSettings' },
+  { key: 'calling', label: 'Calling', testID: 'tabCalling' },
 ];
 
 const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabPress }) => {

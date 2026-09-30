@@ -10,6 +10,7 @@ import { parsePublisherProperty, parseSubscriberProperty } from '../utils/proper
 import { styles } from '../styles/styles';
 import { credentials } from '../config/credentials';
 import TabBar from '../components/TabBar';
+import CallingServicesPanel from '../components/CallingServicesPanel';
 import TextBoxComponent from '../../components/TextBoxComponent';
 import ButtonComponent from '../../components/ButtonComponent';
 import TextComponent from '../../components/TextComponent';
@@ -1254,6 +1255,7 @@ class VideoCallScreen extends Component<{}, State> {
                 {this.state.activeTab === 'subscriber' && this.renderSubscriberControls()}
                 {this.state.activeTab === 'moderation' && this.renderModerationControls()}
                 {this.state.activeTab === 'settings' && this.renderSettingsControls()}
+                {this.state.activeTab === 'calling' && <CallingServicesPanel />}
               </View>
             </View>
           )}
