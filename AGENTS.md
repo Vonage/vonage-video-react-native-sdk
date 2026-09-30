@@ -69,6 +69,7 @@ Branch names must match Jira ticket IDs (e.g., `VIDCS-4050`).
 ### Pull requests
 - Always create PRs as **Draft** (`gh pr create --draft`)
 - PRs target `develop` unless explicitly stated otherwise
+- The PR description must follow the PR template (`.github/PULL_REQUEST_TEMPLATE.md`): keep every section and fill them in
 
 ### Commit messages
 This repo uses **Conventional Commits** format enforced via `commitlint`:
@@ -139,6 +140,7 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 ## AI Guidance
 
 ### Code style
+- Do not add code comments unless they are truly necessary to explain non-obvious logic.
 - **JS/TS:** Prettier (single quotes, 2-space indent, trailing comma es5). ESLint with `@react-native` config.
 - **Swift:** 4-space indent, standard Swift conventions
 - **Kotlin:** Standard Kotlin conventions
@@ -163,14 +165,15 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 
 ## Vonage AI Tooling
 
-### vgai (AI Attribution)
+### vg-ai (AI Attribution)
 
-This repository uses `vgai` (vonage-git-ai) for tracking AI adoption in commits. All commits must include accurate AI attribution metadata.
+This repository uses `vg-ai` for tracking AI adoption in commits. All commits must include accurate AI attribution metadata.
 
 - **After each commit**, verify the AI attribution report is correct by checking git notes on the commit
-- If the reported percentage seems inaccurate, **inform the user** and let them decide whether to run `vgai override <percentage>` to correct it — do not override automatically
+- If the reported percentage seems inaccurate, **inform the user** and let them decide whether to run `vg-ai attribution override <pct> [--commit <sha>]` to correct it — do not override automatically
 - Thresholds for PR labels: >90% → `ai-generated`, 20-90% → `ai-assisted`, <20% → `no-ai`
-- Install hooks for automatic tracking: `vgai install-kiro-ide-hooks` (for Kiro IDE)
+- Install hooks for automatic tracking: `vg-ai attribution hooks install [kiro-cli|kiro-ide|all]`
+- Push `refs/notes/ai` so PRs get labelled: `vg-ai attribution setup-notes`
 - The attribution is stored as git notes (`refs/notes/ai`) following Git AI Standard v3.0.0
 
 ### vg-ai (Environment Manager)
