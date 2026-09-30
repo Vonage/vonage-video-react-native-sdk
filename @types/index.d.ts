@@ -117,7 +117,6 @@ declare module "@vonage/client-sdk-video-react-native" {
       | 'hasVideo'
       | 'videoDimensions';
     stream: Stream;
-    sessionId: string;
   }
 
   interface ArchiveEvent {
@@ -129,7 +128,6 @@ declare module "@vonage/client-sdk-video-react-native" {
   interface ErrorEvent {
     code: string;
     message: string;
-    sessionId: string;
   }
 
   interface SubscriberCaptionEvent {
@@ -191,11 +189,6 @@ declare module "@vonage/client-sdk-video-react-native" {
 
   interface MuteForcedEvent {
     active: boolean;
-    sessionId: string;
-  }
-
-  interface SessionReconnectEvent {
-    sessionId: string;
   }
 
   interface OTSessionProps extends ViewProps {
@@ -363,12 +356,12 @@ declare module "@vonage/client-sdk-video-react-native" {
     /**
      * Sent when the local client has reconnected to the Video API session after its network connection was lost temporarily.
      */
-    sessionReconnected?: CallbackWithParam<SessionReconnectEvent>;
+    sessionReconnected?: CallbackWithParam<any>;
 
     /**
      * Sent when the local client has lost its connection to a Video API session and is trying to reconnect. This results from a loss in network connectivity. If the client can reconnect to the session, the sessionReconnected message is sent. Otherwise, if the client cannot reconnect, the sessionDisconnected message is sent.
      */
-    sessionReconnecting?: CallbackWithParam<SessionReconnectEvent>;
+    sessionReconnecting?: Callback<any>;
 
     /**
      * Sent when the client receives a signal.
