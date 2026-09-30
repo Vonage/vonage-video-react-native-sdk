@@ -10,7 +10,6 @@ https://github.com/opentok/opentok-react-native/blob/master/CONTRIBUTING.md
 ### Contributing checklist
 - [ ] Code must follow existing styling conventions
 - [ ] Commit messages follow Conventional Commits
-- [ ] Implemented on both iOS and Android, if applicable
 - [ ] Types updated in `src/types.ts`, if the public API changed
 - [ ] Sample apps updated if needed
 
