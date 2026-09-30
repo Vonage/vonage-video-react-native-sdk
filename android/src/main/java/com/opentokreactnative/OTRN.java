@@ -17,6 +17,7 @@ public class OTRN {
     private ConcurrentHashMap<String, String> androidOnTopMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> androidZOrderMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Boolean> pendingPublishers = new ConcurrentHashMap<>();
 
     public static synchronized OTRN getSharedState() {
         if (sharedState == null) {
@@ -55,6 +56,10 @@ public class OTRN {
     public ConcurrentHashMap<String, Connection> getConnections() {
 
         return this.connections;
+    }
+
+    public ConcurrentHashMap<String, Boolean> getPendingPublishers() {
+        return this.pendingPublishers;
     }
 
     private OTRN() {

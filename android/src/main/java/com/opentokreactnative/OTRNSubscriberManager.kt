@@ -39,7 +39,19 @@ class OTRNSubscriberManager(context: ReactApplicationContext) :
     override public fun setScaleBehavior(view: OTRNSubscriber, value: String?) {
         view.setScaleBehavior(value)
     }
-    
+
+    override fun setEmitAudioLevel(view: OTRNSubscriber?, value: Boolean) {
+        view?.setEmitAudioLevel(value)
+    }
+
+    override fun setEmitAudioNetworkStats(view: OTRNSubscriber?, value: Boolean) {
+        view?.setEmitAudioNetworkStats(value)
+    }
+
+    override fun setEmitVideoNetworkStats(view: OTRNSubscriber?, value: Boolean) {
+        view?.setEmitVideoNetworkStats(value)
+    }
+
     override fun setSubscribeToAudio(
         view: OTRNSubscriber?,
         value: Boolean

@@ -90,6 +90,9 @@ using namespace facebook::react;
 
 @implementation OTRNSubscriberComponentView {
     OTRNSubscriberImpl *_impl;
+    BOOL _emitAudioLevel;
+    BOOL _emitAudioNetworkStats;
+    BOOL _emitVideoNetworkStats;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -142,6 +145,10 @@ using namespace facebook::react;
     if (oldViewProps.scaleBehavior != newViewProps.scaleBehavior) {
         [_impl setScaleBehavior:RCTNSStringFromString(newViewProps.scaleBehavior)];
     }
+
+    _emitAudioLevel = newViewProps.emitAudioLevel;
+    _emitAudioNetworkStats = newViewProps.emitAudioNetworkStats;
+    _emitVideoNetworkStats = newViewProps.emitVideoNetworkStats;
 
     [super updateProps:props oldProps:oldProps];
 }
@@ -232,6 +239,7 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioLevel:(NSDictionary *)eventData {
+    if (!_emitAudioLevel) { return; }
     float audioLevel = static_cast<float>(SafeDoubleFromValue(eventData[@"audioLevel"]));
     NSDictionary *streamDict = eventData[@"stream"];
 
@@ -249,6 +257,7 @@ using namespace facebook::react;
 }
 
 - (void)handleVideoNetworkStats:(NSDictionary *)eventData {
+    if (!_emitVideoNetworkStats) { return; }
     NSDictionary *streamDict = eventData[@"stream"];
     id jsonStatsValue = eventData[@"jsonStats"];
 
@@ -266,6 +275,7 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioNetworkStats:(NSDictionary *)eventData {
+    if (!_emitAudioNetworkStats) { return; }
     NSDictionary *streamDict = eventData[@"stream"];
     id jsonStatsValue = eventData[@"jsonStats"];
 

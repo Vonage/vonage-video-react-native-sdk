@@ -65,6 +65,9 @@ export interface NativeProps extends ViewProps {
   scaleBehavior?: string;
   publishSenderStats?: boolean;
   preferredVideoCodecs?: string;
+  emitAudioLevel?: boolean;
+  emitAudioNetworkStats?: boolean;
+  emitVideoNetworkStats?: boolean;
 
   onError?: BubblingEventHandler<ErrorEvent> | null;
   onStreamCreated?: BubblingEventHandler<StreamEvent> | null;
