@@ -4,6 +4,33 @@ import { OT } from './OT';
 import OTRNSubscriber from './OTSubscriberNativeComponent';
 import OTContext from './contexts/OTContext';
 
+const withParsedJsonStats = (nativeEvent) => {
+  if (!nativeEvent || typeof nativeEvent !== 'object') {
+    return nativeEvent;
+  }
+
+  const jsonStats =
+    typeof nativeEvent.jsonStats === 'string' && nativeEvent.jsonStats.length > 0
+      ? nativeEvent.jsonStats
+      : typeof nativeEvent.jsonArrayOfReports === 'string' &&
+          nativeEvent.jsonArrayOfReports.length > 0
+        ? nativeEvent.jsonArrayOfReports
+        : undefined;
+
+  if (typeof jsonStats !== 'string' || jsonStats.length === 0) {
+    return nativeEvent;
+  }
+
+  try {
+    return {
+      ...nativeEvent,
+      stats: JSON.parse(jsonStats),
+    };
+  } catch {
+    return nativeEvent;
+  }
+};
+
 export default class OTSubscriberView extends React.Component {
   static defaultProps = {
     subscribeToAudio: true,
@@ -61,6 +88,9 @@ export default class OTSubscriberView extends React.Component {
       <OTRNSubscriber
         sessionId={this.context.sessionId}
         streamId={streamId}
+        emitAudioLevel={!!eventHandlers.audioLevel}
+        emitAudioNetworkStats={!!eventHandlers.audioNetworkStats}
+        emitVideoNetworkStats={!!eventHandlers.videoNetworkStats}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}
@@ -68,18 +98,29 @@ export default class OTSubscriberView extends React.Component {
         preferredFrameRate={preferredFrameRate}
         preferredResolution={preferredResolution}
         audioVolume={audioVolume}
-        onAudioLevel={(event) => {
-          eventHandlers.audioLevel?.(event.nativeEvent);
-        }}
-        onAudioNetworkStats={(event) => {
-          eventHandlers.audioNetworkStats?.(event.nativeEvent);
-        }}
+        onAudioLevel={
+          eventHandlers.audioLevel
+            ? (event) => {
+                eventHandlers.audioLevel(event.nativeEvent);
+              }
+            : undefined
+        }
+        onAudioNetworkStats={
+          eventHandlers.audioNetworkStats
+            ? (event) => {
+                eventHandlers.audioNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         onSubscriberConnected={(event) => {
           eventHandlers.connected?.(event.nativeEvent);
           eventHandlers.subscriberConnected?.(event.nativeEvent);
         }}
         onSubscriberDisconnected={(event) => {
           eventHandlers.disconnected?.(event.nativeEvent);
+          eventHandlers.subscriberDisconnected?.(event.nativeEvent);
         }}
         onSubscriberError={(event) => {
           eventHandlers.error?.(event.nativeEvent);
@@ -100,7 +141,12 @@ export default class OTSubscriberView extends React.Component {
           eventHandlers.videoDisableWarningLifted?.(event.nativeEvent);
         }}
         onRtcStatsReport={(event) => {
-          eventHandlers.rtcStatsReport?.(event.nativeEvent);
+          // The Fabric codegen type for this event is { stream, jsonStats: string }.
+          // Keep backward compatibility by passing jsonStats unchanged, and also
+          // provide parsed stats when jsonStats is valid JSON.
+          eventHandlers.rtcStatsReport?.(
+            withParsedJsonStats(event.nativeEvent)
+          );
         }}
         onVideoEnabled={(event) => {
           eventHandlers.videoEnabled?.(event.nativeEvent);
@@ -108,9 +154,15 @@ export default class OTSubscriberView extends React.Component {
         onReconnected={(event) => {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
-        onVideoNetworkStats={(event) => {
-          eventHandlers.videoNetworkStats?.(event.nativeEvent);
-        }}
+        onVideoNetworkStats={
+          eventHandlers.videoNetworkStats
+            ? (event) => {
+                eventHandlers.videoNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         style={style}
       />
     );

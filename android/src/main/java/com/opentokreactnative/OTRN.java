@@ -11,12 +11,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OTRN {
     public static OTRN sharedState;
     private ConcurrentHashMap<String, Stream> subscriberStreams = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Stream> publisherStreams = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Subscriber> subscribers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Publisher> publishers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> androidOnTopMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> androidZOrderMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
+    // publish() requests made before the publisher view attached; completed by
+    // OTRNPublisher.publishStream() once the Publisher exists.
+    private ConcurrentHashMap<String, Boolean> pendingPublishers = new ConcurrentHashMap<>();
 
     public static synchronized OTRN getSharedState() {
         if (sharedState == null) {
@@ -39,6 +43,10 @@ public class OTRN {
         return this.subscriberStreams;
     }
 
+    public ConcurrentHashMap<String, Stream> getPublisherStreams() {
+        return this.publisherStreams;
+    }
+
 
     public ConcurrentHashMap<String, Session> getSessions() {
         return this.sessions;
@@ -55,6 +63,10 @@ public class OTRN {
     public ConcurrentHashMap<String, Connection> getConnections() {
 
         return this.connections;
+    }
+
+    public ConcurrentHashMap<String, Boolean> getPendingPublishers() {
+        return this.pendingPublishers;
     }
 
     private OTRN() {

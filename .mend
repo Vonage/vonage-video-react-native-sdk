@@ -1,6 +1,6 @@
 {
   "settingsInheritedFrom": "vonage/whitesource-config@main",
   "scanSettings": {
-    "excludes": ["/e2e/**", "/docs/**", "/scripts/**", "/patch/**"]
+    "configMode": "LOCAL"
   }
 }

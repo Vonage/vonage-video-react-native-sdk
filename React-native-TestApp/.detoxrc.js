@@ -1,7 +1,7 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
   logger: {
-    level: 'info',
+    level: 'verbose',
     options: {
       showLoggerName: false,
       showPid: false,
@@ -11,22 +11,22 @@ module.exports = {
   testRunner: {
     args: {
       '$0': 'jest',
-      config: 'e2e/jest.config.js'
+      config: '__tests__/jest.e2e.config.js'
     },
     jest: {
-      setupTimeout: 120000
+      setupTimeout: 300000
     }
   },
   apps: {
     'ios.debug': {
       type: 'ios.app',
-      binaryPath: 'ios/build/Products/Debug-iphonesimulator/TestApp.app',
-      build: 'xcodebuild -workspace ios/TestApp.xcworkspace -scheme TestApp -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
+      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/ReactNativeTesApp.app',
+      build: 'xcodebuild -workspace ios/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
     },
     'ios.release': {
       type: 'ios.app',
-      binaryPath: 'ios/build/Products/Debug-iphonesimulator/TestApp.app',
-      build: 'xcodebuild -workspace ios/TestApp.xcworkspace -scheme TestApp -configuration Release -sdk iphonesimulator -derivedDataPath ios/build'
+      binaryPath: 'ios/build/Build/Products/Release-iphonesimulator/ReactNativeTesApp.app',
+      build: 'xcodebuild -workspace ios/ReactNativeTesApp.xcworkspace -scheme ReactNativeTesApp -configuration Release -sdk iphonesimulator -derivedDataPath ios/build'
     },
     'android.debug': {
       type: 'android.apk',
@@ -43,7 +43,7 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone SE (3rd generation)'
+        type: process.env.DETOX_DEVICE_NAME || 'iPhone SE (3rd generation)'
       }
     },
     attached: {
@@ -55,7 +55,7 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_8_Pro_API_33'
+        avdName: process.env.DETOX_AVD_NAME || 'Pixel_8_Pro_API_33'
       }
     }
   },

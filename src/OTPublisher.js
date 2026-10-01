@@ -1,6 +1,5 @@
 import React from 'react';
 import { Platform, View } from 'react-native';
-import { ViewPropTypes } from 'deprecated-react-native-prop-types';
 import PropTypes from 'prop-types';
 import { isEqual } from 'underscore';
 import uuid from 'react-native-uuid';
@@ -15,6 +14,36 @@ import {
 } from './helpers/OTSessionHelper';
 import { sanitizeProperties } from './helpers/OTPublisherHelper';
 import OTContext from './contexts/OTContext';
+
+const parseStatsString = (rawStats) => {
+  if (typeof rawStats !== 'string' || rawStats.length === 0) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawStats);
+  } catch {
+    return undefined;
+  }
+};
+
+const getParsedStatsPayload = (nativeEvent) => {
+  if (!nativeEvent || typeof nativeEvent !== 'object') {
+    return nativeEvent;
+  }
+
+  const parsedJsonStats = parseStatsString(nativeEvent.jsonStats);
+  if (parsedJsonStats !== undefined) {
+    return parsedJsonStats;
+  }
+
+  const parsedLegacyStats = parseStatsString(nativeEvent.stats);
+  if (parsedLegacyStats !== undefined) {
+    return parsedLegacyStats;
+  }
+
+  return nativeEvent.stats ?? nativeEvent.jsonStats ?? nativeEvent;
+};
 
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
@@ -135,6 +164,24 @@ export default class OTPublisher extends React.Component {
     );
   }
 
+  setVideoTransformers(transformers = []) {
+    //NOSONAR - this method is exposed externally
+    OT.setVideoTransformers(
+      this.context.sessionId,
+      this.state.publisherId,
+      transformers
+    );
+  }
+
+  setAudioTransformers(transformers = []) {
+    //NOSONAR - this method is exposed externally
+    OT.setAudioTransformers(
+      this.context.sessionId,
+      this.state.publisherId,
+      transformers
+    );
+  }
+
   componentWillUnmount() {
     OT.unpublish(this.context.sessionId, this.state.publisherId);
     const publisherStreamId = getPublisherStream(this.context.sessionId);
@@ -169,6 +216,9 @@ export default class OTPublisher extends React.Component {
       <OTRNPublisher
         sessionId={this.context.sessionId}
         publisherId={this.state.publisherId}
+        emitAudioLevel={!!this.props.eventHandlers?.audioLevel}
+        emitAudioNetworkStats={!!this.props.eventHandlers?.audioNetworkStats}
+        emitVideoNetworkStats={!!this.props.eventHandlers?.videoNetworkStats}
         onError={(event) => {
           this.props.eventHandlers?.error?.(event.nativeEvent);
         }}
@@ -181,22 +231,27 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}
         onStreamDestroyed={this.onStreamDestroyed}
-        onAudioLevel={(event) => {
-          this.props.eventHandlers?.audioLevel?.(event.nativeEvent);
-        }}
+        onAudioLevel={
+          this.props.eventHandlers?.audioLevel
+            ? (event) => {
+                this.props.eventHandlers.audioLevel(event.nativeEvent);
+              }
+            : undefined
+        }
         onMuteForced={(event) => {
           this.props.eventHandlers?.muteForced?.();
         }}
-        onAudioNetworkStats={(event) => {
-          // TODO - remove workaround for Android stats prop
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent.stats;
-          this.props.eventHandlers?.audioNetworkStats?.(eventData);
-        }}
+        onAudioNetworkStats={
+          this.props.eventHandlers?.audioNetworkStats
+            ? (event) => {
+                const eventData = getParsedStatsPayload(event.nativeEvent);
+                this.props.eventHandlers.audioNetworkStats(eventData);
+              }
+            : undefined
+        }
         onRtcStatsReport={(event) => {
           this.props.eventHandlers?.rtcStatsReport?.(
-            JSON.parse(event.nativeEvent.jsonStats)
+            getParsedStatsPayload(event.nativeEvent)
           );
         }}
         onVideoDisabled={(event) => {
@@ -213,13 +268,14 @@ export default class OTPublisher extends React.Component {
         onVideoEnabled={(event) => {
           this.props.eventHandlers?.videoEnabled?.(event.nativeEvent);
         }}
-        onVideoNetworkStats={(event) => {
-          // TODO - remove workaround for Android stats prop
-          const eventData = event.nativeEvent.jsonStats
-            ? JSON.parse(event.nativeEvent.jsonStats)
-            : event.nativeEvent.stats;
-          this.props.eventHandlers?.videoNetworkStats?.(eventData);
-        }}
+        onVideoNetworkStats={
+          this.props.eventHandlers?.videoNetworkStats
+            ? (event) => {
+                const eventData = getParsedStatsPayload(event.nativeEvent);
+                this.props.eventHandlers.videoNetworkStats(eventData);
+              }
+            : undefined
+        }
         style={this.props.style}
         {...this.state.publisherProperties}
       />
@@ -232,7 +288,7 @@ export default class OTPublisher extends React.Component {
 OTPublisher.propTypes = {
   eventHandlers: PropTypes.object,
   properties: PropTypes.object,
-  style: ViewPropTypes.style,
+  style: PropTypes.any,
 };
 
 OTPublisher.defaultProps = {
