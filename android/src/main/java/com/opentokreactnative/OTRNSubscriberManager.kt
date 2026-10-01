@@ -102,6 +102,13 @@ class OTRNSubscriberManager(context: ReactApplicationContext) :
         viewToUpdate.updateProperties(props)
     }
 
+    // Fabric destroys the view: release its subscriber deterministically on the UI
+    // thread instead of relying on the asynchronous JS removeSubscriber call.
+    override fun onDropViewInstance(view: OTRNSubscriber) {
+        view.teardown()
+        super.onDropViewInstance(view)
+    }
+
     companion object {
         const val REACT_CLASS = "OTRNSubscriber"
     }

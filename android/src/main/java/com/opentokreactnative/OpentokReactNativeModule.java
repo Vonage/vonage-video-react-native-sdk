@@ -223,18 +223,13 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-                Session mSession = mSessions.get(sessionId);
-                if (mSession == null) {
-                    return;
-                }
-                ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
-                Subscriber subscriber = subscribers.get(streamId);
-                if (subscriber != null) {
-                    mSession.unsubscribe(subscriber);
-                    subscribers.remove(streamId);
-                }
-            };
+                Session mSession = sharedState.getSessions().get(sessionId);
+                // Views that are still attached are released by
+                // OTRNSubscriberManager.onDropViewInstance. This call can arrive after
+                // Fabric already mounted a new view for the same stream, so it only
+                // cleans up a subscriber that no attached view owns.
+                OTRNSubscriber.releaseOrphanedSubscriber(streamId, mSession);
+            }
         });
     }
 
@@ -423,9 +418,29 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void onStreamDropped(Session session, Stream stream) {
+        final String streamId = stream.getStreamId();
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
+        // Remove first, so a view attached late cannot subscribe to a dropped stream.
+        sharedState.getSubscriberStreams().remove(streamId);
+        // Stop the subscribers for this stream now, while their TextureView surfaces
+        // are still valid, instead of waiting for JS to process streamDestroyed and
+        // unmount the views. When several streams drop at once, that wait is where
+        // renderers end up racing view attach/detach churn.
+        runOnUiThreadNow(new Runnable() {
+            @Override
+            public void run() {
+                OTRNSubscriber.releaseSubscribersForStream(streamId, session);
+            }
+        });
         emitOnStreamDestroyed(payload);
-        sharedState.getSubscriberStreams().remove(stream.getStreamId());
+    }
+
+    private static void runOnUiThreadNow(Runnable runnable) {
+        if (UiThreadUtil.isOnUiThread()) {
+            runnable.run();
+        } else {
+            UiThreadUtil.runOnUiThread(runnable);
+        }
     }
 
     @Override

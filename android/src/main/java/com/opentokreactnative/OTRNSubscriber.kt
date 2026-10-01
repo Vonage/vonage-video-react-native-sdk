@@ -3,10 +3,13 @@ package com.opentokreactnative
 import android.content.Context
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
+import android.util.Log
+import android.view.ViewGroup
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.ReactContext
+import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.uimanager.ReactStylesDiffMap
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.events.Event
@@ -23,6 +26,8 @@ import com.opentokreactnative.utils.Utils;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.toVideoScaleType;
 import java.lang.ref.WeakReference
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
@@ -176,6 +181,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         }
     }
 
+    // Stream id the current subscriber was registered under in sharedState.subscribers.
+    private var subscribedStreamId: String? = null
+
+    // Set when sessionId/streamId changes on a live view; the new subscription is created
+    // in updateProperties(), after Fabric has applied the whole prop batch.
+    private var pendingResubscribe = false
+
+    // The current subscriber, unless it was already released (stream dropped, unsubscribed).
+    // Prop setters use this so they never call into a released SDK subscriber.
+    private val liveSubscriber: Subscriber?
+        get() = subscriber?.takeUnless { isReleased(it) }
+
     constructor(context: Context) : super(context) {
         configureComponent()
     }
@@ -193,11 +210,20 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     fun updateProperties(props: ReactStylesDiffMap?) {
-        if (this.props == null) {
-            this.props = props?.toMap()
+        // Keep the latest value of every prop (not only the initial batch), so a
+        // re-subscribe after a sessionId/streamId change uses current values.
+        val latest = props?.toMap()
             ?.filterValues { it != null }
             ?.mapValues { it.value!! }
-            ?.toMutableMap()
+            ?: emptyMap()
+        val current = this.props ?: mutableMapOf<String, Any>().also { this.props = it }
+        current.putAll(latest)
+
+        if (pendingResubscribe) {
+            pendingResubscribe = false
+            if (isAttachedToWindow) {
+                subscribeIfPossible()
+            }
         }
     }
 
@@ -229,27 +255,80 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        
-        val safeSessionId = sessionId
-        val safeStreamId = streamId
-        
-        if (safeSessionId == null || safeStreamId == null) {
+        // A detach/re-attach without unmount (clipped subviews in lists, screens kept
+        // alive by navigators, re-parenting) must not create another Subscriber. The
+        // existing SDK view is still our child and re-attaches with us. If the
+        // subscriber was released because its stream dropped, we also must not
+        // subscribe again: the reference is kept until teardown() for that reason.
+        val current = subscriber
+        if (current != null) {
+            // onDetachedFromWindow() unregistered us from the stream-property registry;
+            // re-register so the stream cache keeps receiving property changes.
+            val currentStreamId = subscribedStreamId
+            if (currentStreamId != null && !isReleased(current)) {
+                register(currentStreamId, this)
+            }
             return
         }
-        
-        session = sharedState.getSessions().get(safeSessionId)
-        stream = findStream(safeStreamId)
+        subscribeIfPossible()
+    }
 
-        if (session != null && stream != null) {
-            subscribeToStream(session!!, stream!!)
+    private fun subscribeIfPossible() {
+        val safeSessionId = sessionId
+        val safeStreamId = streamId
+        if (safeSessionId.isNullOrEmpty() || safeStreamId.isNullOrEmpty()) {
+            return
         }
+        val foundSession = sharedState.getSessions().get(safeSessionId) ?: return
+        // Dropped streams are removed from sharedState in onStreamDropped, so a late
+        // attach cannot subscribe to a stream that no longer exists.
+        val foundStream = findStream(safeStreamId) ?: return
+        session = foundSession
+        stream = foundStream
+        subscribeToStream(foundSession, foundStream)
+    }
+
+    /**
+     * Releases this view's subscriber and forgets it. Idempotent; UI thread only.
+     * Called by OTRNSubscriberManager.onDropViewInstance when Fabric destroys the view.
+     */
+    fun teardown() {
+        val current = subscriber
+        if (current != null) {
+            releaseSubscriber(current, session, subscribedStreamId)
+        }
+        subscribedStreamId?.let { unregister(it, this) }
+        streamCache.set(null)
+        subscriber = null
+        subscribedStreamId = null
+        stream = null
+        session = null
+        pendingResubscribe = false
+        liveViews.remove(this)
+    }
+
+    // Stops the current subscriber because its stream is gone, but keeps the reference so
+    // onAttachedToWindow() does not subscribe again. teardown() clears it later.
+    private fun releaseCurrentSubscriber() {
+        val current = subscriber ?: return
+        releaseSubscriber(current, session, subscribedStreamId)
+    }
+
+    // sessionId or streamId changed on a view that already subscribed: release the old
+    // subscriber now and subscribe again once the full prop batch has been applied.
+    private fun resetSubscriptionForNewTarget() {
+        if (subscriber == null) {
+            return
+        }
+        teardown()
+        pendingResubscribe = true
     }
 
     override fun onDetachedFromWindow() {
         // Pair with onAttachedToWindow -> subscribeToStream: unregister this view from the
         // companion registry so it no longer receives dispatched property changes. Stale weak
         // refs are also pruned lazily in dispatch, so a missed unregister cannot leak.
-        streamId?.let { unregister(it, this) }
+        (subscribedStreamId ?: streamId)?.let { unregister(it, this) }
         super.onDetachedFromWindow()
     }
 
@@ -268,6 +347,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     public fun setSessionId(str: String?) {
+        if (str == sessionId) {
+            return
+        }
+        resetSubscriptionForNewTarget()
         sessionId = str
     }
 
@@ -284,45 +367,53 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     public fun setSubscribeToAudio(value: Boolean) {
-        subscriber?.subscribeToAudio = value
+        liveSubscriber?.subscribeToAudio = value
     }
 
     public fun setSubscribeToVideo(value: Boolean) {
-        subscriber?.subscribeToVideo = value
+        liveSubscriber?.subscribeToVideo = value
     }
 
     public fun setStreamId(str: String?) {
+        if (str == streamId) {
+            return
+        }
+        resetSubscriptionForNewTarget()
         streamId = str
     }
 
     fun setSubscribeToCaptions(value: Boolean) {
-        subscriber?.subscribeToCaptions = value
+        liveSubscriber?.subscribeToCaptions = value
     }
 
     fun setAudioVolume(value: Float) {
-        subscriber?.audioVolume = value.toDouble()
+        liveSubscriber?.audioVolume = value.toDouble()
     }
 
     fun setPreferredFrameRate(value: Int) {
-        subscriber?.preferredFrameRate = value.toFloat()
+        liveSubscriber?.preferredFrameRate = value.toFloat()
     }
 
     fun setPreferredResolution(value: String?) {
         var values: List<String> = value?.split("x") ?: return
         var width: Int = values[0].toInt()
         var height: Int = values[1].toInt()
-        subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
+        liveSubscriber?.setPreferredResolution(VideoUtils.Size(width, height))
     }
 
     fun subscribeToStream(session: Session, stream: Stream) {
         var pubOrSub: String? = ""
         var zOrder: String? = ""
-        subscriber = Subscriber.Builder(context, stream)
+        val newSubscriber = Subscriber.Builder(context, stream)
             .build()
-        sharedState.getSubscribers().put(stream.getStreamId(), subscriber ?: return);
+        val newStreamId = stream.getStreamId()
+        subscriber = newSubscriber
+        subscribedStreamId = newStreamId
+        liveViews.add(this)
+        sharedState.getSubscribers().put(newStreamId, newSubscriber)
         subscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
+            (this.props?.get("scaleBehavior") as? String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -372,14 +463,12 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
         }
 
-        this.props?.clear()
-
         // Read the SDK Stream exactly once, into the immutable cache, while it is known alive
         // (right before subscribe). Every later callback reads only from this snapshot.
         primeStreamCache(stream, session)
         // Register this view so session-scoped property callbacks (which live on the module) can
         // reach it via the companion registry, keyed by this view's streamId.
-        streamId?.let { register(it, this) }
+        register(newStreamId, this)
 
         session.subscribe(subscriber)
         if (subscriber?.view != null) {
@@ -389,7 +478,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     public fun setScaleBehavior(value: String?) {
-        subscriber?.setStyle(
+        liveSubscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
             value.toVideoScaleType()
         )
@@ -639,6 +728,90 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             }
             for (view in live) {
                 view.applyStreamPropertyChange(streamId, change)
+            }
+        }
+
+        private const val LOG_TAG = "OTRNSubscriber"
+
+        // Subscribers that were already released, so release is idempotent across the
+        // view manager, removeSubscriber and onStreamDropped paths. Weak keys: no leak.
+        // UI thread only.
+        private val releasedSubscribers: MutableSet<Subscriber> =
+            Collections.newSetFromMap(WeakHashMap())
+
+        // Views that currently hold a subscriber. Weak: never keeps a view alive.
+        // UI thread only.
+        private val liveViews: MutableSet<OTRNSubscriber> =
+            Collections.newSetFromMap(WeakHashMap())
+
+        @JvmStatic
+        fun isReleased(subscriber: Subscriber): Boolean =
+            releasedSubscribers.contains(subscriber)
+
+        /**
+         * Stops and unregisters a subscriber. Idempotent; UI thread only.
+         *
+         * Order matters with TextureView rendering: the renderer is paused and the
+         * subscriber unsubscribed while its TextureView is still attached (surface
+         * valid), and only then is the SDK view removed from its container.
+         */
+        @JvmStatic
+        fun releaseSubscriber(subscriber: Subscriber, session: Session?, streamId: String?) {
+            UiThreadUtil.assertOnUiThread()
+            if (!releasedSubscribers.add(subscriber)) {
+                return
+            }
+            try {
+                subscriber.renderer?.onPause()
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Failed to pause subscriber renderer", e)
+            }
+            try {
+                session?.unsubscribe(subscriber)
+            } catch (e: Exception) {
+                Log.w(LOG_TAG, "Failed to unsubscribe subscriber", e)
+            }
+            val sdkView = subscriber.view
+            (sdkView?.parent as? ViewGroup)?.removeView(sdkView)
+            if (streamId != null) {
+                // Two-argument remove: never drops an entry that now belongs to
+                // another (newer) subscriber for the same stream.
+                OTRN.getSharedState().getSubscribers().remove(streamId, subscriber)
+            }
+        }
+
+        /**
+         * The stream is gone: release every subscriber rendering it, before JS
+         * unmounts the views. UI thread only.
+         */
+        @JvmStatic
+        fun releaseSubscribersForStream(streamId: String, session: Session?) {
+            UiThreadUtil.assertOnUiThread()
+            for (view in liveViews.toList()) {
+                if (view.subscribedStreamId == streamId) {
+                    view.releaseCurrentSubscriber()
+                }
+            }
+            OTRN.getSharedState().getSubscribers().get(streamId)?.let {
+                releaseSubscriber(it, session, streamId)
+            }
+        }
+
+        /**
+         * JS removeSubscriber path. It runs asynchronously, possibly after Fabric has
+         * already mounted a new view for the same stream, so it only releases a
+         * subscriber that no attached view owns. Attached views are released by
+         * OTRNSubscriberManager.onDropViewInstance. UI thread only.
+         */
+        @JvmStatic
+        fun releaseOrphanedSubscriber(streamId: String, session: Session?) {
+            UiThreadUtil.assertOnUiThread()
+            val subscriber = OTRN.getSharedState().getSubscribers().get(streamId) ?: return
+            val ownedByAttachedView = liveViews.any {
+                it.subscriber === subscriber && it.isAttachedToWindow
+            }
+            if (!ownedByAttachedView) {
+                releaseSubscriber(subscriber, session, streamId)
             }
         }
     }

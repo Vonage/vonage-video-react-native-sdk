@@ -52,7 +52,9 @@ const clearPublisherStream = (sessionId) => {
   publisherStreams[sessionId] = undefined;
 };
 
-const getStreams = (sessionId) => streams[sessionId] || [];
+// Return a copy: callers keep this in React state, and the internal array is
+// mutated in place by addStream/removeStream.
+const getStreams = (sessionId) => [...(streams[sessionId] || [])];
 
 const getPublisherStream = (sessionId) => publisherStreams[sessionId];
 

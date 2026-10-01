@@ -97,9 +97,14 @@ export default class OTSubscriber extends Component {
     });
   };
   streamDestroyedHandler = (stream) => {
-    this.setState((prevState) => ({
-      streams: prevState.streams.filter((item) => item !== stream.streamId),
-    }));
+    this.setState((prevState) => {
+      if (!prevState.streams.includes(stream.streamId)) {
+        return null;
+      }
+      return {
+        streams: prevState.streams.filter((item) => item !== stream.streamId),
+      };
+    });
   };
 
   subscriberConnectedHandler = (event) => {
