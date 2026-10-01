@@ -1,0 +1,84 @@
+// OT.js imports NativeOpentok (a TurboModule) at load; stub it so the module loads under jest.
+jest.mock('../NativeOpentok', () => ({ __esModule: true, default: {} }));
+
+jest.mock('react-native', () => ({
+  PermissionsAndroid: {
+    PERMISSIONS: {
+      RECORD_AUDIO: 'android.permission.RECORD_AUDIO',
+      CAMERA: 'android.permission.CAMERA',
+      BLUETOOTH_CONNECT: 'android.permission.BLUETOOTH_CONNECT',
+    },
+    requestMultiple: jest.fn(),
+  },
+  Platform: { OS: 'android', Version: 31 },
+}));
+
+import { PermissionsAndroid, Platform } from 'react-native';
+import { checkAndroidPermissions } from '../OT';
+
+describe('checkAndroidPermissions — BLUETOOTH_CONNECT on Android 12+', () => {
+  beforeEach(() => {
+    PermissionsAndroid.requestMultiple.mockReset();
+    // Mirror React Native: return a 'granted' result only for the keys actually
+    // requested, rather than a fixed set, so the tests don't assume permissions
+    // that weren't asked for.
+    PermissionsAndroid.requestMultiple.mockImplementation((perms) =>
+      Promise.resolve(
+        Object.fromEntries((perms || []).map((perm) => [perm, 'granted']))
+      )
+    );
+  });
+
+  it('requests BLUETOOTH_CONNECT alongside RECORD_AUDIO on API 31+ when audio is enabled', async () => {
+    Platform.Version = 31;
+    await checkAndroidPermissions(/*audio*/ true, /*video*/ true, /*screen*/ false);
+    const requested = PermissionsAndroid.requestMultiple.mock.calls[0][0];
+    expect(requested).toEqual([
+      'android.permission.RECORD_AUDIO',
+      'android.permission.BLUETOOTH_CONNECT',
+      'android.permission.CAMERA',
+    ]);
+  });
+
+  it('does NOT request BLUETOOTH_CONNECT below API 31', async () => {
+    Platform.Version = 30;
+    await checkAndroidPermissions(/*audio*/ true, /*video*/ false, /*screen*/ false);
+    const requested = PermissionsAndroid.requestMultiple.mock.calls[0][0];
+    expect(requested).not.toContain('android.permission.BLUETOOTH_CONNECT');
+  });
+
+  it('does NOT request BLUETOOTH_CONNECT when audio is disabled', async () => {
+    Platform.Version = 33;
+    await checkAndroidPermissions(/*audio*/ false, /*video*/ true, /*screen*/ false);
+    const requested = PermissionsAndroid.requestMultiple.mock.calls[0][0];
+    expect(requested).not.toContain('android.permission.BLUETOOTH_CONNECT');
+  });
+
+  it('resolves when BLUETOOTH_CONNECT is denied but audio + camera are granted', async () => {
+    // A denied Bluetooth permission only disables BT audio routing; it must NOT
+    // block publishing of mic + camera.
+    Platform.Version = 31;
+    PermissionsAndroid.requestMultiple.mockResolvedValueOnce({
+      'android.permission.RECORD_AUDIO': 'granted',
+      'android.permission.BLUETOOTH_CONNECT': 'never_ask_again',
+      'android.permission.CAMERA': 'granted',
+    });
+    await expect(
+      checkAndroidPermissions(/*audio*/ true, /*video*/ true, /*screen*/ false)
+    ).resolves.toBeUndefined();
+  });
+
+  it('still rejects when a mandatory permission (CAMERA) is denied', async () => {
+    Platform.Version = 31;
+    PermissionsAndroid.requestMultiple.mockResolvedValueOnce({
+      'android.permission.RECORD_AUDIO': 'granted',
+      'android.permission.BLUETOOTH_CONNECT': 'granted',
+      'android.permission.CAMERA': 'denied',
+    });
+    await expect(
+      checkAndroidPermissions(/*audio*/ true, /*video*/ true, /*screen*/ false)
+    ).rejects.toMatchObject({
+      permissionsDenied: ['android.permission.CAMERA'],
+    });
+  });
+});
