@@ -30,11 +30,8 @@ class TestSession {
     this.botOptions = { timeout: 30000, ...botOptions };
     /** @type {jsSDKTesterBot[]} Bots active in the current test */
     this.activeBots = [];
-    /** Ordered list of bot tokens extracted from credentials at construction */
-    this.botTokens = [
-      credentials.tokenBot,
-      credentials.tokenBot2,
-    ].filter(Boolean);
+    /** @type {string[]} Publisher tokens; each bot takes the next one by index. */
+    this.botTokens = (credentials.botTokens || []).filter(Boolean);
   }
 
   // --- Factory methods ---
@@ -54,7 +51,8 @@ class TestSession {
   // --- Bot management ---
 
   /**
-   * Joins a bot to the session. Token is auto-assigned based on position in activeBots.
+   * Joins a bot to the session. Token is auto-assigned by the bot's position
+   * in activeBots, indexing into the botTokens pool.
    *
    * @param {jsSDKTesterBot} bot - Bot instance
    * @param {object} [options]
@@ -64,7 +62,13 @@ class TestSession {
    */
   async joinBot(bot, options = {}) {
     const botIndex = this.activeBots.indexOf(bot);
-    const token = options.token || this.botTokens[botIndex] || this.credentials.tokenBot;
+    const token = options.token || this.botTokens[botIndex];
+    if (!token) {
+      throw new Error(
+        `No bot token available for bot #${botIndex + 1}. Only ${this.botTokens.length} ` +
+          `tokens were generated. Increase E2E_BOT_POOL_SIZE.`
+      );
+    }
     const sessionId = options.sessionId || this.credentials.sessionId;
     await bot.joinSession(
       this.credentials.apiKey,
@@ -83,7 +87,7 @@ class TestSession {
    * for the subscriber view to appear.
    *
    * Each call launches a new browser instance (no pooling).
-   * Token is auto-assigned: 1st addBot() → tokenBot, 2nd → tokenBot2.
+   * Token is auto-assigned by join order from the botTokens pool.
    *
    * @param {object} [options]
    * @param {string} [options.token] - Override token
@@ -111,6 +115,51 @@ class TestSession {
     }
 
     return bot;
+  }
+
+  /**
+   * Adds `count` bots. Only the first waits for the subscriber view (the rest
+   * share the same auto-subscribe view), keeping it fast.
+   *
+   * @param {number} count
+   * @param {object} [options] - Passed through to addBot (except waitForSubscriber)
+   * @returns {Promise<jsSDKTesterBot[]>}
+   */
+  async addBots(count, options = {}) {
+    const bots = [];
+    for (let i = 0; i < count; i++) {
+      const bot = await this.addBot({ ...options, waitForSubscriber: i === 0 });
+      bots.push(bot);
+    }
+    return bots;
+  }
+
+  /**
+   * Churns the camera on every active bot in parallel.
+   * @param {number} iterations - off→on cycles per bot
+   * @param {number} [intervalMs=100]
+   */
+  async churnAllBotsVideo(iterations, intervalMs = 100) {
+    await Promise.all(
+      this.activeBots.map((bot) => bot.churnVideo(iterations, intervalMs))
+    );
+  }
+
+  /**
+   * Disconnects the oldest `count` bots and adds `count` fresh ones, so streams
+   * are torn down and rebuilt while other peers keep publishing. Used to make
+   * lifecycle/stats callbacks (onDisconnected/onError/onAudioStats/onVideoStats)
+   * race stream teardown.
+   *
+   * @param {number} count - Number of bots to turn over
+   */
+  async replaceBots(count) {
+    const leaving = this.activeBots.slice(0, count);
+    await Promise.all(leaving.map((bot) => bot.close().catch(() => {})));
+    this.activeBots = this.activeBots.filter((bot) => !leaving.includes(bot));
+    for (let i = 0; i < count; i++) {
+      await this.addBot({ waitForSubscriber: false });
+    }
   }
 
   // --- App connection ---
