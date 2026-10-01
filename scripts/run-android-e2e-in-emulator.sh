@@ -108,7 +108,6 @@ if ! npm run test:e2e:android; then
   adb -s "$DEVICE_ID" shell pidof com.reactnativetesapp || true
   adb -s "$DEVICE_ID" shell dumpsys activity activities > android-dumpsys-activities.txt 2>&1 || true
   adb -s "$DEVICE_ID" shell dumpsys package com.reactnativetesapp > android-dumpsys-package.txt 2>&1 || true
-  tail -n 400 android-logcat.txt || true
   kill "$LOGCAT_PID" 2>/dev/null || true
   exit 1
 fi

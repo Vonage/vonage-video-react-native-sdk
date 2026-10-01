@@ -78,6 +78,7 @@ class jsSDKTesterBot {
    * @param {string} token - Authentication token for the bot
    * @param {object} [options] - Optional configuration
    * @param {string} [options.apiUrl] - API URL (for non-production environments)
+   * @param {string} [options.jsSdkUrl] - JS SDK URL (overrides env var and default CDN)
    * @param {object} [options.publisherOptions] - OT.initPublisher options
    */
   async joinSession(apiKey, sessionId, token, options = {}) {
@@ -88,7 +89,7 @@ class jsSDKTesterBot {
     // Navigate to fresh page to clear any previous session state
     await this.page.goto('https://localhost/bot');
 
-    const { apiUrl, publisherOptions = {} } = options;
+    const { apiUrl, jsSdkUrl, publisherOptions = {} } = options;
 
     const pubOpts = JSON.stringify({
       videoSource: true,
@@ -99,9 +100,9 @@ class jsSDKTesterBot {
       ...publisherOptions,
     });
 
-    // JS SDK URL: defaults to production CDN.
-    // For non-production environments, set E2E_JS_SDK_URL env var.
-    const sdkUrl = process.env.E2E_JS_SDK_URL
+    // JS SDK URL resolution: options.jsSdkUrl → env var → default
+    const sdkUrl = jsSdkUrl
+      || process.env.E2E_JS_SDK_URL
       || 'https://static.opentok.com/v2/js/opentok.min.js';
 
     await this.page.setContent(`
@@ -123,9 +124,10 @@ class jsSDKTesterBot {
             streamCreated: false,
           };
 
-          const session = OT.initSession('${apiKey}', '${sessionId}');
+          const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
 
           session.on('streamCreated', (event) => {
+            if (!window.botState.connected) return;
             session.subscribe(event.stream, 'videos', { insertMode: 'append' });
             window.botState.subscriberCount++;
             window.botState.streamCreated = true;
@@ -225,16 +227,78 @@ class jsSDKTesterBot {
   }
 
   /**
+   * Toggles the bot's outbound video (camera) on its publisher.
+   * @param {boolean} on
+   */
+  async setPublishVideo(on) {
+    await this.page.evaluate((value) => {
+      if (window.botPublisher) window.botPublisher.publishVideo(value);
+    }, on);
+  }
+
+  /**
+   * Toggles the bot's outbound audio (mic) on its publisher.
+   * @param {boolean} on
+   */
+  async setPublishAudio(on) {
+    await this.page.evaluate((value) => {
+      if (window.botPublisher) window.botPublisher.publishAudio(value);
+    }, on);
+  }
+
+  /**
+   * Repeatedly toggles the bot's camera off/on. The loop runs inside a single
+   * page.evaluate so timing is at browser speed, not gated by the CDP round-trip.
+   * @param {number} iterations - off→on cycles
+   * @param {number} [intervalMs=100]
+   */
+  async churnVideo(iterations, intervalMs = 100) {
+    await this.page.evaluate(
+      async ({ iterations, intervalMs }) => {
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+        for (let i = 0; i < iterations; i++) {
+          if (!window.botPublisher) break;
+          window.botPublisher.publishVideo(false);
+          await sleep(intervalMs);
+          if (!window.botPublisher) break;
+          window.botPublisher.publishVideo(true);
+          await sleep(intervalMs);
+        }
+      },
+      { iterations, intervalMs }
+    );
+  }
+
+  /**
    * Disconnects the bot from the session without closing the browser.
+   * Unpublishes first to avoid "cannot publish" errors during teardown,
+   * then waits for sessionDisconnected to confirm disconnect is complete.
    * Can call joinSession() again after this.
    */
   async disconnect() {
     if (this.page) {
       await this.page.evaluate(() => {
+        // Unpublish first to stop the publisher cleanly
+        if (window.botPublisher && window.botSession) {
+          try {
+            window.botSession.unpublish(window.botPublisher);
+            window.botPublisher.destroy();
+          } catch (_) {}
+          window.botPublisher = null;
+        }
         if (window.botSession) {
           window.botSession.disconnect();
         }
       });
+      // Wait for disconnect to complete (sessionDisconnected sets connected=false)
+      try {
+        await this.page.waitForFunction(
+          () => !window.botState.connected,
+          { timeout: 5000 }
+        );
+      } catch (_) {
+        // Timeout is acceptable — bot may already be disconnected
+      }
     }
   }
 
