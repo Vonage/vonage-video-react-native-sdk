@@ -63,8 +63,11 @@ React-native-TestApp/        # Full RN app for manual and E2E testing
 
 ## Development Workflow
 
+### Change review and publishing
+After making changes, tell the user they are ready for review and ask them to inspect the diff in Git source control before creating a commit or pushing to any remote.
+
 ### Branch naming
-Branch names must match Jira ticket IDs (e.g., `VIDCS-4050`).
+For internal work, include a Jira ticket ID in the branch name when applicable (e.g., `VIDCS-4050`). For external contributions without a Jira ticket, use a clear, descriptive branch name instead.
 
 ### Pull requests
 - Always create PRs as **Draft** (`gh pr create --draft`)
@@ -78,10 +81,6 @@ This repo uses **Conventional Commits** format enforced via `commitlint`:
 - `chore:` maintenance
 - `docs:` documentation
 - `refactor:` code restructure without behavior change
-
-**Note:** The standard VIDCS ticket-prefix format (`VIDCS-XXXX Description`) is NOT used in this repository due to a commit-msg hook that enforces conventional commits.
-
-**After making changes, tell the user they are ready for review and ask them to inspect the diff in Git source control before creating a commit or pushing to any remote.**
 
 ### Setup
 
@@ -187,9 +186,3 @@ Use `vg-ai` to manage AI development tooling:
 - Check environment health: `vg-ai doctor`
 - Update everything: `vg-ai update`
 
-### Jira Integration (Optional)
-
-This project supports Jira MCP integration for ticket context during development sessions. To enable:
-1. Set the environment variable: `export JIRA_PERSONAL_TOKEN=<your-token>`
-2. The Jira MCP server is configured globally and provides access to issue details, search, transitions, and more
-3. When working on a ticket, reference it by key (e.g., `VIDCS-XXXX`) to pull context into your session
