@@ -81,6 +81,8 @@ This repo uses **Conventional Commits** format enforced via `commitlint`:
 
 **Note:** The standard VIDCS ticket-prefix format (`VIDCS-XXXX Description`) is NOT used in this repository due to a commit-msg hook that enforces conventional commits.
 
+**After making changes, tell the user they are ready for review and ask them to inspect the diff in Git source control before creating a commit or pushing to any remote.**
+
 ### Setup
 
 ```bash
