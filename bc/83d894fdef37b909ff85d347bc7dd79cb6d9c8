@@ -1,22 +1,42 @@
 android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
-  h_b9583e878a641a 6-7,12,29-30,184-195,213-215,218-226,258-262,271-276,279,282-299,302-315,317-321,323-324,350-353,370,374,378-381,386,390,394,401,407,409-413,416,481,652-653,734-817
+  6d60ad611c4edd62 1-198
 android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
-  h_b9583e878a641a 105-111
+  6d60ad611c4edd62 1-7
 android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
-  h_b9583e878a641a 226-232,421,423-434,438-445
+  6d60ad611c4edd62 1-28
 src/OTSubscriber.js
-  h_b9583e878a641a 93-94,96,100-107
+  6d60ad611c4edd62 1-8
 src/helpers/OTSessionHelper.js
-  h_b9583e878a641a 55-57
+  6d60ad611c4edd62 1-3
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "bc83d894fdef37b909ff85d347bc7dd79cb6d9c8",
-  "prompts": {},
-  "humans": {
-    "h_b9583e878a641a": {
-      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+  "prompts": {
+    "6d60ad611c4edd62": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "9f256a33-2ae2-410f-b1ea-de6158b50a32",
+        "model": "gpt-4o"
+      },
+      "human_author": "igorperunovicvonage <igor.perunovic@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-10-02T07:27:45.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-02T07:27:45.000Z"
+        }
+      ],
+      "total_additions": 244,
+      "total_deletions": 42,
+      "accepted_lines": 244,
+      "overriden_lines": 0
     }
   }
 }
