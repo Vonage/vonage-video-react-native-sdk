@@ -10,6 +10,7 @@ import { each } from 'underscore';
 const MAX_SAFE_INTEGER = 32767;
 
 const sanitizeResolution = (resolution) => {
+  if (typeof resolution === 'string') return resolution;
   if (
     typeof resolution !== 'object' ||
     (resolution &&
@@ -124,4 +125,12 @@ const sanitizeStreamProperties = (streamProperties) => {
   });
 };
 
-export { sanitizeProperties, sanitizeStreamProperties };
+const nativeResolution = (resolution) => {
+  const sanitized = sanitizeResolution(resolution);
+  if (typeof sanitized === 'string') return sanitized;
+  const dimension = (value) =>
+    Number.isFinite(value) && value > 0 ? value : MAX_SAFE_INTEGER;
+  return `${dimension(sanitized.width)}x${dimension(sanitized.height)}`;
+};
+
+export { sanitizeProperties, sanitizeStreamProperties, nativeResolution };

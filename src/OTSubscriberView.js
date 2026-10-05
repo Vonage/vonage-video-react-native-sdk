@@ -1,3 +1,4 @@
+import { nativeResolution } from './helpers/OTSubscriberHelper';
 import React from 'react';
 import PropTypes from 'prop-types';
 import { OT } from './OT';
@@ -10,7 +11,8 @@ const withParsedJsonStats = (nativeEvent) => {
   }
 
   const jsonStats =
-    typeof nativeEvent.jsonStats === 'string' && nativeEvent.jsonStats.length > 0
+    typeof nativeEvent.jsonStats === 'string' &&
+    nativeEvent.jsonStats.length > 0
       ? nativeEvent.jsonStats
       : typeof nativeEvent.jsonArrayOfReports === 'string' &&
           nativeEvent.jsonArrayOfReports.length > 0
@@ -57,20 +59,12 @@ export default class OTSubscriberView extends React.Component {
     const streamProperties = this.context.streamProperties
       ? this.context.streamProperties[streamId]
       : undefined;
-    let {
+    const {
       audioVolume,
       preferredFrameRate,
       preferredResolution,
       subscribeToCaptions,
-    } = subscriberProperties;
-    if (streamProperties) {
-      ({
-        audioVolume,
-        preferredFrameRate,
-        preferredResolution,
-        subscribeToCaptions,
-      } = streamProperties);
-    }
+    } = { ...subscriberProperties, ...streamProperties };
     const subscribeToVideo =
       streamProperties?.subscribeToVideo ??
       subscriberProperties?.subscribeToVideo ??
@@ -94,10 +88,10 @@ export default class OTSubscriberView extends React.Component {
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}
-        subscribeToCaptions={subscribeToCaptions}
-        preferredFrameRate={preferredFrameRate}
-        preferredResolution={preferredResolution}
-        audioVolume={audioVolume}
+        subscribeToCaptions={subscribeToCaptions ?? false}
+        preferredFrameRate={preferredFrameRate ?? 32767}
+        preferredResolution={nativeResolution(preferredResolution)}
+        audioVolume={audioVolume ?? 100}
         onAudioLevel={
           eventHandlers.audioLevel
             ? (event) => {
