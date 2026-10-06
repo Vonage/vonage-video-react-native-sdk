@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.facebook.react.bridge.Arguments;
@@ -37,6 +38,14 @@ import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
 
+/**
+ * Publisher lifecycle threading contract:
+ * publish()/unpublish() (TurboModule thread) and OTRNPublisher.publishStream()
+ * (UI thread) race over the publishers/pendingPublishers maps. Run every mutation
+ * on the UI thread so these check-then-act sequences stay atomic and keep JS call
+ * order. Session.publish()/unpublish() must also run there (they touch the view).
+ * Keep UI-thread bodies to cheap map ops + the SDK call — no blocking work (ANR).
+ */
 @ReactModule(name = OpentokReactNativeModule.NAME)
 public class OpentokReactNativeModule extends NativeOpentokSpec implements
         SessionListener,
@@ -176,31 +185,49 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.publish(publisher);
-        }
+        // See class threading contract. UI thread coordinates with publishStream().
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                Session mSession = mSessions.get(sessionId);
+                if (mSession == null) {
+                    return;
+                }
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher != null) {
+                    sharedState.getPendingPublishers().remove(publisherId);
+                    mSession.publish(publisher);
+                } else {
+                    // View not attached yet; publishStream() completes this on attach.
+                    sharedState.getPendingPublishers().put(publisherId, Boolean.TRUE);
+                }
+            }
+        });
     }
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-        if (mSession == null) {
-            return;
-        }
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            mSession.unpublish(publisher);
-            publishers.remove(publisher);
-        }
+        // See class threading contract. UI thread keeps ordering with publish().
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Cancel any pending publish so a late-attaching view won't republish.
+                sharedState.getPendingPublishers().remove(publisherId);
+
+                ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
+                Publisher publisher = publishers.get(publisherId);
+                if (publisher == null) {
+                    return;
+                }
+                Session mSession = sharedState.getSessions().get(sessionId);
+                if (mSession != null) {
+                    mSession.unpublish(publisher);
+                }
+                Utils.releasePublisherIfSame(publisherId, publisher, "unpublish");
+            }
+        });
     }
 
     @Override
@@ -217,7 +244,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                 Subscriber subscriber = subscribers.get(streamId);
                 if (subscriber != null) {
                     mSession.unsubscribe(subscriber);
-                    subscribers.remove(subscriber);
+                    subscribers.remove(streamId);
                 }
             };
         });
@@ -334,6 +361,13 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             promise.reject("Session not found.");
             return;
         }
+        // The native getCapabilities() segfaults (SIGSEGV in libopentok) when the
+        // session is not yet connected. The connection is null until onConnected
+        // fires, so guard on it before touching capabilities.
+        if (mSession.getConnection() == null) {
+            promise.reject("Capabilities are unavailable until the session is connected.");
+            return;
+        }
         WritableMap sessionCapabilitiesMap = Arguments.createMap();
         Session.Capabilities sessionCapabilities = mSession.getCapabilities();
         sessionCapabilitiesMap.putBoolean("canForceMute", sessionCapabilities.canForceMute);
@@ -382,8 +416,22 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onDisconnected(Session session) {
         WritableMap payload = EventUtils.prepareJSSessionMap(session);
         emitOnSessionDisconnected(payload);
+        String sessionId = session.getSessionId();
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        mSessions.remove(session.getSessionId());
+        mSessions.remove(sessionId);
+
+        for (Map.Entry<String, Publisher> entry : sharedState.getPublishers().entrySet()) {
+            Session publisherSession = entry.getValue().getSession();
+            if (publisherSession != null
+                    && sessionId.equals(publisherSession.getSessionId())) {
+                Utils.releasePublisher(entry.getKey(), "sessionDisconnected");
+            }
+        }
+
+        Connection localConnection = session.getConnection();
+        if (localConnection != null && localConnection.getConnectionId() != null) {
+            sharedState.getConnections().remove(localConnection.getConnectionId());
+        }
     }
 
     @Override
@@ -397,6 +445,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onStreamDropped(Session session, Stream stream) {
         WritableMap payload = EventUtils.prepareJSStreamMap(stream, session);
         emitOnStreamDestroyed(payload);
+        sharedState.getSubscriberStreams().remove(stream.getStreamId());
     }
 
     @Override
@@ -474,7 +523,10 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasCaptions", !hasCaptions, hasCaptions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // hasCaptions is not part of the subscriber stream cache, so there is
+        // nothing to push. Previously this triggered a cache refresh that
+        // re-read the SDK for no reason, which was one of the paths into the
+        // otc_stream_copy crash.
     }
 
     @Override
@@ -482,7 +534,11 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasAudio", !hasAudio, hasAudio, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Push the value we were handed into the subscriber cache. The
+        // subscriber must never re-read the SDK to discover it (see
+        // OTRNSubscriber cache design).
+        OTRNSubscriber.applyHasAudioChangeForStream(stream.getStreamId(),
+                                                    hasAudio);
     }
 
     @Override
@@ -490,7 +546,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "hasVideo", !hasVideo, hasVideo, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyHasVideoChangeForStream(stream.getStreamId(),
+                                                    hasVideo);
     }
 
     @Override
@@ -508,7 +565,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoDimensions", oldVideoDimensions, newVideoDimensions, stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        OTRNSubscriber.applyVideoDimensionsChangeForStream(stream.getStreamId(),
+                                                           width, height);
     }
 
     @Override
@@ -518,7 +576,15 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         WritableMap eventData = EventUtils.prepareStreamPropertyChangedEventData(
                 "videoType", oldVideoType, streamVideoType.toString(), stream, session);
         emitOnStreamPropertyChanged(eventData);
-        OTRNSubscriber.requestCacheRefreshForStream(stream.getStreamId());
+        // Normalise to the same "screen"/"camera" vocabulary buildCacheEntry
+        // uses, so the cached value stays consistent with the one primed at
+        // subscribe time.
+        String normalisedVideoType =
+            streamVideoType == Stream.StreamVideoType.StreamVideoTypeScreen
+                ? "screen"
+                : "camera";
+        OTRNSubscriber.applyVideoTypeChangeForStream(stream.getStreamId(),
+                                                     normalisedVideoType);
     }
 
     @Override
