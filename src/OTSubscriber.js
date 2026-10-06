@@ -22,7 +22,7 @@ export default class OTSubscriber extends Component {
 
   constructor(props, context) {
     super(props, context);
-    let initialStreams = getStreams(this.context.sessionId);
+    let initialStreams = [...getStreams(this.context.sessionId)];
     let initialPublisherStream = getPublisherStream(this.context.sessionId);
     if (props.subscribeToSelf && initialPublisherStream) {
       initialStreams.push(initialPublisherStream);
