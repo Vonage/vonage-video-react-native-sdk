@@ -109,3 +109,41 @@ describe('A partial per-stream override inherits global settings', () => {
     });
   });
 });
+
+describe('Malformed resolution strings and undefined stream fields', () => {
+  it.each(['', '640', '0x480', '640x0', 'axb', '99999x480', '640x480x2'])(
+    'falls back to unlimited for malformed resolution %p',
+    (preferredResolution) => {
+      expect(renderedProps({ preferredResolution }).preferredResolution).toBe(
+        '32767x32767'
+      );
+    }
+  );
+
+  it('does not let undefined stream fields erase global preferences', () => {
+    expect(
+      renderedProps(
+        {
+          audioVolume: 0,
+          subscribeToCaptions: true,
+          preferredFrameRate: 7,
+          preferredResolution: '640x480',
+        },
+        {
+          'remote-a': {
+            scaleBehavior: 'fit',
+            audioVolume: undefined,
+            subscribeToCaptions: undefined,
+            preferredFrameRate: undefined,
+            preferredResolution: undefined,
+          },
+        }
+      )
+    ).toMatchObject({
+      audioVolume: 0,
+      subscribeToCaptions: true,
+      preferredFrameRate: 7,
+      preferredResolution: '640x480',
+    });
+  });
+});

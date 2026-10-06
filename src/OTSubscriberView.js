@@ -64,7 +64,14 @@ export default class OTSubscriberView extends React.Component {
       preferredFrameRate,
       preferredResolution,
       subscribeToCaptions,
-    } = { ...subscriberProperties, ...streamProperties };
+    } = {
+      ...subscriberProperties,
+      ...Object.fromEntries(
+        Object.entries(streamProperties ?? {}).filter(
+          ([, value]) => value !== undefined
+        )
+      ),
+    };
     const subscribeToVideo =
       streamProperties?.subscribeToVideo ??
       subscriberProperties?.subscribeToVideo ??
