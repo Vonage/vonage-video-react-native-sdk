@@ -101,7 +101,9 @@ adb -s "$DEVICE_ID" logcat -c || true
 adb -s "$DEVICE_ID" logcat -v time > android-logcat.txt 2>&1 &
 LOGCAT_PID=$!
 
-if ! npm run test:e2e:android; then
+# Keep the continuous host logcat above; per-test logcat shutdowns in Detox
+# coincide with ADB transport loss and abort the remaining suites on CI.
+if ! npx detox test -c android.emu.debug --record-logs none --take-screenshots failing -- --testTimeout=240000 --testPathIgnorePatterns /node_modules/ '\.stress\.js$'; then
   echo "=== Detox failed: collecting Android diagnostics ==="
   adb -s "$DEVICE_ID" devices || true
   adb -s "$DEVICE_ID" shell getprop ro.build.version.release || true
