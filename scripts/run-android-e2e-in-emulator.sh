@@ -97,10 +97,6 @@ unlock_emulator
 echo "Configuring adb reverse for Metro..."
 adb -s "$DEVICE_ID" reverse tcp:8081 tcp:8081
 
-# Record one continuous logcat stream. Per-test Detox recordings repeatedly
-# interrupt ADB clients; the CI transport dropped at that boundary, taking the
-# instrumentation and port forwarding down with it.
-adb version
 adb -s "$DEVICE_ID" logcat -c || true
 adb -s "$DEVICE_ID" logcat -v time > android-logcat.txt 2>&1 &
 LOGCAT_PID=$!

@@ -46,7 +46,6 @@ describe('Publisher Options', () => {
 
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
-    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasAudio')).tap();
     console.log('[audio] Unmuted.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
@@ -60,7 +59,6 @@ describe('Publisher Options', () => {
 
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
-    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasVideo')).tap();
     console.log('[video] Camera on.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
@@ -87,7 +85,6 @@ describe('Publisher Options', () => {
     console.log('[audio-only] Publishing audio only.');
 
     // Restore
-    await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasVideo')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
@@ -100,7 +97,6 @@ describe('Publisher Options', () => {
     console.log('[video-only] Publishing video only.');
 
     // Restore
-    await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
