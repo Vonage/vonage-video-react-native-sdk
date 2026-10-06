@@ -438,15 +438,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
-            audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
             audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
             statsArray.pushMap(audioStats)
         }
         val serializedStats = statsArray.toString()
         val payload =
             Arguments.createMap().apply {
-                putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
-                putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
+                putString("jsonStats", serializedStats) // matches iOS/codegen
             }
         emitOpenTokEvent("onAudioNetworkStats", payload)
     }
@@ -472,15 +470,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("startTime", stat.startTime) // kept for backward compatibility
                 audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
                 statsArrayMap.pushMap(audioStats)
             }
             val serializedStats = statsArrayMap.toString()
             val payload =
                 Arguments.createMap().apply {
-                    putString("jsonStats", serializedStats) // preferred key (matches iOS/codegen)
-                    putString("stats", serializedStats) // deprecated legacy key kept for backward compatibility
+                    putString("jsonStats", serializedStats) // matches iOS/codegen
                 }
             emitOpenTokEvent("onVideoNetworkStats", payload)
         }

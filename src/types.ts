@@ -107,10 +107,6 @@ export type PublisherAudioNetworkStats = {
   audioBytesSent: number;
   audioPacketsSent: number;
   timestamp: number;
-  /** @deprecated Use `timestamp`. */
-  startTime?: number;
-  /** @deprecated Use `timestamp`. */
-  timeStamp?: number;
 };
 
 export type PublisherVideoNetworkStats = {
@@ -120,16 +116,19 @@ export type PublisherVideoNetworkStats = {
   videoBytesSent: number;
   videoPacketsSent: number;
   timestamp: number;
-  /** @deprecated Use `timestamp`. */
-  startTime?: number;
 };
 
+/**
+ * @deprecated Deprecated in the native iOS and Android SDKs in favour of
+ * subscriber media link stats.
+ */
 export type SenderStats = {
   connectionMaxAllocatedBitrate: number;
   connectionEstimatedBandwidth: number;
 };
 
 export type VideoNetworkStatsEvent = {
+  /** @deprecated Deprecated in the native SDKs in favour of subscriber media link stats. */
   senderStats?: SenderStats;
   videoBytesReceived: number;
   videoPacketsLost: number;
@@ -142,23 +141,48 @@ export type SubscriberAudioNetworkStatsEvent = {
   audioPacketsReceived: number;
   audioBytesReceived: number;
   timestamp?: number;
-  /** @deprecated Use `timestamp`. */
-  startTime?: number;
-  /** @deprecated Use `timestamp`. */
-  timeStamp?: number;
 };
 
 /**
  * Payload shape for subscriber RTC stats reports.
  * `jsonStats` is the canonical transport field from native.
- * `jsonArrayOfReports` is a deprecated compatibility alias.
  * `stats` is an optional parsed convenience payload added by the JS layer.
  */
 export type SubscriberRtcStatsReportPayload = SubscriberRTCStatsReportEvent & {
-  /** @deprecated Use `jsonStats`. */
-  jsonArrayOfReports?: string;
   /** Parsed subscriber RTC stats report data. */
   stats?: unknown;
+};
+
+/**
+ * Android-only flat shape of the subscriber `audioNetworkStats` payload (iOS never sends it).
+ * Same shape as `SubscriberAudioNetworkStatsEvent`.
+ */
+type SubscriberAudioNetworkStatsFlatPayload = {
+  /** @deprecated Android-only flat field; use `stats.audioPacketsLost`. */
+  audioPacketsLost: number;
+  /** @deprecated Android-only flat field; use `stats.audioPacketsReceived`. */
+  audioPacketsReceived: number;
+  /** @deprecated Android-only flat field; use `stats.audioBytesReceived`. */
+  audioBytesReceived: number;
+  /** @deprecated Android-only flat field; use `stats.timestamp`. */
+  timestamp?: number;
+};
+
+/**
+ * Android-only flat shape of the subscriber `videoNetworkStats` payload (iOS never sends it).
+ * Same shape as `VideoNetworkStatsEvent`.
+ */
+type SubscriberVideoNetworkStatsFlatPayload = {
+  /** @deprecated Android-only flat field; use `stats.senderStats`. */
+  senderStats?: SenderStats;
+  /** @deprecated Android-only flat field; use `stats.videoBytesReceived`. */
+  videoBytesReceived: number;
+  /** @deprecated Android-only flat field; use `stats.videoPacketsLost`. */
+  videoPacketsLost: number;
+  /** @deprecated Android-only flat field; use `stats.videoPacketsReceived`. */
+  videoPacketsReceived: number;
+  /** @deprecated Android-only flat field; use `stats.timestamp`. */
+  timestamp: number;
 };
 
 export type SubscriberCaptionReceivedEvent = {
@@ -185,6 +209,7 @@ export type OTSessionEventHandlers = {
   connectionDestroyed?: CallbackWithParam<ConnectionDestroyedEvent>;
   error?: CallbackWithParam<SessionErrorEvent | ErrorEvent | unknown>;
   muteForced?: CallbackWithParam<MuteForcedEvent>;
+  /** @deprecated Never emitted by the SDK; listen to `error` instead. */
   otrnError?: CallbackWithParam<unknown>;
   sessionConnected?: CallbackWithParam<SessionConnectEvent>;
   sessionDisconnected?: CallbackWithParam<SessionDisconnectEvent>;
@@ -231,6 +256,7 @@ export type OTPublisherEventHandlers = {
   audioNetworkStats?: CallbackWithParam<PublisherAudioNetworkStats[] | unknown>;
   error?: CallbackWithParam<ErrorEvent | unknown>;
   muteForced?: Callback;
+  /** @deprecated Never emitted by the SDK; listen to `error` instead. */
   otrnError?: CallbackWithParam<unknown>;
   rtcStatsReport?: CallbackWithParam<Array<{ connectionId: string; jsonArrayOfReports: string }> | unknown>;
   streamCreated?: CallbackWithParam<PublisherStreamEvent>;
@@ -270,30 +296,20 @@ export type OTSubscriberEventHandlers = {
   audioLevel?: CallbackWithParam<SubscriberAudioLevelEvent>;
   /**
    * Preferred shape includes parsed `event.stats` when available.
-   * Fallback shape is the legacy flat event payload.
+   * The flat fallback shape is deprecated (Android-only).
    */
   audioNetworkStats?: CallbackWithParam<
     | (SubscriberAudioStatsEvent & { stats?: SubscriberAudioNetworkStatsEvent })
-    | SubscriberAudioNetworkStatsEvent
+    | SubscriberAudioNetworkStatsFlatPayload
   >;
   captionReceived?: CallbackWithParam<SubscriberCaptionEvent | SubscriberCaptionReceivedEvent>;
-  /**
-    * @deprecated Legacy alias for subscriber connection events.
-    * Use `OTSubscriberEventHandlers.subscriberConnected` instead.
-   */
-  connected?: CallbackWithParam<SubscriberStreamEvent>;
-  /**
-    * @deprecated Legacy alias for subscriber disconnection events.
-    * Use `OTSubscriberEventHandlers.subscriberDisconnected` instead.
-   */
-  disconnected?: CallbackWithParam<SubscriberStreamEvent>;
   error?: CallbackWithParam<StreamErrorEvent | ErrorEvent | unknown>;
+  /** @deprecated Never emitted by the SDK; listen to `error` instead. */
   otrnError?: CallbackWithParam<unknown>;
   reconnected?: CallbackWithParam<SubscriberStreamEvent>;
   /**
-    * `jsonStats` is the canonical transport field for this callback payload.
-    * `jsonArrayOfReports` is deprecated and kept only for backward compatibility.
-    * Use `stats` when available for parsed convenience data.
+   * `jsonStats` is the canonical transport field for this callback payload.
+   * Use `stats` when available for parsed convenience data.
    */
   rtcStatsReport?: CallbackWithParam<SubscriberRtcStatsReportPayload>;
   subscriberConnected?: CallbackWithParam<SubscriberStreamEvent>;
@@ -305,11 +321,11 @@ export type OTSubscriberEventHandlers = {
   videoEnabled?: CallbackWithParam<VideoEnabledEvent>;
   /**
    * Preferred shape includes parsed `event.stats` when available.
-   * Fallback shape is the legacy flat event payload.
+   * The flat fallback shape is deprecated (Android-only).
    */
   videoNetworkStats?: CallbackWithParam<
     | (SubscriberVideoNetworkStatsEvent & { stats?: VideoNetworkStatsEvent })
-    | VideoNetworkStatsEvent
+    | SubscriberVideoNetworkStatsFlatPayload
   >;
 };
 
@@ -398,22 +414,3 @@ export type OTSubscriberComponent = React.ComponentClass<OTSubscriberProps> & {
 export type OTSubscriberViewComponent = React.ComponentClass<OTSubscriberViewProps> & {
   prototype: OTSubscriberViewInstance;
 };
-/**
- * @deprecated Use OTSessionInstance for ref types
- */
-export type OTSession = OTSessionInstance;
-
-/**
- * @deprecated Use OTPublisherInstance for ref types
- */
-export type OTPublisher = OTPublisherInstance;
-
-/**
- * @deprecated Use OTSubscriberInstance for ref types
- */
-export type OTSubscriber = OTSubscriberInstance;
-
-/**
- * @deprecated Use OTSubscriberViewInstance for ref types
- */
-export type OTSubscriberView = OTSubscriberViewInstance;

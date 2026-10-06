@@ -46,6 +46,7 @@ export type SessionOptions = {
   sessionMigration?: boolean;
   iceConfig?: IceConfig;
   ipWhitelist?: boolean;
+  /** @deprecated Has no effect. */
   isCamera2Capable?: boolean;
   proxyUrl?: string;
   useTextureViews?: boolean;

@@ -28,6 +28,6 @@
     "target": "ESNext",
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*", "@types/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["lib", "e2e", "node_modules"]
 }
