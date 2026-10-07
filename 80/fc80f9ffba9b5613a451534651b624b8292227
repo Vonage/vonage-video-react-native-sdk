@@ -1,0 +1,21 @@
+src/__tests__/OTSession.eventHandlers.test.js
+  8fb3125705fa8056 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "21c9b394ad3db668fd7f8098a6d8ee938ca8735e",
+  "prompts": {
+    "8fb3125705fa8056": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11534-4047-7133-8f09-701fffcec5c0",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
