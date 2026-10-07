@@ -10,7 +10,7 @@ import com.opentok.android.BaseVideoCapturer;
 
 public class OTScreenCapturer extends BaseVideoCapturer {
 
-    private boolean capturing = false;
+    private volatile boolean capturing = false;
     private View contentView;
 
     private int fps = 15;
@@ -26,7 +26,7 @@ public class OTScreenCapturer extends BaseVideoCapturer {
     private Runnable newFrame = new Runnable() {
         @Override
         public void run() {
-            if (capturing) {
+            if (capturing && contentView != null) {
                 int width = contentView.getWidth();
                 int height = contentView.getHeight();
 
@@ -115,7 +115,23 @@ public class OTScreenCapturer extends BaseVideoCapturer {
 
     @Override
     public void destroy() {
-
+        // The SDK may call destroy() off the looper that runs newFrame, so the bitmap
+        // is released on that looper: queued after any in-flight frame, it can never
+        // recycle bmp underneath getPixels().
+        stopCapture();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (bmp != null) {
+                    bmp.recycle();
+                    bmp = null;
+                }
+                canvas = null;
+                frame = null;
+                // contentView retains the Activity's whole view tree.
+                contentView = null;
+            }
+        });
     }
 
     @Override
