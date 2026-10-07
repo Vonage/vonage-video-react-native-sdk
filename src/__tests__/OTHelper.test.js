@@ -39,19 +39,15 @@ describe('OTHelper', () => {
       expect(sanitizeBooleanProperty(false)).toBe(false);
     });
 
-    // Documents the current behavior: the guard is `property || property === undefined`,
-    // so any truthy value collapses to `true` (the raw value is not preserved).
     it('returns true for a truthy non-boolean', () => {
       expect(sanitizeBooleanProperty('yes')).toBe(true);
       expect(sanitizeBooleanProperty(1)).toBe(true);
     });
 
-    // Falsy-but-defined values fail both sides of the guard and fall through,
-    // so the raw value is returned as-is.
-    it('returns the falsy value itself for a falsy non-boolean (not undefined)', () => {
-      expect(sanitizeBooleanProperty(0)).toBe(0);
-      expect(sanitizeBooleanProperty(null)).toBeNull();
-      expect(sanitizeBooleanProperty('')).toBe('');
+    it('returns false for a defined falsy non-boolean', () => {
+      expect(sanitizeBooleanProperty(0)).toBe(false);
+      expect(sanitizeBooleanProperty(null)).toBe(false);
+      expect(sanitizeBooleanProperty('')).toBe(false);
     });
   });
 
