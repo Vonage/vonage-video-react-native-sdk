@@ -481,7 +481,8 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     }
 
     public func session(_ session: OTSession, didFailWithError error: OTError) {
-        let errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+        var errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+        errorInfo["sessionId"] = session.sessionId
         impl?.ot?.emit(onSessionError: errorInfo)
     }
 
@@ -547,6 +548,7 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     {
         var muteForcedInfo: [String: Any] = [:]
         muteForcedInfo["active"] = muteForced.active
+        muteForcedInfo["sessionId"] = session.sessionId
         impl?.ot?.emit(onMuteForced: muteForcedInfo)
     }
     public func session(
