@@ -1,0 +1,21 @@
+src/__tests__/OTHelper.test.js
+  8fb3125705fa8056 47,48,49,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "4ad694df0d5388d7d690ce381bd5eb69487e82e2",
+  "prompts": {
+    "8fb3125705fa8056": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11534-4047-7133-8f09-701fffcec5c0",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 4,
+      "total_deletions": 8,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
