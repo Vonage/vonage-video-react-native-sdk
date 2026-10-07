@@ -215,6 +215,50 @@ RCT_EXPORT_MODULE()
 //}
 
 
+#pragma mark - Calling services (CallKit)
+
+- (void)isCallingServicesModeAvailable:(nonnull RCTPromiseResolveBlock)resolve
+                                reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl isCallingServicesModeAvailable:resolve reject:reject];
+}
+
+- (void)enableCallingServicesMode:(nonnull RCTPromiseResolveBlock)resolve
+                           reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl enableCallingServicesMode:resolve reject:reject];
+}
+
+- (void)preconfigureAudioSessionForCall:(NSString *)mode
+                                resolve:(nonnull RCTPromiseResolveBlock)resolve
+                                 reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl preconfigureAudioSessionForCall:mode resolve:resolve reject:reject];
+}
+
+- (void)notifyAudioSessionActivated:(nonnull RCTPromiseResolveBlock)resolve
+                             reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl notifyAudioSessionActivated:resolve reject:reject];
+}
+
+- (void)notifyAudioSessionDeactivated:(nonnull RCTPromiseResolveBlock)resolve
+                               reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl notifyAudioSessionDeactivated:resolve reject:reject];
+}
+
+- (void)setRequestAudioFocus:(BOOL)requestFocus
+                     resolve:(nonnull RCTPromiseResolveBlock)resolve
+                      reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl setRequestAudioFocus:requestFocus resolve:resolve reject:reject];
+}
+
+- (void)notifyAudioFocusActivated:(nonnull RCTPromiseResolveBlock)resolve
+                           reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl notifyAudioFocusActivated:resolve reject:reject];
+}
+
+- (void)notifyAudioFocusDeactivated:(nonnull RCTPromiseResolveBlock)resolve
+                             reject:(nonnull RCTPromiseRejectBlock)reject {
+    [impl notifyAudioFocusDeactivated:resolve reject:reject];
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
