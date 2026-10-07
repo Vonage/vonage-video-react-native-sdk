@@ -1,6 +1,13 @@
 import React, { Component } from 'react';
 import { View, Text, ScrollView, ImageBackground, Alert, TextInput } from 'react-native';
-import { OTSession, OTPublisher, OTSubscriber } from '@vonage/client-sdk-video-react-native';
+import {
+  OTSession,
+  OTPublisher,
+  OTSubscriber,
+  type OTSessionInstance,
+  type OTPublisherInstance,
+  type OTSubscriberInstance,
+} from '@vonage/client-sdk-video-react-native';
 import { State, DegradationPreference, VideoStats, TabName } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
 import { createSessionHandlers } from '../handlers/sessionHandlers';
@@ -18,15 +25,15 @@ class VideoCallScreen extends Component<{}, State> {
   streamId = '';
   shouldLogNextSubscriberVideoStats = false;
   statsUpdateInterval: NodeJS.Timeout | null = null;
-  sessionRef: React.RefObject<OTSession>;
-  pubRef: React.RefObject<OTPublisher>;
-  subRef: React.RefObject<OTSubscriber>;
+  sessionRef: React.RefObject<OTSessionInstance | null>;
+  pubRef: React.RefObject<OTPublisherInstance | null>;
+  subRef: React.RefObject<OTSubscriberInstance | null>;
 
   constructor(props: {}) {
     super(props);
-    this.sessionRef = React.createRef<OTSession>();
-    this.pubRef = React.createRef<OTPublisher>();
-    this.subRef = React.createRef<OTSubscriber>();
+    this.sessionRef = React.createRef<OTSessionInstance>();
+    this.pubRef = React.createRef<OTPublisherInstance>();
+    this.subRef = React.createRef<OTSubscriberInstance>();
   }
 
   state: State = {
@@ -87,11 +94,10 @@ class VideoCallScreen extends Component<{}, State> {
       audioLevel: 0,
       audioNetworkStats: 0,
       captionReceived: 0,
-      connected: 0,
-      disconnected: 0,
       error: 0,
       reconnected: 0,
       subscriberConnected: 0,
+      subscriberDisconnected: 0,
       rtcStatsReport: 0,
       videoDataReceived: 0,
       videoDisabled: 0,
@@ -443,11 +449,10 @@ class VideoCallScreen extends Component<{}, State> {
             audioLevel: 0,
             audioNetworkStats: 0,
             captionReceived: 0,
-            connected: 0,
-            disconnected: 0,
             error: 0,
             reconnected: 0,
             subscriberConnected: 0,
+            subscriberDisconnected: 0,
             rtcStatsReport: 0,
             videoDataReceived: 0,
             videoDisabled: 0,
@@ -1134,11 +1139,10 @@ class VideoCallScreen extends Component<{}, State> {
         audioLevel: 0,
         audioNetworkStats: 0,
         captionReceived: 0,
-        connected: 0,
-        disconnected: 0,
         error: 0,
         reconnected: 0,
         subscriberConnected: 0,
+        subscriberDisconnected: 0,
         rtcStatsReport: 0,
         videoDataReceived: 0,
         videoDisabled: 0,

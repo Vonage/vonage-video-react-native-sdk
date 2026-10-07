@@ -112,6 +112,4 @@ export const createSessionHandlers = (
       message: event?.message,
     });
   },
-  otrnError: (event: any) => {
-  },
 });

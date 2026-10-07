@@ -66,11 +66,10 @@ export interface SubscriberEvents {
   audioLevel: number;
   audioNetworkStats: number;
   captionReceived: number;
-  connected: number;
-  disconnected: number;
   error: number;
   reconnected: number;
   subscriberConnected: number;
+  subscriberDisconnected: number;
   rtcStatsReport: number;
   videoDataReceived: number;
   videoDisabled: number;

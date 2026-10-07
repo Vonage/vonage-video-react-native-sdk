@@ -9,13 +9,7 @@ const withParsedJsonStats = (nativeEvent) => {
     return nativeEvent;
   }
 
-  const jsonStats =
-    typeof nativeEvent.jsonStats === 'string' && nativeEvent.jsonStats.length > 0
-      ? nativeEvent.jsonStats
-      : typeof nativeEvent.jsonArrayOfReports === 'string' &&
-          nativeEvent.jsonArrayOfReports.length > 0
-        ? nativeEvent.jsonArrayOfReports
-        : undefined;
+  const { jsonStats } = nativeEvent;
 
   if (typeof jsonStats !== 'string' || jsonStats.length === 0) {
     return nativeEvent;
@@ -115,11 +109,9 @@ export default class OTSubscriberView extends React.Component {
             : undefined
         }
         onSubscriberConnected={(event) => {
-          eventHandlers.connected?.(event.nativeEvent);
           eventHandlers.subscriberConnected?.(event.nativeEvent);
         }}
         onSubscriberDisconnected={(event) => {
-          eventHandlers.disconnected?.(event.nativeEvent);
           eventHandlers.subscriberDisconnected?.(event.nativeEvent);
         }}
         onSubscriberError={(event) => {
