@@ -370,7 +370,7 @@ import React
         guard let session = OTRN.sharedState.sessions[sessionId] else {
             return
         }
-        for subscriber in OTRN.sharedState.subscribers {
+        for subscriber in OTRN.sharedState.subscribers.snapshot {
             if let streamId = subscriber.value.stream?.streamId,
                OTRN.sharedState.subscriberStreams[streamId] != nil {
                 subscriber.value.getRtcStatsReport(&error)
