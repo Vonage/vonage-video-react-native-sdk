@@ -120,10 +120,9 @@ import React
             properties["subscribeToVideo"] as Any)
         subscriber.subscribeToCaptions = Utils.sanitizeBooleanProperty(
             properties["subscribeToCaptions"] as Any)
-        subscriber.preferredFrameRate = Utils.sanitizePreferredFrameRate(
-            properties["preferredFrameRate"] as Any)
-        subscriber.preferredResolution = Utils.sanitizePreferredResolution(
-            properties["preferredResolution"] as Any)
+        subscriber.preferredFrameRate = (properties["preferredFrameRate"] as? NSNumber)?.floatValue
+            ?? Float.greatestFiniteMagnitude
+        subscriber.preferredResolution = Self.preferredSize(properties["preferredResolution"] as? String)
         subscriber.viewScaleBehavior = Utils.sanitizeStringProperty(properties["scaleBehavior"]).toViewScaleBehavior
 
         var error: OTError?
@@ -175,6 +174,34 @@ import React
         guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""]
         else { return }
         subscriber.subscribeToCaptions = subscribeToCaptions
+    }
+
+    private static func preferredSize(_ resolution: String?) -> CGSize {
+        guard let resolution = resolution else {
+            return CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        }
+        let dimensions = resolution.split(separator: "x", omittingEmptySubsequences: false)
+        guard dimensions.count == 2,
+              let width = Double(dimensions[0]), let height = Double(dimensions[1]),
+              width.isFinite, height.isFinite, width > 0, height > 0 else {
+            return CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        }
+        return CGSize(width: width, height: height)
+    }
+
+    @objc public func setAudioVolume(_ audioVolume: Double) {
+        guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""] else { return }
+        subscriber.audioVolume = audioVolume
+    }
+
+    @objc public func setPreferredFrameRate(_ preferredFrameRate: Int32) {
+        guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""] else { return }
+        subscriber.preferredFrameRate = Float(preferredFrameRate)
+    }
+
+    @objc public func setPreferredResolution(_ preferredResolution: String) {
+        guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""] else { return }
+        subscriber.preferredResolution = Self.preferredSize(preferredResolution)
     }
 
     @objc public func setScaleBehavior(_ scaleBehavior: String) {
