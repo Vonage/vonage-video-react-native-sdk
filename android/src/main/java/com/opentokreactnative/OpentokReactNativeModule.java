@@ -121,7 +121,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
         session.setArchiveListener(this);
         session.setConnectionListener(this);
-        session.setMuteListener(this);
+        session.setReconnectionListener(this);
         session.setMuteListener(this);
         session.setSessionListener(this);
         session.setSignalListener(this);
@@ -510,12 +510,12 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void onReconnecting(Session session) {
-        emitOnSessionReconnecting(null);
+        emitOnSessionReconnecting(EventUtils.prepareJSSessionMap(session));
     }
 
     @Override
     public void onReconnected(Session session) {
-        emitOnSessionReconnected(null);
+        emitOnSessionReconnected(EventUtils.prepareJSSessionMap(session));
     }
 
     @Override
