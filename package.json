@@ -252,6 +252,12 @@
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
+    },
+    "ios": {
+      "componentProvider": {
+        "OTRNPublisher": "OTRNPublisherComponentView",
+        "OTRNSubscriber": "OTRNSubscriberComponentView"
+      }
     }
   },
   "create-react-native-library": {
