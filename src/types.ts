@@ -380,10 +380,14 @@ export type VideoFilter =
 
 export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   getRtcStatsReport: () => void;
-  setVideoTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
-  setAudioTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
-  applyVideoFilter: (filter: VideoFilter) => void;
-  clearVideoFilter: () => void;
+  setVideoTransformers: (
+    transformers: Array<{ name: string; properties?: string }>
+  ) => Promise<void>;
+  setAudioTransformers: (
+    transformers: Array<{ name: string; properties?: string }>
+  ) => void;
+  applyVideoFilter: (filter: VideoFilter) => Promise<void>;
+  clearVideoFilter: () => Promise<void>;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {

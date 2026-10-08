@@ -161,7 +161,8 @@ public final class Utils {
                 String transformerName = transformerList.getMap(i).getString("name");
                 VideoTransformer transformer = publisher.new VideoTransformer(
                         transformerName,
-                        transformerList.getMap(i).getString("properties")
+                        transformerList.getMap(i).hasKey("properties") && !transformerList.getMap(i).isNull("properties")
+                                ? transformerList.getMap(i).getString("properties") : "{}"
                 );
                 nativeVideoTransformers.add(transformer);
             }

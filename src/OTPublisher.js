@@ -166,7 +166,7 @@ export default class OTPublisher extends React.Component {
 
   setVideoTransformers(transformers = []) {
     //NOSONAR - this method is exposed externally
-    OT.setVideoTransformers(
+    return OT.setVideoTransformers(
       this.context.sessionId,
       this.state.publisherId,
       transformers
@@ -186,7 +186,7 @@ export default class OTPublisher extends React.Component {
   // NOTE (mobile): backgroundReplacement expects a LOCAL image file path — unlike
   // the Web SDK's backgroundImgUrl, a remote URL is not fetched by the native
   // media library, so download the image to a local file first.
-  applyVideoFilter(filter) {
+  async applyVideoFilter(filter) {
     //NOSONAR - this method is exposed externally
     let transformer;
     if (filter && filter.type === 'backgroundBlur') {
@@ -219,7 +219,9 @@ export default class OTPublisher extends React.Component {
       }
       transformer = {
         name: 'BackgroundReplacement',
-        properties: JSON.stringify({ image_file_path: filter.backgroundImgUrl }),
+        properties: JSON.stringify({
+          image_file_path: filter.backgroundImgUrl,
+        }),
       };
     } else {
       throw new Error(
@@ -228,12 +230,12 @@ export default class OTPublisher extends React.Component {
         }". Use "backgroundBlur" or "backgroundReplacement".`
       );
     }
-    this.setVideoTransformers([transformer]);
+    await this.setVideoTransformers([transformer]);
   }
 
-  clearVideoFilter() {
+  async clearVideoFilter() {
     //NOSONAR - this method is exposed externally
-    this.setVideoTransformers([]);
+    await this.setVideoTransformers([]);
   }
 
   componentWillUnmount() {

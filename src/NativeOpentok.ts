@@ -153,7 +153,7 @@ export interface Spec extends TurboModule {
       name: string;
       properties?: string;
     }>
-  ): void;
+  ): Promise<void>;
   publish(sessionId: string, publisherId: string): void;
   unpublish(sessionId: string, publisherId: string): void;
   removeSubscriber(sessionId: string, streamId: string): void;

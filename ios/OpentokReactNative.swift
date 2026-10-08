@@ -411,35 +411,41 @@ import React
         publisher.audioTransformers = nativeTransformers
     }
 
-    @objc public func setVideoTransformers(_ sessionId: String, publisherId: String, transformers: NSArray) -> Void {
+    @objc public func setVideoTransformers(
+        _ sessionId: String,
+        publisherId: String,
+        transformers: NSArray,
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) -> Void {
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
-            print("ERROR: Could not find publisher with ID \(publisherId)")
+            reject("OT_INVALID_STATE", "Publisher not found.", nil)
             return
         }
-        // Optionally use sessionId for session-specific logic
         var nativeTransformers: [OTVideoTransformer] = []
 
-        for case let transformer as [String: Any] in transformers {
-            guard let transformerName = transformer["name"] as? String else {
-                print("ERROR: Invalid transformer format. Each transformer must have a 'name' key")
+        for item in transformers {
+            guard let transformer = item as? [String: Any],
+                  let transformerName = transformer["name"] as? String else {
+                reject("OT_VIDEO_FILTER_ERROR", "Each video transformer must have a name.", nil)
                 return
             }
-            
-            let transformerProperties = transformer["properties"] as? String ?? ""
-            
+            let transformerProperties = transformer["properties"] as? String ?? "{}"
             guard let nativeTransformer = OTVideoTransformer(
                 name: transformerName,
                 properties: transformerProperties
             ) else {
-                print("ERROR: Failed to create video transformer with name: \(transformerName)")
+                reject("OT_VIDEO_FILTER_ERROR", "Failed to create video transformer: \(transformerName)", nil)
                 return
             }
-            
             nativeTransformers.append(nativeTransformer)
         }
-        
+
+        // Keep the existing pipeline when any transformer could not be created.
         publisher.videoTransformers = nativeTransformers
+        resolve(nil)
     }
+
 }
 
 class DebugAlertHelper {

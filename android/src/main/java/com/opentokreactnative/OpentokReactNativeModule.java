@@ -343,14 +343,31 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         }
     }
 
-    //@Override Move this to publisher code
-    public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers) {
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            ArrayList<PublisherKit.VideoTransformer> nativeVideoTransformers = Utils.sanitizeVideoTransformerList(publisher, videoTransformers);
-            publisher.setVideoTransformers(nativeVideoTransformers);
-        }
+    @Override
+    public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers, Promise promise) {
+        UiThreadUtil.runOnUiThread(() -> {
+            Publisher publisher = sharedState.getPublishers().get(publisherId);
+            if (publisher == null) {
+                promise.reject("OT_INVALID_STATE", "Publisher not found.");
+                return;
+            }
+            try {
+                // Construct every transformer before replacing the current list.
+                ArrayList<PublisherKit.VideoTransformer> nativeVideoTransformers = Utils.sanitizeVideoTransformerList(publisher, videoTransformers);
+                publisher.setVideoTransformers(nativeVideoTransformers);
+                // Publishers are created on the UI thread. The SDK posts its setter
+                // to that same looper, so acknowledge after the queued setter runs.
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    if (sharedState.getPublishers().get(publisherId) != publisher) {
+                        promise.reject("OT_INVALID_STATE", "Publisher was removed during the video transformer update.");
+                    } else {
+                        promise.resolve(null);
+                    }
+                });
+            } catch (Exception error) {
+                promise.reject("OT_VIDEO_FILTER_ERROR", error.getMessage(), error);
+            }
+        });
     }
 
     @Override
