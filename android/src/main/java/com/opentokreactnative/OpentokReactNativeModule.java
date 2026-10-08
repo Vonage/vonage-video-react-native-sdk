@@ -75,29 +75,65 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void invalidate() {
-        // New-Architecture cleanup hook. OTRN is a static singleton, so without this
-        // the previous Session survives a JS reload — still connected to the backend
-        // and still dispatching callbacks into a destroyed React instance. Disconnect
-        // the sessions, remove their listeners, and clear the shared registries.
-        for (Session session : sharedState.getSessions().values()) {
-            session.setSessionListener(null);
-            session.setConnectionListener(null);
-            session.setSignalListener(null);
-            session.setArchiveListener(null);
-            session.setMuteListener(null);
-            session.setStreamPropertiesListener(null);
-            session.setStreamCaptionsPropertiesListener(null);
-            session.disconnect();
-        }
-        sharedState.getSessions().clear();
-        sharedState.getPublishers().clear();
-        sharedState.getSubscribers().clear();
-        sharedState.getConnections().clear();
-        sharedState.getSubscriberStreams().clear();
-        sharedState.getPublisherStreams().clear();
-        sharedState.getAndroidOnTopMap().clear();
-        sharedState.getAndroidZOrderMap().clear();
-        super.invalidate();
+        // Serialize teardown with publish/unpublish and Fabric view cleanup.
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Stop callbacks into the old React instance before releasing media.
+                for (Session session : sharedState.getSessions().values()) {
+                    session.setSessionListener(null);
+                    session.setConnectionListener(null);
+                    session.setSignalListener(null);
+                    session.setArchiveListener(null);
+                    session.setReconnectionListener(null);
+                    session.setMuteListener(null);
+                    session.setStreamPropertiesListener(null);
+                    session.setStreamCaptionsPropertiesListener(null);
+                }
+                for (Publisher publisher : sharedState.getPublishers().values()) {
+                    publisher.setPublisherListener(null);
+                    publisher.setAudioLevelListener(null);
+                    publisher.setAudioStatsListener(null);
+                    publisher.setMuteListener(null);
+                    publisher.setVideoListener(null);
+                    publisher.setVideoStatsListener(null);
+                    publisher.setRtcStatsReportListener(null);
+                    Session session = publisher.getSession();
+                    if (session != null) {
+                        session.unpublish(publisher);
+                    }
+                    publisher.destroy();
+                }
+                for (Subscriber subscriber : sharedState.getSubscribers().values()) {
+                    subscriber.setSubscriberListener(null);
+                    subscriber.setRtcStatsReportListener(null);
+                    subscriber.setCaptionsListener(null);
+                    subscriber.setAudioStatsListener(null);
+                    subscriber.setVideoStatsListener(null);
+                    subscriber.setVideoListener(null);
+                    subscriber.setStreamListener(null);
+                    subscriber.setAudioLevelListener(null);
+                    Session session = subscriber.getSession();
+                    if (session != null) {
+                        session.unsubscribe(subscriber);
+                    }
+                    subscriber.destroy();
+                }
+                for (Session session : sharedState.getSessions().values()) {
+                    session.disconnect();
+                }
+                sharedState.getSessions().clear();
+                sharedState.getPublishers().clear();
+                sharedState.getPendingPublishers().clear();
+                sharedState.getSubscribers().clear();
+                sharedState.getConnections().clear();
+                sharedState.getSubscriberStreams().clear();
+                sharedState.getPublisherStreams().clear();
+                sharedState.getAndroidOnTopMap().clear();
+                sharedState.getAndroidZOrderMap().clear();
+                OpentokReactNativeModule.super.invalidate();
+            }
+        });
     }
 
     @Override
