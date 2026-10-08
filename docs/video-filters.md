@@ -26,3 +26,20 @@ transformer update; subsequent media/runtime errors continue through the publish
 Background replacement still requires an absolute local PNG/JPEG image path in
 `backgroundImgUrl`. Download remote images first. Both platforms require the
 optional Vonage Media Library transformer dependency to be installed.
+
+## Existing video transformers
+
+Built-in filters and lower-level video transformers are mutually exclusive.
+`applyVideoFilter()` rejects with `name` and `code` set to `OT_NOT_SUPPORTED` if
+`setVideoTransformers()` has installed a non-empty pipeline. Explicitly remove
+that pipeline with `await publisher.setVideoTransformers([])` before applying a
+built-in filter.
+
+`clearVideoFilter()` only removes a filter installed by `applyVideoFilter()`;
+it preserves custom transformers. Applying another built-in filter replaces the
+previous built-in filter. Calling `setVideoTransformers()` explicitly replaces the
+pipeline and relinquishes built-in filter ownership.
+
+Updates are processed in invocation order. Failed updates preserve the previous
+state and do not block subsequent calls. Calls after unmount reject with
+`OT_INVALID_STATE`.

@@ -119,6 +119,7 @@ describe('OTPublisher video filters', () => {
   });
 
   it('clearVideoFilter sends an empty transformer list', async () => {
+    await publisher.applyVideoFilter({ type: 'backgroundBlur' });
     await publisher.clearVideoFilter();
 
     expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', []);
@@ -171,6 +172,9 @@ describe('OTPublisher video filters', () => {
   it.each(['apply', 'clear'])(
     '%s waits for native completion',
     async (operation) => {
+      if (operation === 'clear') {
+        await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      }
       let complete;
       OT.setVideoTransformers.mockImplementation(
         () =>
@@ -187,6 +191,7 @@ describe('OTPublisher video filters', () => {
         settled = true;
       });
       await Promise.resolve();
+      await Promise.resolve();
       expect(settled).toBe(false);
       complete();
       await pending;
@@ -197,6 +202,9 @@ describe('OTPublisher video filters', () => {
   it.each(['apply', 'clear'])(
     '%s propagates native rejection',
     async (operation) => {
+      if (operation === 'clear') {
+        await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      }
       const error = Object.assign(new Error('Publisher not found'), {
         code: 'OT_INVALID_STATE',
       });
@@ -208,4 +216,145 @@ describe('OTPublisher video filters', () => {
       await expect(pending).rejects.toBe(error);
     }
   );
+
+  const customTransformers = [{ name: 'CustomEffect', properties: '{}' }];
+
+  it('rejects apply with OT_NOT_SUPPORTED and preserves custom transformers', async () => {
+    await publisher.setVideoTransformers(customTransformers);
+    OT.setVideoTransformers.mockClear();
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).rejects.toMatchObject({
+      name: 'OT_NOT_SUPPORTED',
+      code: 'OT_NOT_SUPPORTED',
+    });
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+    await publisher.clearVideoFilter();
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+  });
+
+  it('allows apply once custom transformers have been explicitly removed', async () => {
+    await publisher.setVideoTransformers(customTransformers);
+    await publisher.setVideoTransformers([]);
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not clear a custom pipeline that replaced a built-in filter', async () => {
+    await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+    await publisher.setVideoTransformers(customTransformers);
+    OT.setVideoTransformers.mockClear();
+    await publisher.clearVideoFilter();
+    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+  });
+
+  it('waits for an earlier custom update before checking for conflicts', async () => {
+    let complete;
+    OT.setVideoTransformers.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+    );
+    const custom = publisher.setVideoTransformers(customTransformers);
+    const apply = publisher.applyVideoFilter({ type: 'backgroundBlur' });
+    const rejected = expect(apply).rejects.toMatchObject({
+      code: 'OT_NOT_SUPPORTED',
+    });
+    await Promise.resolve();
+    expect(OT.setVideoTransformers).toHaveBeenCalledTimes(1);
+    complete();
+    await custom;
+    await rejected;
+    expect(OT.setVideoTransformers).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes apply then clear and ends with an empty native pipeline', async () => {
+    let complete;
+    OT.setVideoTransformers.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+    );
+    const apply = publisher.applyVideoFilter({ type: 'backgroundBlur' });
+    const clear = publisher.clearVideoFilter();
+    await Promise.resolve();
+    expect(OT.setVideoTransformers).toHaveBeenCalledTimes(1);
+    complete();
+    await Promise.all([apply, clear]);
+    expect(OT.setVideoTransformers).toHaveBeenLastCalledWith(
+      'sid-1',
+      'pub-1',
+      []
+    );
+  });
+
+  it('keeps custom ownership when removal fails and recovers after rejection', async () => {
+    await publisher.setVideoTransformers(customTransformers);
+    OT.setVideoTransformers.mockRejectedValueOnce(
+      new Error('Could not remove')
+    );
+    await expect(publisher.setVideoTransformers([])).rejects.toThrow(
+      'Could not remove'
+    );
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).rejects.toMatchObject({ code: 'OT_NOT_SUPPORTED' });
+    await publisher.setVideoTransformers([]);
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not record a custom pipeline when native installation fails', async () => {
+    OT.setVideoTransformers.mockRejectedValueOnce(
+      new Error('Could not create')
+    );
+    await expect(
+      publisher.setVideoTransformers(customTransformers)
+    ).rejects.toThrow('Could not create');
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).resolves.toBeUndefined();
+  });
+
+  it('snapshots custom transformer input before queueing it', async () => {
+    const transformers = [{ name: 'CustomEffect', properties: '{}' }];
+    const pending = publisher.setVideoTransformers(transformers);
+    transformers[0].name = 'Changed';
+    transformers.length = 0;
+    await pending;
+    expect(OT.setVideoTransformers).toHaveBeenCalledWith(
+      'sid-1',
+      'pub-1',
+      customTransformers
+    );
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).rejects.toMatchObject({ code: 'OT_NOT_SUPPORTED' });
+  });
+
+  it('rejects an in-flight update and queued work after unmount', async () => {
+    let complete;
+    OT.setVideoTransformers.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+    );
+    const pending = publisher.applyVideoFilter({ type: 'backgroundBlur' });
+    const rejected = expect(pending).rejects.toMatchObject({
+      code: 'OT_INVALID_STATE',
+    });
+    await Promise.resolve();
+    publisher.componentWillUnmount();
+    complete();
+    await rejected;
+    await expect(
+      publisher.applyVideoFilter({ type: 'backgroundBlur' })
+    ).rejects.toMatchObject({ code: 'OT_INVALID_STATE' });
+    expect(OT.setVideoTransformers).toHaveBeenCalledTimes(1);
+  });
 });

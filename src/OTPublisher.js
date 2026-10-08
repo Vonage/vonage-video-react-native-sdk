@@ -48,6 +48,10 @@ const getParsedStatsPayload = (nativeEvent) => {
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
+  videoTransformerQueue = Promise.resolve();
+  videoTransformers = [];
+  videoFilter = null;
+  videoFiltersDisposed = false;
 
   constructor(props) {
     super(props);
@@ -164,13 +168,38 @@ export default class OTPublisher extends React.Component {
     );
   }
 
+  assertVideoFilterPublisherAvailable() {
+    if (this.videoFiltersDisposed) {
+      throw Object.assign(new Error('Publisher has been removed.'), {
+        code: 'OT_INVALID_STATE',
+      });
+    }
+  }
+
+  queueVideoTransformerUpdate(update) {
+    // Serialize both APIs, including calls made before an earlier promise settles.
+    const pending = this.videoTransformerQueue.then(async () => {
+      this.assertVideoFilterPublisherAvailable();
+      await update();
+    });
+    // A failed operation must not prevent the next operation from running.
+    this.videoTransformerQueue = pending.catch(() => {});
+    return pending;
+  }
+
   setVideoTransformers(transformers = []) {
     //NOSONAR - this method is exposed externally
-    return OT.setVideoTransformers(
-      this.context.sessionId,
-      this.state.publisherId,
-      transformers
-    );
+    const snapshot = transformers.map((transformer) => ({ ...transformer }));
+    return this.queueVideoTransformerUpdate(async () => {
+      await OT.setVideoTransformers(
+        this.context.sessionId,
+        this.state.publisherId,
+        snapshot
+      );
+      this.assertVideoFilterPublisherAvailable();
+      this.videoTransformers = snapshot;
+      this.videoFilter = null;
+    });
   }
 
   setAudioTransformers(transformers = []) {
@@ -189,6 +218,7 @@ export default class OTPublisher extends React.Component {
   async applyVideoFilter(filter) {
     //NOSONAR - this method is exposed externally
     let transformer;
+    let appliedFilter;
     if (filter && filter.type === 'backgroundBlur') {
       // Default only when omitted — '', null, false and 0 are invalid inputs and
       // must reach the check below rather than being silently treated as 'high'.
@@ -199,6 +229,7 @@ export default class OTPublisher extends React.Component {
           `applyVideoFilter: blurStrength must be "low" or "high" (got "${filter.blurStrength}").`
         );
       }
+      appliedFilter = { type: 'backgroundBlur', blurStrength };
       // The Vonage Media Library expects a capitalised radius ("Low"/"High"/"None");
       // the Web SDK's public API is lowercase, so translate at the boundary.
       transformer = {
@@ -217,6 +248,10 @@ export default class OTPublisher extends React.Component {
             'backgroundImgUrl (a local image file path on mobile).'
         );
       }
+      appliedFilter = {
+        type: 'backgroundReplacement',
+        backgroundImgUrl: filter.backgroundImgUrl,
+      };
       transformer = {
         name: 'BackgroundReplacement',
         properties: JSON.stringify({
@@ -230,15 +265,48 @@ export default class OTPublisher extends React.Component {
         }". Use "backgroundBlur" or "backgroundReplacement".`
       );
     }
-    await this.setVideoTransformers([transformer]);
+    await this.queueVideoTransformerUpdate(async () => {
+      if (this.videoTransformers.length > 0 && this.videoFilter === null) {
+        throw Object.assign(
+          new Error(
+            'Remove custom video transformers before applying a video filter.'
+          ),
+          { name: 'OT_NOT_SUPPORTED', code: 'OT_NOT_SUPPORTED' }
+        );
+      }
+      await OT.setVideoTransformers(
+        this.context.sessionId,
+        this.state.publisherId,
+        [transformer]
+      );
+      this.assertVideoFilterPublisherAvailable();
+      this.videoTransformers = [transformer];
+      this.videoFilter = appliedFilter;
+    });
   }
 
   async clearVideoFilter() {
     //NOSONAR - this method is exposed externally
-    await this.setVideoTransformers([]);
+    await this.queueVideoTransformerUpdate(async () => {
+      // Clearing a built-in filter never removes a custom transformer pipeline.
+      if (this.videoFilter === null) {
+        return;
+      }
+      await OT.setVideoTransformers(
+        this.context.sessionId,
+        this.state.publisherId,
+        []
+      );
+      this.assertVideoFilterPublisherAvailable();
+      this.videoTransformers = [];
+      this.videoFilter = null;
+    });
   }
 
   componentWillUnmount() {
+    this.videoFiltersDisposed = true;
+    this.videoTransformers = [];
+    this.videoFilter = null;
     OT.unpublish(this.context.sessionId, this.state.publisherId);
     const publisherStreamId = getPublisherStream(this.context.sessionId);
     if (publisherStreamId) {
