@@ -1,0 +1,36 @@
+.github/workflows/ci-pr-tests.yml
+  s_8ffc8bc54f104b::t_8b706b483f984b 177-179,275
+android/__tests__/subscriber-cleanup/README.md
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-14
+android/__tests__/subscriber-cleanup/SubscriberCleanupTest.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-82
+android/__tests__/subscriber-cleanup/com/opentok/android/Session.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-25
+android/__tests__/subscriber-cleanup/com/opentok/android/Subscriber.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-30
+android/__tests__/subscriber-cleanup/com/opentokreactnative/OTRN.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-12
+android/__tests__/subscriber-cleanup/run.sh
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-17
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_8ffc8bc54f104b::t_8b706b483f984b 25,190,192,194-199,664
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 39,241
+android/src/main/java/com/opentokreactnative/utils/SubscriberCleanup.java
+  s_8ffc8bc54f104b::t_8b706b483f984b 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "67851e2cc5089d14a331d1d632bd1a8d682c2ab7",
+  "prompts": {},
+  "sessions": {
+    "s_8ffc8bc54f104b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "9a4635ec-f97d-4bce-872d-0c630a11cce7",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>"
+    }
+  }
+}
