@@ -1,0 +1,34 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_283_fe4c09c5820b::t_fe4c09c5820b 346-370
+android/src/main/java/com/opentokreactnative/utils/Utils.java
+  s_283_fe4c09c5820b::t_fe4c09c5820b 164-165
+docs/video-filters.md
+  s_283_fe4c09c5820b::t_fe4c09c5820b 1-28
+ios/OpentokReactNative.mm
+  s_283_fe4c09c5820b::t_fe4c09c5820b 206-217
+ios/OpentokReactNative.swift
+  s_283_fe4c09c5820b::t_fe4c09c5820b 414-420,422,427-430,433,438,443-444,446,448
+src/NativeOpentok.ts
+  s_283_fe4c09c5820b::t_fe4c09c5820b 156
+src/OTPublisher.js
+  s_283_fe4c09c5820b::t_fe4c09c5820b 169,189,222-224,233,236,238
+src/__tests__/OTPublisher.videoFilters.test.js
+  s_283_fe4c09c5820b::t_fe4c09c5820b 46-49,60-61,69-73,80-84,87-90,94-95,98-101,105-106,121-122,127-128,134-140,151-152,154,158-159,161-162,167,170-210
+src/types.ts
+  s_283_fe4c09c5820b::t_fe4c09c5820b 383-390
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "d0246e0f8eb73da329c14167f4106a136185bd99",
+  "prompts": {},
+  "sessions": {
+    "s_283_fe4c09c5820b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11b74-a47f-7742-9d2b-4f7e5060783a",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>"
+    }
+  }
+}
