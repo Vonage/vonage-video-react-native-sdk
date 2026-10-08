@@ -22,6 +22,7 @@ import com.opentok.android.SubscriberKit.SubscriberListener
 import com.opentok.android.SubscriberKit.SubscriberRtcStatsReportListener
 import com.opentok.android.VideoUtils
 import com.opentokreactnative.utils.Utils;
+import com.opentokreactnative.utils.SubscriberCleanup
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.toVideoScaleType;
 import java.lang.ref.WeakReference
@@ -186,16 +187,16 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         this.setLayoutParams(params)
     }
 
-    // Releases the subscriber's native resources (decoder, renderer) and detaches its
-    // view on final teardown. Called from OTRNSubscriberManager.onDropViewInstance
-    // (fires on real destruction, not recycling). subscriberStreams is left alone: it
-    // tracks the remote stream, which may still be live and re-subscribed by a remount;
-    // streamDropped removes it.
+    // Final view teardown; temporary detach/recycle keeps the subscription alive.
     fun cleanUpMemory() {
-        removeAllViews()
-        streamId?.let { sharedState.getSubscribers().remove(it) }
-        subscriber?.destroy()
+        val currentSubscriber = subscriber
         subscriber = null
+        SubscriberCleanup.release(sharedState, streamId, currentSubscriber)
+        removeAllViews()
+        streamId?.let { unregisterRefreshListener(it, this) }
+        session = null
+        stream = null
+        streamCache.set(null)
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
