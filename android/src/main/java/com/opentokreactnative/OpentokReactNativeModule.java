@@ -151,7 +151,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
             mSession.disconnect();
             promise.resolve(null);
         } else {
-            promise.reject("Error disconnecting from session. Could not find native session instance");
+            promise.reject("ERROR", "Error disconnecting from session. Could not find native session instance");
         }
     }
 
