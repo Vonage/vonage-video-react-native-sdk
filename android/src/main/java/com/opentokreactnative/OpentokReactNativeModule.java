@@ -36,6 +36,7 @@ import com.opentok.android.Stream;
 import com.opentok.android.Subscriber;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
+import com.opentokreactnative.utils.SubscriberCleanup;
 
 
 /**
@@ -235,17 +236,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-                Session mSession = mSessions.get(sessionId);
-                if (mSession == null) {
-                    return;
-                }
                 ConcurrentHashMap<String, Subscriber> subscribers = sharedState.getSubscribers();
                 Subscriber subscriber = subscribers.get(streamId);
-                if (subscriber != null) {
-                    mSession.unsubscribe(subscriber);
-                    subscribers.remove(streamId);
-                }
+                SubscriberCleanup.release(sharedState, streamId, subscriber);
             };
         });
     }
