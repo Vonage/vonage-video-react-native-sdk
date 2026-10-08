@@ -357,4 +357,220 @@ describe('OTPublisher video filters', () => {
     ).rejects.toMatchObject({ code: 'OT_INVALID_STATE' });
     expect(OT.setVideoTransformers).toHaveBeenCalledTimes(1);
   });
+
+  describe('getVideoFilter', () => {
+    it('returns null before a filter has been applied', () => {
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('reports the resolved default blur strength', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+    });
+
+    it('reports low blur and replacement image settings', async () => {
+      await publisher.applyVideoFilter({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      const filter = {
+        type: 'backgroundReplacement',
+        backgroundImgUrl: '/data/bg.jpg',
+      };
+      await publisher.applyVideoFilter(filter);
+      expect(publisher.getVideoFilter()).toEqual(filter);
+    });
+
+    it('returns null after a successful clear', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      await publisher.clearVideoFilter();
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('returns null for a lower-level transformer pipeline', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      await publisher.setVideoTransformers(customTransformers);
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('preserves the previous filter when a replacement fails', async () => {
+      const previous = { type: 'backgroundBlur', blurStrength: 'low' };
+      await publisher.applyVideoFilter(previous);
+      OT.setVideoTransformers.mockRejectedValueOnce(new Error('Invalid image'));
+      await expect(
+        publisher.applyVideoFilter({
+          type: 'backgroundReplacement',
+          backgroundImgUrl: '/missing.jpg',
+        })
+      ).rejects.toThrow('Invalid image');
+      expect(publisher.getVideoFilter()).toEqual(previous);
+    });
+
+    it('preserves the previous filter when clearing fails', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      OT.setVideoTransformers.mockRejectedValueOnce(
+        new Error('Could not clear')
+      );
+      await expect(publisher.clearVideoFilter()).rejects.toThrow(
+        'Could not clear'
+      );
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+    });
+
+    it('preserves the built-in filter when a custom update fails', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      OT.setVideoTransformers.mockRejectedValueOnce(
+        new Error('Could not create')
+      );
+      await expect(
+        publisher.setVideoTransformers(customTransformers)
+      ).rejects.toThrow('Could not create');
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+      await publisher.clearVideoFilter();
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('does not report an initial filter until native completion', async () => {
+      let complete;
+      OT.setVideoTransformers.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            complete = resolve;
+          })
+      );
+      const pending = publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      await Promise.resolve();
+      expect(publisher.getVideoFilter()).toBeNull();
+      complete();
+      await pending;
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+    });
+
+    it('reports the old filter while a replacement is pending', async () => {
+      await publisher.applyVideoFilter({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      let complete;
+      OT.setVideoTransformers.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            complete = resolve;
+          })
+      );
+      const pending = publisher.applyVideoFilter({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      complete();
+      await pending;
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+    });
+
+    it('reports the old filter until a pending clear completes', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      let complete;
+      OT.setVideoTransformers.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            complete = resolve;
+          })
+      );
+      const pending = publisher.clearVideoFilter();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'high',
+      });
+      complete();
+      await pending;
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('snapshots caller input and returns independent copies', async () => {
+      const filter = {
+        type: 'backgroundReplacement',
+        backgroundImgUrl: '/original.jpg',
+      };
+      const pending = publisher.applyVideoFilter(filter);
+      filter.backgroundImgUrl = '/changed.jpg';
+      await pending;
+      const result = publisher.getVideoFilter();
+      expect(result.backgroundImgUrl).toBe('/original.jpg');
+      result.type = 'backgroundBlur';
+      result.backgroundImgUrl = '/mutated.jpg';
+      expect(publisher.getVideoFilter()).toEqual({
+        type: 'backgroundReplacement',
+        backgroundImgUrl: '/original.jpg',
+      });
+    });
+
+    it('returns null after unmount and ignores late completions', async () => {
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      let complete;
+      OT.setVideoTransformers.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            complete = resolve;
+          })
+      );
+      const pending = publisher.applyVideoFilter({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      const rejected = expect(pending).rejects.toMatchObject({
+        code: 'OT_INVALID_STATE',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      publisher.componentWillUnmount();
+      expect(publisher.getVideoFilter()).toBeNull();
+      complete();
+      await rejected;
+      expect(publisher.getVideoFilter()).toBeNull();
+    });
+
+    it('keeps filter state isolated between publisher instances', async () => {
+      const other = new OTPublisher({ eventHandlers: {}, properties: {} });
+      other.context = { sessionId: 'sid-2' };
+      other.state = { ...other.state, publisherId: 'pub-2' };
+      await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+      expect(other.getVideoFilter()).toBeNull();
+      await other.applyVideoFilter({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+      await publisher.clearVideoFilter();
+      expect(other.getVideoFilter()).toEqual({
+        type: 'backgroundBlur',
+        blurStrength: 'low',
+      });
+    });
+  });
 });

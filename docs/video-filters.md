@@ -43,3 +43,21 @@ pipeline and relinquishes built-in filter ownership.
 Updates are processed in invocation order. Failed updates preserve the previous
 state and do not block subsequent calls. Calls after unmount reject with
 `OT_INVALID_STATE`.
+
+## Reading the current filter
+
+`publisher.getVideoFilter()` synchronously returns a copy of the last successfully
+applied built-in filter, or `null` when none is active. Blur results include the
+resolved `blurStrength` (`'high'` when omitted). Replacement results include the
+local `backgroundImgUrl` path.
+
+While an update is pending, the getter continues to report the previous filter.
+A failed apply, clear, or lower-level transformer update leaves that result
+unchanged. A successful clear, a successful lower-level transformer update, or
+publisher unmount resets it to `null`.
+
+```js
+await publisher.applyVideoFilter({ type: 'backgroundBlur' });
+const filter = publisher.getVideoFilter();
+// { type: 'backgroundBlur', blurStrength: 'high' }
+```

@@ -388,6 +388,8 @@ export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   ) => void;
   applyVideoFilter: (filter: VideoFilter) => Promise<void>;
   clearVideoFilter: () => Promise<void>;
+  /** The last successfully applied built-in filter, or null. */
+  getVideoFilter: () => VideoFilter | null;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {

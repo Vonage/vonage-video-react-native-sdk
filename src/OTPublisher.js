@@ -303,6 +303,12 @@ export default class OTPublisher extends React.Component {
     });
   }
 
+  getVideoFilter() {
+    //NOSONAR - this method is exposed externally
+    // Report only the last successful update and never expose mutable state.
+    return this.videoFilter === null ? null : { ...this.videoFilter };
+  }
+
   componentWillUnmount() {
     this.videoFiltersDisposed = true;
     this.videoTransformers = [];
