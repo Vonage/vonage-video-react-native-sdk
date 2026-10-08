@@ -1,0 +1,24 @@
+docs/video-filters.md
+  s_283_8eed747f73cc::t_8eed747f73cc 29-45
+src/OTPublisher.js
+  s_283_8eed747f73cc::t_8eed747f73cc 51-54,171-189,192-202,221,232,251-254,268-285,290-303,307-309
+src/__tests__/OTPublisher.transformers.test.js
+  s_283_8eed747f73cc::t_8eed747f73cc 112,119
+src/__tests__/OTPublisher.videoFilters.test.js
+  s_283_8eed747f73cc::t_8eed747f73cc 122,175-177,194,205-207,219-359
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "fe4c09c5820b08ee109b8f50a1cdd53b1c13128f",
+  "prompts": {},
+  "sessions": {
+    "s_283_8eed747f73cc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11b74-a47f-7742-9d2b-4f7e5060783a",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>"
+    }
+  }
+}
