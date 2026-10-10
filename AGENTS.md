@@ -63,12 +63,16 @@ React-native-TestApp/        # Full RN app for manual and E2E testing
 
 ## Development Workflow
 
+### Change review and publishing
+After making changes, tell the user they are ready for review and ask them to inspect the diff in Git source control before creating a commit or pushing to any remote.
+
 ### Branch naming
-Branch names must match Jira ticket IDs (e.g., `VIDCS-4050`).
+For internal work, include a Jira ticket ID in the branch name when applicable (e.g., `VIDCS-4050`). For external contributions without a Jira ticket, use a clear, descriptive branch name instead.
 
 ### Pull requests
 - Always create PRs as **Draft** (`gh pr create --draft`)
 - PRs target `develop` unless explicitly stated otherwise
+- The PR description must follow the PR template (`.github/PULL_REQUEST_TEMPLATE.md`): keep every section and fill them in
 
 ### Commit messages
 This repo uses **Conventional Commits** format enforced via `commitlint`:
@@ -77,8 +81,6 @@ This repo uses **Conventional Commits** format enforced via `commitlint`:
 - `chore:` maintenance
 - `docs:` documentation
 - `refactor:` code restructure without behavior change
-
-**Note:** The standard VIDCS ticket-prefix format (`VIDCS-XXXX Description`) is NOT used in this repository due to a commit-msg hook that enforces conventional commits.
 
 ### Setup
 
@@ -139,6 +141,7 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 ## AI Guidance
 
 ### Code style
+- Do not add code comments unless they are truly necessary to explain non-obvious logic.
 - **JS/TS:** Prettier (single quotes, 2-space indent, trailing comma es5). ESLint with `@react-native` config.
 - **Swift:** 4-space indent, standard Swift conventions
 - **Kotlin:** Standard Kotlin conventions
@@ -163,14 +166,15 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 
 ## Vonage AI Tooling
 
-### vgai (AI Attribution)
+### vg-ai (AI Attribution)
 
-This repository uses `vgai` (vonage-git-ai) for tracking AI adoption in commits. All commits must include accurate AI attribution metadata.
+This repository uses `vg-ai` for tracking AI adoption in commits. All commits must include accurate AI attribution metadata.
 
 - **After each commit**, verify the AI attribution report is correct by checking git notes on the commit
-- If the reported percentage seems inaccurate, **inform the user** and let them decide whether to run `vgai override <percentage>` to correct it — do not override automatically
+- If the reported percentage seems inaccurate, **inform the user** and let them decide whether to run `vg-ai attribution override <pct> [--commit <sha>]` to correct it — do not override automatically
 - Thresholds for PR labels: >90% → `ai-generated`, 20-90% → `ai-assisted`, <20% → `no-ai`
-- Install hooks for automatic tracking: `vgai install-kiro-ide-hooks` (for Kiro IDE)
+- Install hooks for automatic tracking: `vg-ai attribution hooks install [kiro-cli|kiro-ide|all]`
+- Push `refs/notes/ai` so PRs get labelled: `vg-ai attribution setup-notes`
 - The attribution is stored as git notes (`refs/notes/ai`) following Git AI Standard v3.0.0
 
 ### vg-ai (Environment Manager)
@@ -182,9 +186,3 @@ Use `vg-ai` to manage AI development tooling:
 - Check environment health: `vg-ai doctor`
 - Update everything: `vg-ai update`
 
-### Jira Integration (Optional)
-
-This project supports Jira MCP integration for ticket context during development sessions. To enable:
-1. Set the environment variable: `export JIRA_PERSONAL_TOKEN=<your-token>`
-2. The Jira MCP server is configured globally and provides access to issue details, search, transitions, and more
-3. When working on a ticket, reference it by key (e.g., `VIDCS-XXXX`) to pull context into your session
