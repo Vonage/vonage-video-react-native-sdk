@@ -130,8 +130,11 @@ import React
             return
         }
 
-        if let connectionId = signal["to"] {
-            let connection = OTRN.sharedState.connections[connectionId]
+        if let connectionId = signal["to"], !connectionId.isEmpty {
+            guard let connection = OTRN.sharedState.connections[connectionId] else {
+                reject("ERROR", "Error sending signal. Could not find target connection", nil)
+                return
+            }
             session.signal(
                 withType: signal["type"], string: signal["data"],
                 connection: connection, error: &error)
