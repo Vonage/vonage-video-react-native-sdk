@@ -185,6 +185,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void publish(String sessionId, String publisherId) {
+        if (sessionId == null || publisherId == null) {
+            return;
+        }
         // See class threading contract. UI thread coordinates with publishStream().
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
@@ -209,6 +212,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
     @Override
     public void unpublish(String sessionId, String publisherId) {
+        if (sessionId == null || publisherId == null) {
+            return;
+        }
         // See class threading contract. UI thread keeps ordering with publish().
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
