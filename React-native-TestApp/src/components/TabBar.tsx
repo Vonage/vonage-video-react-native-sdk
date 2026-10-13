@@ -29,6 +29,9 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabPress }) => {
             onPress={() => onTabPress(tab.key)}
           >
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
               style={[
                 tabBarStyles.tabLabel,
                 isActive && tabBarStyles.tabLabelActive,
