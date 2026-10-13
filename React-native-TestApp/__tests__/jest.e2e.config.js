@@ -8,6 +8,7 @@ module.exports = {
   // `--testPathPattern <name>`.
   testMatch: ["**/*.e2e.js", "**/*.stress.js"],
   testEnvironment: "detox/runners/jest/testEnvironment",
+  setupFilesAfterEnv: ["./setup.js"],
   verbose: true,
   forceExit: true,
   globalSetup: "./globalSetup.js"
