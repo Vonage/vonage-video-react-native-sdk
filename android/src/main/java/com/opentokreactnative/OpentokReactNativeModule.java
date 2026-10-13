@@ -226,6 +226,9 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
                     mSession.unpublish(publisher);
                 }
                 Utils.releasePublisherIfSame(publisherId, publisher, "unpublish");
+                // Release the camera/audio device immediately rather than waiting on GC:
+                // unpublish() is only called from the Publisher's final teardown path.
+                publisher.destroy();
             }
         });
     }
