@@ -122,7 +122,7 @@ export interface VideoStats {
   height: number;
 }
 
-export type TabName = 'session' | 'publisher' | 'subscriber' | 'moderation' | 'settings';
+export type TabName = 'session' | 'publisher' | 'subscriber' | 'moderation' | 'settings' | 'calling';
 
 export interface State {
   connectedToSession: boolean;

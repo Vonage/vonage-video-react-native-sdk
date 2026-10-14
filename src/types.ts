@@ -12,6 +12,7 @@ import type {
   SessionErrorEvent,
   SessionOptions,
   SessionReconnectEvent,
+  Spec,
   SignalEvent,
   Stream,
   StreamEvent,
@@ -420,3 +421,17 @@ export type OTSubscriber = OTSubscriberInstance;
  * @deprecated Use OTSubscriberViewInstance for ref types
  */
 export type OTSubscriberView = OTSubscriberViewInstance;
+/** Audio lifecycle hooks for app-managed CallKit / ConnectionService integration.
+ * Platform-specific hooks resolve without effect on the other platform.
+ */
+export type CallingServicesAPI = Pick<
+  Spec,
+  | 'isCallingServicesModeAvailable'
+  | 'enableCallingServicesMode'
+  | 'preconfigureAudioSessionForCall'
+  | 'notifyAudioSessionActivated'
+  | 'notifyAudioSessionDeactivated'
+  | 'setRequestAudioFocus'
+  | 'notifyAudioFocusActivated'
+  | 'notifyAudioFocusDeactivated'
+>;
