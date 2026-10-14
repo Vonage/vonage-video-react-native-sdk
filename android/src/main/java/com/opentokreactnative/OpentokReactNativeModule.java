@@ -74,6 +74,69 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
+    public void invalidate() {
+        // Serialize teardown with publish/unpublish and Fabric view cleanup.
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Stop callbacks into the old React instance before releasing media.
+                for (Session session : sharedState.getSessions().values()) {
+                    session.setSessionListener(null);
+                    session.setConnectionListener(null);
+                    session.setSignalListener(null);
+                    session.setArchiveListener(null);
+                    session.setReconnectionListener(null);
+                    session.setMuteListener(null);
+                    session.setStreamPropertiesListener(null);
+                    session.setStreamCaptionsPropertiesListener(null);
+                }
+                for (Publisher publisher : sharedState.getPublishers().values()) {
+                    publisher.setPublisherListener(null);
+                    publisher.setAudioLevelListener(null);
+                    publisher.setAudioStatsListener(null);
+                    publisher.setMuteListener(null);
+                    publisher.setVideoListener(null);
+                    publisher.setVideoStatsListener(null);
+                    publisher.setRtcStatsReportListener(null);
+                    Session session = publisher.getSession();
+                    if (session != null) {
+                        session.unpublish(publisher);
+                    }
+                    publisher.destroy();
+                }
+                for (Subscriber subscriber : sharedState.getSubscribers().values()) {
+                    subscriber.setSubscriberListener(null);
+                    subscriber.setRtcStatsReportListener(null);
+                    subscriber.setCaptionsListener(null);
+                    subscriber.setAudioStatsListener(null);
+                    subscriber.setVideoStatsListener(null);
+                    subscriber.setVideoListener(null);
+                    subscriber.setStreamListener(null);
+                    subscriber.setAudioLevelListener(null);
+                    Session session = subscriber.getSession();
+                    if (session != null) {
+                        session.unsubscribe(subscriber);
+                    }
+                    subscriber.destroy();
+                }
+                for (Session session : sharedState.getSessions().values()) {
+                    session.disconnect();
+                }
+                sharedState.getSessions().clear();
+                sharedState.getPublishers().clear();
+                sharedState.getPendingPublishers().clear();
+                sharedState.getSubscribers().clear();
+                sharedState.getConnections().clear();
+                sharedState.getSubscriberStreams().clear();
+                sharedState.getPublisherStreams().clear();
+                sharedState.getAndroidOnTopMap().clear();
+                sharedState.getAndroidZOrderMap().clear();
+                OpentokReactNativeModule.super.invalidate();
+            }
+        });
+    }
+
+    @Override
     public void initSession(String apiKey, String sessionId, ReadableMap options) {
 
         final boolean useTextureViews = options.getBoolean("useTextureViews");
