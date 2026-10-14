@@ -130,8 +130,11 @@ import React
             return
         }
 
-        if let connectionId = signal["to"] {
-            let connection = OTRN.sharedState.connections[connectionId]
+        if let connectionId = signal["to"], !connectionId.isEmpty {
+            guard let connection = OTRN.sharedState.connections[connectionId] else {
+                reject("ERROR", "Error sending signal. Could not find target connection", nil)
+                return
+            }
             session.signal(
                 withType: signal["type"], string: signal["data"],
                 connection: connection, error: &error)
@@ -481,7 +484,8 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     }
 
     public func session(_ session: OTSession, didFailWithError error: OTError) {
-        let errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+        var errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+        errorInfo["sessionId"] = session.sessionId
         impl?.ot?.emit(onSessionError: errorInfo)
     }
 
@@ -496,6 +500,9 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     {
         let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(
             stream)
+        // Release the KVO stream observers registered in session(_:streamCreated:)
+        // (mirrors the publisher's teardown) to avoid leaking NSKeyValueObservations.
+        OTRN.sharedState.streamObservers.removeValue(forKey: stream.streamId)
         OTRN.sharedState.subscriberStreams.removeValue(forKey: stream.streamId)
         OTRN.sharedState.subscribers.removeValue(forKey: stream.streamId)
         impl?.ot?.emit(onStreamDestroyed: streamInfo)
@@ -547,6 +554,7 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     {
         var muteForcedInfo: [String: Any] = [:]
         muteForcedInfo["active"] = muteForced.active
+        muteForcedInfo["sessionId"] = session.sessionId
         impl?.ot?.emit(onMuteForced: muteForcedInfo)
     }
     public func session(
