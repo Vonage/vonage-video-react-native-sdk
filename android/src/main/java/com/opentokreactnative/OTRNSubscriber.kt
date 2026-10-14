@@ -259,6 +259,9 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     }
 
     fun subscribeToStream(session: Session, stream: Stream) {
+        // onAttachedToWindow fires again after every detach; a second Subscriber for
+        // the same stream would orphan the first in the shared map.
+        if (subscriber?.stream?.streamId == stream.streamId) return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         subscriber = Subscriber.Builder(context, stream)
@@ -266,7 +269,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         sharedState.getSubscribers().put(stream.getStreamId(), subscriber ?: return);
         subscriber?.setStyle(
             BaseVideoRenderer.STYLE_VIDEO_SCALE,
-            (this.props?.get("scaleBehavior") as String).toVideoScaleType()
+            (this.props?.get("scaleBehavior") as? String).toVideoScaleType()
         )
 
         if (androidOnTopMap.get(sessionId) != null) {
@@ -316,7 +319,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             subscriber?.setPreferredResolution(VideoUtils.Size(width, height))
         }
 
-        this.props?.clear()
+        // props is not cleared: updateProperties() only assigns a null map, and a
+        // re-attach reads it again.
 
         primeStreamCache(stream, session)
 
