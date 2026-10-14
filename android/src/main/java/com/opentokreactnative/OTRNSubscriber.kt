@@ -22,6 +22,7 @@ import com.opentok.android.SubscriberKit.SubscriberListener
 import com.opentok.android.SubscriberKit.SubscriberRtcStatsReportListener
 import com.opentok.android.VideoUtils
 import com.opentokreactnative.utils.Utils;
+import com.opentokreactnative.utils.SubscriberCleanup
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.toVideoScaleType;
 import java.lang.ref.WeakReference
@@ -184,6 +185,18 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
     private fun configureComponent() {
         var params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         this.setLayoutParams(params)
+    }
+
+    // Final view teardown; temporary detach/recycle keeps the subscription alive.
+    fun cleanUpMemory() {
+        val currentSubscriber = subscriber
+        subscriber = null
+        SubscriberCleanup.release(sharedState, streamId, currentSubscriber)
+        removeAllViews()
+        streamId?.let { unregisterRefreshListener(it, this) }
+        session = null
+        stream = null
+        streamCache.set(null)
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {

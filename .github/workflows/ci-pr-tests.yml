@@ -251,6 +251,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Subscriber teardown regression checks
+        run: bash android/__tests__/subscriber-cleanup/run.sh
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
