@@ -4,7 +4,7 @@ import axios from 'axios';
 import { OTRN_PACKAGE_INFO } from '../generated/packageInfo';
 
 const sanitizeBooleanProperty = (property) =>
-  property || property === undefined ? true : property;
+  property === undefined ? true : Boolean(property);
 
 const getOtrnErrorEventHandler = (events) => {
   let otrnEventHandler = (event) => {
