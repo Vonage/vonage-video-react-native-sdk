@@ -1,0 +1,36 @@
+AGENTS.md
+  h_b9583e878a641a 158
+React-native-TestApp/src/handlers/subscriberHandlers.ts
+  h_b9583e878a641a 22-25
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  h_b9583e878a641a 3-10,28-30,34-36,100,455,1145
+React-native-TestApp/src/types/index.ts
+  h_b9583e878a641a 72
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  h_b9583e878a641a 447,479
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  h_b9583e878a641a 421,460
+src/NativeOpentok.ts
+  h_b9583e878a641a 49
+src/OTPublisher.js
+  h_b9583e878a641a 40,97-98,140-141
+src/OTSubscriberView.js
+  h_b9583e878a641a 12
+src/__tests__/OTStatsPayloadParsing.test.js
+  h_b9583e878a641a 18,56,80,82,88-89,104,152,154,159,177,184,188-189,207,239
+src/types.ts
+  h_b9583e878a641a 121-124,131,156-187,212,259,299,303,307,311-312,324,328
+tsconfig.json
+  h_b9583e878a641a 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "828f69d7b75cf4e02e022d483ed3a2438fe0fc82",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}
