@@ -20,8 +20,6 @@ export type ConnectionEvent = {
   sessionId: string;
 };
 
-export type EmptyEvent = {};
-
 export type IceConfig = {
   includeServers: string; // 'all' | 'custom';
   transportPolicy: string; // 'all' | 'relay';
@@ -35,6 +33,7 @@ export type IceConfig = {
 
 export type MuteForcedEvent = {
   active: boolean;
+  sessionId: string;
 };
 
 export type SessionOptions = {
@@ -101,6 +100,7 @@ export type StreamPropertyChangedEvent = {
   newValue: StreamPropertyChangedValue;
   stream: Stream;
   changedProperty: string;
+  sessionId: string;
 };
 
 export type SignalEvent = {
@@ -113,6 +113,11 @@ export type SignalEvent = {
 export type SessionErrorEvent = {
   code: string;
   message: string;
+  sessionId: string;
+};
+
+export type SessionReconnectEvent = {
+  sessionId: string;
 };
 
 export interface Spec extends TurboModule {
@@ -123,8 +128,8 @@ export interface Spec extends TurboModule {
   readonly onMuteForced: CodegenTypes.EventEmitter<MuteForcedEvent>;
   readonly onSessionConnected: CodegenTypes.EventEmitter<SessionConnectEvent>;
   readonly onSessionDisconnected: CodegenTypes.EventEmitter<SessionDisconnectEvent>;
-  readonly onSessionReconnecting: CodegenTypes.EventEmitter<EmptyEvent>;
-  readonly onSessionReconnected: CodegenTypes.EventEmitter<EmptyEvent>;
+  readonly onSessionReconnecting: CodegenTypes.EventEmitter<SessionReconnectEvent>;
+  readonly onSessionReconnected: CodegenTypes.EventEmitter<SessionReconnectEvent>;
   readonly onStreamCreated: CodegenTypes.EventEmitter<StreamEvent>;
   readonly onStreamDestroyed: CodegenTypes.EventEmitter<StreamEvent>;
   readonly onStreamPropertyChanged: CodegenTypes.EventEmitter<StreamPropertyChangedEvent>;
