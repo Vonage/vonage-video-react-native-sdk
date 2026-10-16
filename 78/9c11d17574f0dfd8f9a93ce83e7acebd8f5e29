@@ -1,0 +1,27 @@
+React-native-TestApp/__tests__/helpers/testSession.js
+  54c6f4f3c74bfef9 186,200
+src/__tests__/E2EConnectionReadiness.test.js
+  54c6f4f3c74bfef9 1-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "c489001279a3dc314308f7e364346d6ee5533078",
+  "prompts": {
+    "54c6f4f3c74bfef9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11136-6ea6-7a93-bc79-fc39179060cc",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 93,
+      "total_deletions": 0,
+      "accepted_lines": 93,
+      "overriden_lines": 0,
+      "custom_attributes": {
+        "model_detail": "GPT-6 family; exact runtime variant is not exposed.",
+        "attribution_origin": "Direct record of additions produced by this Codex session; vg-ai executable unavailable."
+      }
+    }
+  }
+}

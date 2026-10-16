@@ -1,0 +1,18 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_09bc8b6032ae4b::t_e15d6f4436d948 154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "e2d1a709bc1e44b5d61809b9343808153a344006",
+  "prompts": {},
+  "sessions": {
+    "s_09bc8b6032ae4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "5669faee-28d9-4ef9-aa47-4c77b913be91",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>"
+    }
+  }
+}

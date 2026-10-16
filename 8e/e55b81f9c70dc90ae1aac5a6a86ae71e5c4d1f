@@ -1,0 +1,14 @@
+React-native-TestApp/__tests__/screenShare.e2e.js
+  h_2dd6c0fa170a63 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "8ee55b81f9c70dc90ae1aac5a6a86ae71e5c4d1f",
+  "prompts": {},
+  "humans": {
+    "h_2dd6c0fa170a63": {
+      "author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}

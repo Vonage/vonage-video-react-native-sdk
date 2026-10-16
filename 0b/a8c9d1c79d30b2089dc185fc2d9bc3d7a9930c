@@ -1,0 +1,19 @@
+AGENTS.md
+  s_f1508bee6f5e90::t_2dfb87a45660ad 84-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0ba8c9d1c79d30b2089dc185fc2d9bc3d7a9930c",
+  "prompts": {},
+  "sessions": {
+    "s_f1508bee6f5e90": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_90295cea-b30f-4cb8-af42-90f49bfa662a",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
