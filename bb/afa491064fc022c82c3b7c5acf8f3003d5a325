@@ -1,16 +1,36 @@
 .github/workflows/pull_request-ai-label-scan.yml
-  h_2dd6c0fa170a63 1-14
+  01729ba7d33323ba 1-14
 AGENTS.md
-  h_2dd6c0fa170a63 175
+  01729ba7d33323ba 175
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "bbafa491064fc022c82c3b7c5acf8f3003d5a325",
-  "prompts": {},
-  "humans": {
-    "h_2dd6c0fa170a63": {
-      "author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+  "prompts": {
+    "01729ba7d33323ba": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "04671b31-af7b-4cc4-aaad-e96ce0ba65d2",
+        "model": "gpt-4o"
+      },
+      "human_author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-16T09:04:56.122Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-16T09:04:56.122Z"
+        }
+      ],
+      "total_additions": 15,
+      "total_deletions": 1,
+      "accepted_lines": 15,
+      "overriden_lines": 0
     }
   }
 }
