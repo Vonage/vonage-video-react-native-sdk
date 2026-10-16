@@ -94,9 +94,10 @@ jobs:
             echo "✅ Valid (user: $USERNAME)"
             if [ -n "$SCOPES" ]; then
               echo "🔐 Scopes: $SCOPES"
-              if ! echo "$SCOPES" | grep -q 'write:packages'; then
-                echo "::warning::$NAME is missing the write:packages scope"
-              fi
+            fi
+            if ! echo "$SCOPES" | grep -Eq '(^|[ ,])write:packages([ ,]|$)'; then
+              echo "::error::$NAME is missing the write:packages scope"
+              FAILED=1
             fi
             if [ -n "$EXPIRY" ]; then
               print_expiry "$NAME" "$EXPIRY"
