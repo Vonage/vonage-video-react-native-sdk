@@ -1,0 +1,33 @@
+ios/OTRNSubscriberComponentView.mm
+  420bd4befa2219d8 130,131,132,133,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171
+ios/OTRNSubscriberComponentView.swift
+  420bd4befa2219d8 123,124,125,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206
+src/OTSubscriberView.js
+  420bd4befa2219d8 1,14,15,62,67,91,92,93,94
+src/__tests__/OTSubscriberPreferences.test.js
+  420bd4befa2219d8 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111
+src/helpers/OTSubscriberHelper.js
+  420bd4befa2219d8 13,128,129,130,131,132,133,134,135,136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "c489001279a3dc314308f7e364346d6ee5533078",
+  "prompts": {
+    "420bd4befa2219d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10a97-3bbe-70b1-b262-1e6c69604c47",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 181,
+      "total_deletions": 20,
+      "accepted_lines": 181,
+      "overriden_lines": 0,
+      "custom_attributes": {
+        "model_detail": "GPT-6 family; exact runtime variant is not exposed.",
+        "attribution_origin": "Direct record of additions produced by this Codex session; vg-ai executable unavailable."
+      }
+    }
+  }
+}

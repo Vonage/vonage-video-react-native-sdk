@@ -1,0 +1,27 @@
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  cbb97abf476068fe 43,56,94
+scripts/run-android-e2e-in-emulator.sh
+  cbb97abf476068fe 104-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "fe3e5726918666dcb054bfee5390765a6b89a8e2",
+  "prompts": {
+    "cbb97abf476068fe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1103f-5b46-7762-a9f9-a2430d146737",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 6,
+      "total_deletions": 1,
+      "accepted_lines": 6,
+      "overriden_lines": 0,
+      "custom_attributes": {
+        "model_detail": "GPT-6 family; exact runtime variant is not exposed.",
+        "attribution_origin": "Direct record of additions produced by this Codex session; vg-ai executable unavailable."
+      }
+    }
+  }
+}

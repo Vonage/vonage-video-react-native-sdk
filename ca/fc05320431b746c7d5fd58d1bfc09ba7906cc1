@@ -1,0 +1,25 @@
+src/OTSubscriber.js
+  s_ce55cec5e89d7f::t_86265ec6c75c80 119-123
+  s_ce55cec5e89d7f::t_d30b6f81740e5d 93-94,96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "cafc05320431b746c7d5fd58d1bfc09ba7906cc1",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_ce55cec5e89d7f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_fed30d36-383b-449f-9743-d76fc0216985",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+docs/VIDCS-4941-backport-status.md
+  s_41a30bf0398932::t_5efca5c4e34872 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "68f12086daa109161e4259cddf7ddf6220c33bcc",
+  "prompts": {},
+  "sessions": {
+    "s_41a30bf0398932": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_ae51f9c6-f2b1-464b-8ee0-91cac0a5a96e",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

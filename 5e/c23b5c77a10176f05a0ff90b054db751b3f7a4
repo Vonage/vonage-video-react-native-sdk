@@ -1,0 +1,28 @@
+.github/workflows/ci-pr-tests.yml
+  s_dab0fa39b9492f::t_5ee953ef3cbd97 79-85
+React-native-TestApp/scripts/rn-spm-config.js
+  s_dab0fa39b9492f::t_0bdb394bf2fb50 1-70
+.gitignore
+  s_dab0fa39b9492f::t_26c69814d58598 81-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5ec23b5c77a10176f05a0ff90b054db751b3f7a4",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_dab0fa39b9492f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_44ffd75b-ecbe-4ea7-a70e-2f819fafe26c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

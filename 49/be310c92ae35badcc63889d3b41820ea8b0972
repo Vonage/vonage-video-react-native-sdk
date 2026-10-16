@@ -1,0 +1,19 @@
+.github/PULL_REQUEST_TEMPLATE.md
+  s_a96a0b27e55586::t_056ca69e7ab0ac 6-9,12-14,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49be310c92ae35badcc63889d3b41820ea8b0972",
+  "prompts": {},
+  "sessions": {
+    "s_a96a0b27e55586": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_ffd1e888-50bc-4a53-a403-c45f45d49da4",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
