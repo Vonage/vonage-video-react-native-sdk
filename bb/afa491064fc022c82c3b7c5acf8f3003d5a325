@@ -1,0 +1,16 @@
+.github/workflows/pull_request-ai-label-scan.yml
+  h_2dd6c0fa170a63 1-14
+AGENTS.md
+  h_2dd6c0fa170a63 175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bbafa491064fc022c82c3b7c5acf8f3003d5a325",
+  "prompts": {},
+  "humans": {
+    "h_2dd6c0fa170a63": {
+      "author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}
