@@ -155,7 +155,7 @@ Use `npm pack` to create a local tarball, then install it in sample apps:
 
 ### Important constraints
 - Always rebuild codegen after changing specs (`pod install` iOS, clean Gradle Android)
-- `@types/index.d.ts` is **legacy** — canonical types live in `src/types.ts`
+- Canonical public types live in `src/types.ts`
 - The OTRN singleton holds strong references; be careful with cleanup in disconnect/unmount
 - iOS requires ObjC++ glue because Swift cannot implement C++ codegen protocols
 - Android permissions (camera/mic) are requested at the JS layer before publishing
