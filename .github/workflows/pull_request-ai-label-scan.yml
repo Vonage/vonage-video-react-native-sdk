@@ -1,0 +1,14 @@
+name: Require exactly one AI label on pull requests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  require-ai-label:
+    uses: opentok/video-release-automation/.github/workflows/ai-label-scan.yml@main
