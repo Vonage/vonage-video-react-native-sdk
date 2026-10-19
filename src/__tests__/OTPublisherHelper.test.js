@@ -323,10 +323,14 @@ describe('sanitizeProperties type coercion (#173)', () => {
   it('coerces mistyped boolean props to real booleans', () => {
     expect(sanitizeProperties({ videoTrack: 0 }).videoTrack).toBe(false);
     expect(sanitizeProperties({ audioTrack: '' }).audioTrack).toBe(false);
-    expect(sanitizeProperties({ publishAudio: null }).publishAudio).toBe(false);
     expect(typeof sanitizeProperties({ videoTrack: 0 }).videoTrack).toBe(
       'boolean'
     );
+  });
+
+  it('defaults null boolean props to true, like omitted ones', () => {
+    expect(sanitizeProperties({ publishAudio: null }).publishAudio).toBe(true);
+    expect(sanitizeProperties({ videoTrack: null }).videoTrack).toBe(true);
   });
 
   it('still defaults omitted boolean props to true', () => {

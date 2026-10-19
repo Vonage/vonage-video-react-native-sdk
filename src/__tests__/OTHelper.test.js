@@ -44,9 +44,12 @@ describe('OTHelper', () => {
       expect(sanitizeBooleanProperty(1)).toBe(true);
     });
 
+    it('returns true for null, like undefined', () => {
+      expect(sanitizeBooleanProperty(null)).toBe(true);
+    });
+
     it('returns false for a defined falsy non-boolean', () => {
       expect(sanitizeBooleanProperty(0)).toBe(false);
-      expect(sanitizeBooleanProperty(null)).toBe(false);
       expect(sanitizeBooleanProperty('')).toBe(false);
     });
   });
