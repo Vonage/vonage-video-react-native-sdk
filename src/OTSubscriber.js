@@ -22,7 +22,7 @@ export default class OTSubscriber extends Component {
 
   constructor(props, context) {
     super(props, context);
-    let initialStreams = getStreams(this.context.sessionId);
+    let initialStreams = [...getStreams(this.context.sessionId)];
     let initialPublisherStream = getPublisherStream(this.context.sessionId);
     if (props.subscribeToSelf && initialPublisherStream) {
       initialStreams.push(initialPublisherStream);
@@ -90,11 +90,10 @@ export default class OTSubscriber extends Component {
 
   streamCreatedHandler = (stream) => {
     this.setState((prevState) => {
-      const modifiedStreams = prevState.streams;
-      if (!modifiedStreams.includes(stream.streamId)) {
-        modifiedStreams.push(stream.streamId);
+      if (prevState.streams.includes(stream.streamId)) {
+        return null;
       }
-      return { streams: modifiedStreams };
+      return { streams: [...prevState.streams, stream.streamId] };
     });
   };
   streamDestroyedHandler = (stream) => {
@@ -117,7 +116,11 @@ export default class OTSubscriber extends Component {
   }
 
   componentWillUnmount() {
-    removeEventListener('streamCreated', this.streamCreatedHandler);
+    removeEventListener(
+      this.context.sessionId,
+      'streamCreated',
+      this.streamCreatedHandler
+    );
     removeEventListener(
       this.context.sessionId,
       'publisherStreamCreated',
@@ -149,7 +152,11 @@ export default class OTSubscriber extends Component {
       style: this.props.style,
     };
 
-    if (!this.props.children) {
+    // `children` is a render-prop function. Only invoke it when it actually is
+    // one; any other value (undefined, or element children passed by mistake)
+    // falls back to the default subscriber-view rendering instead of throwing
+    // "children is not a function" from render.
+    if (typeof this.props.children !== 'function') {
       const containerStyle = this.props.containerStyle;
       const childrenWithStreams = this.state.streams.map((streamId) => (
         <OTSubscriberView

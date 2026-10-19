@@ -1,6 +1,5 @@
-import type { TurboModule } from 'react-native';
+import type { CodegenTypes, TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { EventEmitter } from 'react-native/Libraries/Types/CodegenTypes';
 
 export type ArchiveEvent = {
   archiveId: string;
@@ -21,8 +20,6 @@ export type ConnectionEvent = {
   sessionId: string;
 };
 
-export type EmptyEvent = {};
-
 export type IceConfig = {
   includeServers: string; // 'all' | 'custom';
   transportPolicy: string; // 'all' | 'relay';
@@ -36,6 +33,7 @@ export type IceConfig = {
 
 export type MuteForcedEvent = {
   active: boolean;
+  sessionId: string;
 };
 
 export type SessionOptions = {
@@ -47,6 +45,7 @@ export type SessionOptions = {
   sessionMigration?: boolean;
   iceConfig?: IceConfig;
   ipWhitelist?: boolean;
+  /** @deprecated Has no effect. */
   isCamera2Capable?: boolean;
   proxyUrl?: string;
   useTextureViews?: boolean;
@@ -101,6 +100,7 @@ export type StreamPropertyChangedEvent = {
   newValue: StreamPropertyChangedValue;
   stream: Stream;
   changedProperty: string;
+  sessionId: string;
 };
 
 export type SignalEvent = {
@@ -113,23 +113,28 @@ export type SignalEvent = {
 export type SessionErrorEvent = {
   code: string;
   message: string;
+  sessionId: string;
+};
+
+export type SessionReconnectEvent = {
+  sessionId: string;
 };
 
 export interface Spec extends TurboModule {
-  readonly onArchiveStarted: EventEmitter<ArchiveEvent>;
-  readonly onArchiveStopped: EventEmitter<ArchiveEvent>;
-  readonly onConnectionCreated: EventEmitter<ConnectionEvent>;
-  readonly onConnectionDestroyed: EventEmitter<ConnectionEvent>;
-  readonly onMuteForced: EventEmitter<MuteForcedEvent>;
-  readonly onSessionConnected: EventEmitter<SessionConnectEvent>;
-  readonly onSessionDisconnected: EventEmitter<SessionDisconnectEvent>;
-  readonly onSessionReconnecting: EventEmitter<EmptyEvent>;
-  readonly onSessionReconnected: EventEmitter<EmptyEvent>;
-  readonly onStreamCreated: EventEmitter<StreamEvent>;
-  readonly onStreamDestroyed: EventEmitter<StreamEvent>;
-  readonly onStreamPropertyChanged: EventEmitter<StreamPropertyChangedEvent>;
-  readonly onSignalReceived: EventEmitter<SignalEvent>;
-  readonly onSessionError: EventEmitter<SessionErrorEvent>;
+  readonly onArchiveStarted: CodegenTypes.EventEmitter<ArchiveEvent>;
+  readonly onArchiveStopped: CodegenTypes.EventEmitter<ArchiveEvent>;
+  readonly onConnectionCreated: CodegenTypes.EventEmitter<ConnectionEvent>;
+  readonly onConnectionDestroyed: CodegenTypes.EventEmitter<ConnectionEvent>;
+  readonly onMuteForced: CodegenTypes.EventEmitter<MuteForcedEvent>;
+  readonly onSessionConnected: CodegenTypes.EventEmitter<SessionConnectEvent>;
+  readonly onSessionDisconnected: CodegenTypes.EventEmitter<SessionDisconnectEvent>;
+  readonly onSessionReconnecting: CodegenTypes.EventEmitter<SessionReconnectEvent>;
+  readonly onSessionReconnected: CodegenTypes.EventEmitter<SessionReconnectEvent>;
+  readonly onStreamCreated: CodegenTypes.EventEmitter<StreamEvent>;
+  readonly onStreamDestroyed: CodegenTypes.EventEmitter<StreamEvent>;
+  readonly onStreamPropertyChanged: CodegenTypes.EventEmitter<StreamPropertyChangedEvent>;
+  readonly onSignalReceived: CodegenTypes.EventEmitter<SignalEvent>;
+  readonly onSessionError: CodegenTypes.EventEmitter<SessionErrorEvent>;
   initSession(
     apiKey: string,
     sessionId: string,

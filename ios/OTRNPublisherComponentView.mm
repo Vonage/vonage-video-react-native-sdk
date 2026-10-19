@@ -28,6 +28,9 @@ using namespace facebook::react;
 
 @implementation OTRNPublisherComponentView {
     OTRNPublisherImpl *_impl;
+    BOOL _emitAudioLevel;
+    BOOL _emitAudioNetworkStats;
+    BOOL _emitVideoNetworkStats;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -70,6 +73,13 @@ using namespace facebook::react;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
+        // React Native 0.87 requires Fabric component-view subclasses to seed
+        // `_props` with a concrete default in the constructor; otherwise the
+        // first `updateProps:` (which reads `_props` as the old props) trips
+        // RCTViewComponentView's assertion and crashes with
+        // NSInternalInconsistencyException.
+        static const auto defaultProps = std::make_shared<const OTRNPublisherProps>();
+        _props = defaultProps;
         _impl = [[OTRNPublisherImpl alloc] initWithView:self];
         self.contentView = nil;
     }
@@ -142,6 +152,10 @@ using namespace facebook::react;
         [_impl setCameraPosition:RCTNSStringFromString(newViewProps.cameraPosition)];
     }
 
+    _emitAudioLevel = newViewProps.emitAudioLevel;
+    _emitAudioNetworkStats = newViewProps.emitAudioNetworkStats;
+    _emitVideoNetworkStats = newViewProps.emitVideoNetworkStats;
+
     [super updateProps:props oldProps:oldProps];
 }
 
@@ -190,6 +204,7 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioLevel:(float)audioLevel {
+    if (!_emitAudioLevel) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnAudioLevel payload{
@@ -199,6 +214,7 @@ using namespace facebook::react;
 }
 
 - (void)handleAudioNetworkStats:(NSString *)jsonString {
+    if (!_emitAudioNetworkStats) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnAudioNetworkStats payload{
@@ -208,6 +224,7 @@ using namespace facebook::react;
 }
 
 - (void)handleVideoNetworkStats:(NSString *)jsonString {
+    if (!_emitVideoNetworkStats) { return; }
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
         OTRNPublisherEventEmitter::OnVideoNetworkStats payload{
