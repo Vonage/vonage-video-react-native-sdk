@@ -1,12 +1,22 @@
-// Regression test for PR #155 review: a rejected OT.connect() must be handled
-// (logged) rather than surfacing as an unhandled promise rejection.
+// Regression test for #154: a rejected OT.connect() is reported through
+// eventHandlers.error instead of surfacing as an unhandled promise rejection.
 
 jest.mock('../OT', () => {
   const emitterNames = [
-    'onSessionConnected', 'onSessionError', 'onStreamCreated', 'onStreamDestroyed',
-    'onSignalReceived', 'onConnectionCreated', 'onConnectionDestroyed', 'onArchiveStarted',
-    'onArchiveStopped', 'onMuteForced', 'onSessionReconnecting', 'onSessionReconnected',
-    'onStreamPropertyChanged', 'onSessionDisconnected',
+    'onSessionConnected',
+    'onSessionError',
+    'onStreamCreated',
+    'onStreamDestroyed',
+    'onSignalReceived',
+    'onConnectionCreated',
+    'onConnectionDestroyed',
+    'onArchiveStarted',
+    'onArchiveStopped',
+    'onMuteForced',
+    'onSessionReconnecting',
+    'onSessionReconnected',
+    'onStreamPropertyChanged',
+    'onSessionDisconnected',
   ];
   const OT = { initSession: jest.fn(), setEncryptionSecret: jest.fn() };
   for (const n of emitterNames) OT[n] = jest.fn(() => ({ remove: jest.fn() }));
@@ -34,7 +44,7 @@ jest.mock('../OTError', () => ({ handleError: jest.fn() }));
 jest.mock('../helpers/OTHelper', () => ({ logOT: jest.fn() }));
 
 import OTSession from '../OTSession';
-import { logOT } from '../helpers/OTHelper';
+import { OT } from '../OT';
 
 const base = () => ({
   apiKey: 'app-id',
@@ -45,18 +55,63 @@ const base = () => ({
   signal: {},
 });
 
+const mount = (props) => {
+  const session = new OTSession(props);
+  session.setState = jest.fn(); // component isn't mounted by React in this test
+  session.componentDidMount();
+  return session;
+};
+
+const flush = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
+const emitSessionError = (event) =>
+  OT.onSessionError.mock.calls.at(-1)[0](event);
+
 describe('OTSession connect() rejection handling', () => {
-  it('logs a rejected connect instead of leaving it unhandled', async () => {
-    const session = new OTSession(base());
-    session.setState = jest.fn(); // component isn't mounted by React in this test
-    session.componentDidMount();
+  beforeEach(() => jest.clearAllMocks());
 
-    // flush the microtask queue so the connect().catch runs
-    await Promise.resolve();
-    await Promise.resolve();
+  it('reports a rejected connect through eventHandlers.error', async () => {
+    const error = jest.fn();
+    mount({ ...base(), eventHandlers: { error } });
+    await flush();
 
-    expect(logOT).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'rn_connect_error' })
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'connect failed', sessionId: 'sid-1' })
     );
+  });
+
+  it('reports a connect failure once when it is also emitted as sessionError', async () => {
+    const error = jest.fn();
+    mount({ ...base(), eventHandlers: { error } });
+    emitSessionError({
+      sessionId: 'sid-1',
+      code: 1004,
+      message: 'auth failed',
+    });
+    await flush();
+
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 1004, message: 'auth failed' })
+    );
+  });
+
+  it('passes later session errors through after connecting', async () => {
+    OT.connect.mockImplementationOnce(() => Promise.resolve());
+    const error = jest.fn();
+    mount({ ...base(), eventHandlers: { error } });
+    OT.onSessionConnected.mock.calls.at(-1)[0]({
+      sessionId: 'sid-1',
+      connection: {},
+    });
+    await flush();
+    emitSessionError({ sessionId: 'sid-1', code: 1, message: 'a' });
+    emitSessionError({ sessionId: 'sid-1', code: 2, message: 'b' });
+
+    expect(error).toHaveBeenCalledTimes(2);
   });
 });

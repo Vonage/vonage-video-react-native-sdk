@@ -78,6 +78,7 @@ export default class OTSession extends Component {
     this._eventSubscriptions.push(
       OT.onSessionConnected((event) => {
         if (event.sessionId !== sessionId) return;
+        this.connecting = false;
         this.connectionId = event.connectionId;
         setIsConnected(sessionId, true);
         this.eventHandlers?.sessionConnected?.(event);
@@ -125,6 +126,10 @@ export default class OTSession extends Component {
     this._eventSubscriptions.push(
       OT.onSessionError((event) => {
         if (event.sessionId !== sessionId) return;
+        if (this.connecting) {
+          this.reportConnectError(event);
+          return;
+        }
         this.eventHandlers?.error?.(event);
       })
     );
@@ -185,17 +190,24 @@ export default class OTSession extends Component {
       })
     );
 
-    // OT.connect is typed as a Promise, but its rejection behaviour can differ
-    // across architectures. Handle it defensively so a native rejection can't
-    // surface as an unhandled promise rejection. User-facing connect failures
-    // are still delivered through OT.onSessionError -> eventHandlers.error above,
-    // so we only log here rather than double-dispatching.
-    const connectResult = OT.connect(sessionId, token);
-    if (connectResult && typeof connectResult.catch === 'function') {
-      connectResult.catch((error) => {
-        logOT({ sessionId, action: 'rn_connect_error', error });
+    this.connecting = true;
+    this.connectErrorReported = false;
+    Promise.resolve(OT.connect(sessionId, token)).catch((error) => {
+      this.reportConnectError({
+        code: error?.code,
+        message: error?.message,
+        sessionId,
       });
-    }
+    });
+  }
+
+  // A failed connect can arrive as a promise rejection, a sessionError event,
+  // or both, so report only the first one per connect attempt.
+  reportConnectError(error) {
+    if (this.connectErrorReported) return;
+    this.connectErrorReported = true;
+    this.connecting = false;
+    this.eventHandlers?.error?.(error);
   }
 
   initComponent = () => {
