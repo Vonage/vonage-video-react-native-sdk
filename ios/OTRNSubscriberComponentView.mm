@@ -127,6 +127,10 @@ using namespace facebook::react;
             @"streamId": RCTNSStringFromString(newViewProps.streamId),
             @"subscribeToAudio": @(newViewProps.subscribeToAudio),
             @"subscribeToVideo": @(newViewProps.subscribeToVideo),
+            @"subscribeToCaptions": @(newViewProps.subscribeToCaptions),
+            @"audioVolume": @(newViewProps.audioVolume),
+            @"preferredFrameRate": @(newViewProps.preferredFrameRate),
+            @"preferredResolution": RCTNSStringFromString(newViewProps.preferredResolution),
             @"scaleBehavior": RCTNSStringFromString(newViewProps.scaleBehavior)
         };
         [_impl createSubscriber:subscriberProperties];
@@ -147,6 +151,22 @@ using namespace facebook::react;
 
     if (oldViewProps.subscribeToVideo != newViewProps.subscribeToVideo) {
         [_impl setSubscribeToVideo:newViewProps.subscribeToVideo];
+    }
+
+    if (oldViewProps.subscribeToCaptions != newViewProps.subscribeToCaptions) {
+        [_impl setSubscribeToCaptions:newViewProps.subscribeToCaptions];
+    }
+
+    if (oldViewProps.audioVolume != newViewProps.audioVolume) {
+        [_impl setAudioVolume:newViewProps.audioVolume];
+    }
+
+    if (oldViewProps.preferredFrameRate != newViewProps.preferredFrameRate) {
+        [_impl setPreferredFrameRate:newViewProps.preferredFrameRate];
+    }
+
+    if (oldViewProps.preferredResolution != newViewProps.preferredResolution) {
+        [_impl setPreferredResolution:RCTNSStringFromString(newViewProps.preferredResolution)];
     }
 
     if (oldViewProps.scaleBehavior != newViewProps.scaleBehavior) {
