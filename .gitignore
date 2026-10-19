@@ -74,3 +74,4 @@ android/.gradle
 .kiro/
 
 artifacts/
+coverage/

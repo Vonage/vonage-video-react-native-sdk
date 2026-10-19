@@ -366,7 +366,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val stream = buildStreamMapFromCache()
         val payload =
             Arguments.createMap().apply {
-                putString("jsonArrayOfReports", jsonArrayOfReports) // deprecated: use jsonStats
                 putString("jsonStats", jsonArrayOfReports) // matches iOS key and TS spec
                 putMap("stream", stream)
             }
@@ -412,7 +411,6 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
             put("audioPacketsLost", audioPacketsLost)
             put("audioPacketsReceived", audioPacketsReceived)
             put("audioBytesReceived", audioBytesReceived)
-            put("startTime", timeStamp)   // kept for backward compatibility
             put("timestamp", timeStamp)   // matches iOS field name
         }.toString()
 
@@ -420,11 +418,10 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val payload = Arguments.createMap().apply {
             putString("jsonStats", jsonStats)     // matches iOS key, consumed by JS deserializer
             putMap("stream", stream)              // matches iOS structure
-            // Backward compat: keep flat fields for existing Android consumers
+            // Deprecated: flat fields are Android-only (iOS never sends them); JS reads `stats`.
             putDouble("audioPacketsLost", audioPacketsLost)
             putDouble("audioPacketsReceived", audioPacketsReceived)
             putDouble("audioBytesReceived", audioBytesReceived)
-            putDouble("startTime", timeStamp)     // deprecated: use timestamp
             putDouble("timestamp", timeStamp)
         }
         emitOpenTokEvent("onAudioNetworkStats", payload)
@@ -460,7 +457,7 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         val payload = Arguments.createMap().apply {
             putString("jsonStats", statsJson.toString()) // matches iOS key, consumed by JS deserializer
             putMap("stream", stream)                     // matches iOS structure
-            // Backward compat: keep flat fields so existing Android consumers still work
+            // Deprecated: flat fields are Android-only (iOS never sends them); JS reads `stats`.
             putInt("videoPacketsLost", videoPacketsLost)
             putInt("videoBytesReceived", videoBytesReceived)
             putInt("videoPacketsReceived", videoPacketsReceived)

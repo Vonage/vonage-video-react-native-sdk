@@ -14,6 +14,9 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -23,7 +26,81 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: NODE_OPTIONS=--experimental-require-module npm test
+      - name: Unit tests with coverage
+        env:
+          NODE_OPTIONS: --experimental-require-module
+        run: npm run test:unit -- --coverage
+
+      - name: Comment coverage summary
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const summary = coverage.total;
+            const icon = (pct) => (pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴');
+            const row = (label, metric) => `| ${label} | ${icon(metric.pct)} | ${metric.pct}% | ${metric.covered}/${metric.total} |`;
+            const prNumber = context.payload.pull_request.number;
+            const marker = '<!-- coverage-report-comment -->';
+
+            const fileRows = Object.keys(coverage)
+              .filter((file) => file !== 'total')
+              .sort()
+              .map((file) => {
+                const relativePath = path.relative(process.cwd(), file);
+                const { statements, branches, functions, lines } = coverage[file];
+                const cell = (metric) => `${icon(metric.pct)} ${metric.pct}%`;
+                return `| ${relativePath} | ${cell(statements)} | ${cell(branches)} | ${cell(functions)} | ${cell(lines)} |`;
+              });
+
+            const body = [
+              marker,
+              '## 📊 Coverage summary',
+              '',
+              '| Metric | Status | % | Covered/Total |',
+              '| --- | --- | --- | --- |',
+              row('Statements', summary.statements),
+              row('Branches', summary.branches),
+              row('Functions', summary.functions),
+              row('Lines', summary.lines),
+              '',
+              '🟢 ≥ 80% · 🟡 60–79% · 🔴 < 60%',
+              '',
+              '<details>',
+              '<summary>📁 View coverage by file</summary>',
+              '',
+              '| File | Statements | Branches | Functions | Lines |',
+              '| --- | --- | --- | --- | --- |',
+              ...fileRows,
+              '',
+              '</details>',
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
 
   e2e-ios-tests:
     needs: unit-tests
