@@ -90,6 +90,7 @@ public final class EventUtils {
     public static WritableMap prepareStreamPropertyChangedEventData(String changedProperty, String oldValue, String newValue, Stream stream, Session session) {
 
         WritableMap streamPropertyEventData = Arguments.createMap();
+        streamPropertyEventData.putString("sessionId", session.getSessionId());
         streamPropertyEventData.putString("changedProperty", changedProperty);
         streamPropertyEventData.putString("oldValue", oldValue);
         streamPropertyEventData.putString("newValue", newValue);
@@ -100,6 +101,7 @@ public final class EventUtils {
     public static WritableMap prepareStreamPropertyChangedEventData(String changedProperty, WritableMap oldValue, WritableMap newValue, Stream stream, Session session) {
 
         WritableMap streamPropertyEventData = Arguments.createMap();
+        streamPropertyEventData.putString("sessionId", session.getSessionId());
         streamPropertyEventData.putString("changedProperty", changedProperty);
         streamPropertyEventData.putMap("oldValue", oldValue);
         streamPropertyEventData.putMap("newValue", newValue);
@@ -110,6 +112,7 @@ public final class EventUtils {
     public static WritableMap prepareStreamPropertyChangedEventData(String changedProperty, Boolean oldValue, Boolean newValue, Stream stream, Session session) {
 
         WritableMap streamPropertyEventData = Arguments.createMap();
+        streamPropertyEventData.putString("sessionId", session.getSessionId());
         streamPropertyEventData.putString("changedProperty", changedProperty);
         streamPropertyEventData.putBoolean("oldValue", oldValue);
         streamPropertyEventData.putBoolean("newValue", newValue);

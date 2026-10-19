@@ -1,3 +1,4 @@
+import { nativeResolution } from './helpers/OTSubscriberHelper';
 import React from 'react';
 import PropTypes from 'prop-types';
 import { OT } from './OT';
@@ -9,13 +10,7 @@ const withParsedJsonStats = (nativeEvent) => {
     return nativeEvent;
   }
 
-  const jsonStats =
-    typeof nativeEvent.jsonStats === 'string' && nativeEvent.jsonStats.length > 0
-      ? nativeEvent.jsonStats
-      : typeof nativeEvent.jsonArrayOfReports === 'string' &&
-          nativeEvent.jsonArrayOfReports.length > 0
-        ? nativeEvent.jsonArrayOfReports
-        : undefined;
+  const { jsonStats } = nativeEvent;
 
   if (typeof jsonStats !== 'string' || jsonStats.length === 0) {
     return nativeEvent;
@@ -57,20 +52,19 @@ export default class OTSubscriberView extends React.Component {
     const streamProperties = this.context.streamProperties
       ? this.context.streamProperties[streamId]
       : undefined;
-    let {
+    const {
       audioVolume,
       preferredFrameRate,
       preferredResolution,
       subscribeToCaptions,
-    } = subscriberProperties;
-    if (streamProperties) {
-      ({
-        audioVolume,
-        preferredFrameRate,
-        preferredResolution,
-        subscribeToCaptions,
-      } = streamProperties);
-    }
+    } = {
+      ...subscriberProperties,
+      ...Object.fromEntries(
+        Object.entries(streamProperties ?? {}).filter(
+          ([, value]) => value !== undefined
+        )
+      ),
+    };
     const subscribeToVideo =
       streamProperties?.subscribeToVideo ??
       subscriberProperties?.subscribeToVideo ??
@@ -88,30 +82,36 @@ export default class OTSubscriberView extends React.Component {
       <OTRNSubscriber
         sessionId={this.context.sessionId}
         streamId={streamId}
+        emitAudioLevel={!!eventHandlers.audioLevel}
+        emitAudioNetworkStats={!!eventHandlers.audioNetworkStats}
+        emitVideoNetworkStats={!!eventHandlers.videoNetworkStats}
         subscribeToAudio={subscribeToAudio}
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}
-        subscribeToCaptions={subscribeToCaptions}
-        preferredFrameRate={preferredFrameRate}
-        preferredResolution={preferredResolution}
-        audioVolume={audioVolume}
-        onAudioLevel={(event) => {
-          eventHandlers.audioLevel?.(event.nativeEvent);
-        }}
-        onAudioNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.audioNetworkStats?.(
-            withParsedJsonStats(event.nativeEvent)
-          );
-        }}
+        subscribeToCaptions={subscribeToCaptions ?? false}
+        preferredFrameRate={preferredFrameRate ?? 32767}
+        preferredResolution={nativeResolution(preferredResolution)}
+        audioVolume={audioVolume ?? 100}
+        onAudioLevel={
+          eventHandlers.audioLevel
+            ? (event) => {
+                eventHandlers.audioLevel(event.nativeEvent);
+              }
+            : undefined
+        }
+        onAudioNetworkStats={
+          eventHandlers.audioNetworkStats
+            ? (event) => {
+                eventHandlers.audioNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         onSubscriberConnected={(event) => {
-          eventHandlers.connected?.(event.nativeEvent);
           eventHandlers.subscriberConnected?.(event.nativeEvent);
         }}
         onSubscriberDisconnected={(event) => {
-          eventHandlers.disconnected?.(event.nativeEvent);
           eventHandlers.subscriberDisconnected?.(event.nativeEvent);
         }}
         onSubscriberError={(event) => {
@@ -146,14 +146,15 @@ export default class OTSubscriberView extends React.Component {
         onReconnected={(event) => {
           eventHandlers.reconnected?.(event.nativeEvent);
         }}
-        onVideoNetworkStats={(event) => {
-          // The Fabric codegen type for this event is { stream, jsonStats: string }.
-          // Keep backward compatibility by passing jsonStats unchanged, and also
-          // provide parsed stats when jsonStats is valid JSON.
-          eventHandlers.videoNetworkStats?.(
-            withParsedJsonStats(event.nativeEvent)
-          );
-        }}
+        onVideoNetworkStats={
+          eventHandlers.videoNetworkStats
+            ? (event) => {
+                eventHandlers.videoNetworkStats(
+                  withParsedJsonStats(event.nativeEvent)
+                );
+              }
+            : undefined
+        }
         style={style}
       />
     );

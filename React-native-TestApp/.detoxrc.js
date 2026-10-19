@@ -31,7 +31,9 @@ module.exports = {
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug'
+      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+      // Re-applied on every install, so Metro stays reachable if adb drops mid-run
+      reversePorts: [8081]
     },
     'android.release': {
       type: 'android.apk',
