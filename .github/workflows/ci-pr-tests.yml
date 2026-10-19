@@ -236,6 +236,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - name: Android JVM unit tests
         working-directory: React-native-TestApp/android
         run: ./gradlew :vonage_client-sdk-video-react-native:testDebugUnitTest --console=plain
