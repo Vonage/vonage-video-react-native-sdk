@@ -37,12 +37,7 @@ const getParsedStatsPayload = (nativeEvent) => {
     return parsedJsonStats;
   }
 
-  const parsedLegacyStats = parseStatsString(nativeEvent.stats);
-  if (parsedLegacyStats !== undefined) {
-    return parsedLegacyStats;
-  }
-
-  return nativeEvent.stats ?? nativeEvent.jsonStats ?? nativeEvent;
+  return nativeEvent.jsonStats ?? nativeEvent;
 };
 
 export default class OTPublisher extends React.Component {
@@ -124,8 +119,8 @@ export default class OTPublisher extends React.Component {
             () => this.publishToSession()
           );
         })
-        .catch((error) => {
-          // this.otrnEventHandler(error);
+        .catch(() => {
+          // Android permission denial is not surfaced to eventHandlers.error.
         });
     } else {
       this.publishToSession();
@@ -168,8 +163,8 @@ export default class OTPublisher extends React.Component {
             }
           );
         })
-        .catch((error) => {
-          // this.otrnEventHandler(error);
+        .catch(() => {
+          // Android permission denial is not surfaced to eventHandlers.error.
         });
     } else {
       // Context and publisherId might not be available immediately
