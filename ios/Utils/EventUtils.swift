@@ -56,6 +56,7 @@ class EventUtils {
     
     static func prepareStreamPropertyChangedEventData(_ changedProperty: String, oldValue: Any, newValue: Any, stream: Dictionary<String, Any>) -> Dictionary<String, Any> {
         var streamPropertyEventData: Dictionary<String, Any> = [:];
+        streamPropertyEventData["sessionId"] = stream["sessionId"];
         streamPropertyEventData["oldValue"] = oldValue;
         streamPropertyEventData["newValue"] = newValue;
         streamPropertyEventData["stream"] = stream;

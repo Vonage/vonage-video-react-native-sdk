@@ -11,14 +11,6 @@ export const createSubscriberHandlers = (
     updateEvent('subscriberEvents', 'audioNetworkStats', true);
     captureEvent?.('subscriberAudioNetworkStats', event);
   },
-  connected: (event: any) => {
-    console.log('Subscriber connected event:', event);
-    updateEvent('subscriberEvents', 'connected', true);
-  },
-  disconnected: (event: any) => {
-    console.log('Subscriber disconnected event:', event);
-    updateEvent('subscriberEvents', 'disconnected', true);
-  },
   reconnected: (event: any) => {
     console.log('Subscriber reconnected event:', event);
     updateEvent('subscriberEvents', 'reconnected', true);
@@ -26,6 +18,10 @@ export const createSubscriberHandlers = (
   subscriberConnected: (event: any) => {
     console.log('Subscriber subscriberConnected event:', event);
     updateEvent('subscriberEvents', 'subscriberConnected', true);
+  },
+  subscriberDisconnected: (event: any) => {
+    console.log('Subscriber subscriberDisconnected event:', event);
+    updateEvent('subscriberEvents', 'subscriberDisconnected', true);
   },
   videoDataReceived: (event: any) => {
     updateEvent('subscriberEvents', 'videoDataReceived', true);
