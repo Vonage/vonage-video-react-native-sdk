@@ -1,7 +1,12 @@
 import Foundation
 import OpenTok
 
-class OTCustomAudioDriver: NSObject {
+// The SDK calls the OTAudioDevice methods on its own audio threads, the C
+// render/record callbacks run on the real-time audio thread, and session
+// notifications are funnelled through `safetyQueue`. This matches the
+// pre-Swift 6 behaviour of this driver; the conformance only lets that
+// existing model compile under strict concurrency checking.
+final class OTCustomAudioDriver: NSObject, @unchecked Sendable {
 #if targetEnvironment(simulator)
     static let kSampleRate: UInt16 = 44100
 #else
@@ -427,9 +432,9 @@ extension OTCustomAudioDriver: OTAudioDevice {
 // MARK: - AVAudioSession
 extension OTCustomAudioDriver {
     @objc func onInterruptionEvent(notification: Notification) {
-        let type = notification.userInfo?[AVAudioSessionInterruptionTypeKey]
+        let type = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? Int
         safetyQueue.async {
-            self.handleInterruptionEvent(type: type as? Int)
+            self.handleInterruptionEvent(type: type)
         }
     }
     
@@ -457,8 +462,12 @@ extension OTCustomAudioDriver {
     }
     
     @objc func onRouteChangeEvent(notification: Notification) {
+        let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+        let previousRoute = notification.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
+            as? AVAudioSessionRouteDescription
+        let previousOutputName = previousRoute?.outputs.first?.portName
         safetyQueue.async {
-            self.handleRouteChangeEvent(notification: notification)
+            self.handleRouteChangeEvent(reason: reason, previousOutputName: previousOutputName)
         }
     }
     
@@ -468,8 +477,8 @@ extension OTCustomAudioDriver {
         }
     }
     
-    fileprivate func handleRouteChangeEvent(notification: Notification) {
-        guard let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt else {
+    fileprivate func handleRouteChangeEvent(reason: UInt?, previousOutputName: String?) {
+        guard let reason = reason else {
             return
         }
         
@@ -480,15 +489,8 @@ extension OTCustomAudioDriver {
         if reason == AVAudioSession.RouteChangeReason.override.rawValue ||
             reason == AVAudioSession.RouteChangeReason.categoryChange.rawValue {
             
-            let oldRouteDesc = notification.userInfo?[AVAudioSessionRouteChangePreviousRouteKey] as! AVAudioSessionRouteDescription
-            let outputs = oldRouteDesc.outputs
-            var oldOutputDeviceName: String? = nil
+            let oldOutputDeviceName = previousOutputName
             var currentOutputDeviceName: String? = nil
-            
-            if outputs.count > 0 {
-                let portDesc = outputs[0]
-                oldOutputDeviceName = portDesc.portName
-            }
             
             if AVAudioSession.sharedInstance().currentRoute.outputs.count > 0 {
                 currentOutputDeviceName = AVAudioSession.sharedInstance().currentRoute.outputs[0].portName
