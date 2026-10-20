@@ -67,6 +67,21 @@ Applications using older SDK versions will need to migrate to React Native's new
 
 ---
 
+## iOS: Swift 5 and Swift 6 language modes
+
+The iOS native module builds in both the Swift 5 and Swift 6 language modes with complete concurrency checking. The podspec declares `swift_versions = ["5.0", "6.0"]`, so CocoaPods compiles the SDK pod in Swift 6 mode by default. This only affects the SDK pod; your app's own targets keep their language mode. To build the SDK pod in Swift 5 mode, limit the versions on your app target in the `Podfile`:
+
+```ruby
+target 'YourApp' do
+  supports_swift_versions '< 6.0'
+  # ...
+end
+```
+
+Swift 6 mode requires a Swift 6 compiler (Xcode 16 or later), which React Native 0.81+ already requires. The SDK's native state and OpenTok delegate callbacks are confined to the main thread.
+
+---
+
 ## Documentation & Resources
 
 ### Vonage Package

@@ -35,7 +35,7 @@ Pod::Spec.new do |s|
   
   # Configure compiler flags and settings
   s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
-  s.swift_version = "5.0"
+  s.swift_versions = ["5.0", "6.0"]
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     "HEADER_SEARCH_PATHS" => [
