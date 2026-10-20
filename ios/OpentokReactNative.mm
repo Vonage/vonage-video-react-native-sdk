@@ -19,6 +19,16 @@ typedef JS::NativeOpentok::SessionOptions RN_SessionOptions;
 
 RCT_EXPORT_MODULE()
 
+// The Swift implementation, the shared OTRN state and the OpenTok delegate
+// callbacks are confined to the main thread.
+- (dispatch_queue_t)methodQueue {
+    return dispatch_get_main_queue();
+}
+
++ (BOOL)requiresMainQueueSetup {
+    return YES;
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
