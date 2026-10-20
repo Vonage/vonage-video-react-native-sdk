@@ -9,6 +9,7 @@
 import Foundation
 import OpenTok
 
+@MainActor
 class Utils {
     static func sanitizeCameraResolution(_ resolution: Any)
         -> OTCameraCaptureResolution
@@ -253,86 +254,41 @@ class Utils {
     static func setStreamObservers(stream: OTStream, isPublisherStream: Bool) {
         let streamId = stream.streamId
 
-        // Video dimensions observer
         let dimensionsObserver = stream.observe(
             \.videoDimensions, options: [.old, .new]
-        ) { stream, change in
+        ) { @Sendable _, change in
             guard let oldDimensions = change.oldValue,
                 let newDimensions = change.newValue,
                 oldDimensions != newDimensions
             else { return }
 
-            let oldValue = [
-                "width": oldDimensions.width,
-                "height": oldDimensions.height,
-            ]
-            let newValue = [
-                "width": newDimensions.width,
-                "height": newDimensions.height,
-            ]
-
-            checkAndEmitStreamPropertyChangeEvent(
-                streamId,
-                changedProperty: "videoDimensions",
-                oldValue: oldValue,
-                newValue: newValue,
-                isPublisherStream: isPublisherStream
-            )
+            MainThread.run {
+                checkAndEmitStreamPropertyChangeEvent(
+                    streamId,
+                    changedProperty: "videoDimensions",
+                    oldValue: [
+                        "width": oldDimensions.width,
+                        "height": oldDimensions.height,
+                    ],
+                    newValue: [
+                        "width": newDimensions.width,
+                        "height": newDimensions.height,
+                    ],
+                    isPublisherStream: isPublisherStream
+                )
+            }
         }
 
-        // Audio observer
-        let audioObserver = stream.observe(\.hasAudio, options: [.old, .new]) {
-            stream, change in
-            guard let oldValue = change.oldValue,
-                let newValue = change.newValue,
-                oldValue != newValue
-            else { return }
+        let audioObserver = observeFlag(
+            stream, \.hasAudio, changedProperty: "hasAudio",
+            streamId: streamId, isPublisherStream: isPublisherStream)
+        let videoObserver = observeFlag(
+            stream, \.hasVideo, changedProperty: "hasVideo",
+            streamId: streamId, isPublisherStream: isPublisherStream)
+        let captionsObserver = observeFlag(
+            stream, \.hasCaptions, changedProperty: "hasCaptions",
+            streamId: streamId, isPublisherStream: isPublisherStream)
 
-            checkAndEmitStreamPropertyChangeEvent(
-                streamId,
-                changedProperty: "hasAudio",
-                oldValue: oldValue,
-                newValue: newValue,
-                isPublisherStream: isPublisherStream
-            )
-        }
-
-        // Video observer
-        let videoObserver = stream.observe(\.hasVideo, options: [.old, .new]) {
-            stream, change in
-            guard let oldValue = change.oldValue,
-                let newValue = change.newValue,
-                oldValue != newValue
-            else { return }
-
-            checkAndEmitStreamPropertyChangeEvent(
-                streamId,
-                changedProperty: "hasVideo",
-                oldValue: oldValue,
-                newValue: newValue,
-                isPublisherStream: isPublisherStream
-            )
-        }
-
-        // Captions observer
-        let captionsObserver = stream.observe(
-            \.hasCaptions, options: [.old, .new]
-        ) { stream, change in
-            guard let oldValue = change.oldValue,
-                let newValue = change.newValue,
-                oldValue != newValue
-            else { return }
-
-            checkAndEmitStreamPropertyChangeEvent(
-                streamId,
-                changedProperty: "hasCaptions",
-                oldValue: oldValue,
-                newValue: newValue,
-                isPublisherStream: isPublisherStream
-            )
-        }
-
-        // Store all observers
         OTRN.sharedState.streamObservers.updateValue(
             [
                 dimensionsObserver, audioObserver, videoObserver,
@@ -340,6 +296,33 @@ class Utils {
             ],
             forKey: streamId
         )
+    }
+
+    // KVO notifications arrive on whichever thread the SDK mutates the stream,
+    // so only Sendable values cross to the main actor.
+    private static func observeFlag(
+        _ stream: OTStream,
+        _ keyPath: KeyPath<OTStream, Bool>,
+        changedProperty: String,
+        streamId: String,
+        isPublisherStream: Bool
+    ) -> NSKeyValueObservation {
+        stream.observe(keyPath, options: [.old, .new]) { @Sendable _, change in
+            guard let oldValue = change.oldValue,
+                let newValue = change.newValue,
+                oldValue != newValue
+            else { return }
+
+            MainThread.run {
+                checkAndEmitStreamPropertyChangeEvent(
+                    streamId,
+                    changedProperty: changedProperty,
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    isPublisherStream: isPublisherStream
+                )
+            }
+        }
     }
 
     static func checkAndEmitStreamPropertyChangeEvent(

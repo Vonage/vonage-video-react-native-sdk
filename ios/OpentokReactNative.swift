@@ -2,6 +2,7 @@ import Foundation
 import OpenTok
 import React
 
+@MainActor
 @objc public class OpentokReactNativeImpl: NSObject {
 
     var ot: OpentokReactNative?
@@ -52,7 +53,8 @@ import React
             OTRN.sharedState.sessionDelegateHandlers.removeValue(forKey: sessionId)
             return
         }
-        
+        session.apiQueue = DispatchQueue.main
+
         // Set custom API URL if provided
         let apiUrlString = Utils.sanitizeStringProperty(sessionOptions["apiUrl"] as Any)
         if !apiUrlString.isEmpty, let apiUrl = URL(string: apiUrlString) {
@@ -445,6 +447,7 @@ import React
     }
 }
 
+@MainActor
 class DebugAlertHelper {
     class func showDebugAlert(message: String) {
         DispatchQueue.main.async {
@@ -462,7 +465,8 @@ class DebugAlertHelper {
     }
 }
 
-private class SessionDelegateHandler: NSObject, OTSessionDelegate {
+@MainActor
+private final class SessionDelegateHandler: NSObject, OTSessionDelegate {
     weak var impl: OpentokReactNativeImpl?
 
     init(impl: OpentokReactNativeImpl) {
@@ -470,123 +474,147 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
         super.init()
     }
 
-    public func sessionDidConnect(_ session: OTSession) {
-        guard let connection = session.connection else { return }
-        OTRN.sharedState.connections.updateValue(
-            connection, forKey: connection.connectionId)
-        // Multi-session: resolve promise callback if present
-        if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
-            callback(nil)
-            OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId)
+    nonisolated func sessionDidConnect(_ session: OTSession) {
+        MainThread.run(session) { [self] session in
+            guard let connection = session.connection else { return }
+            OTRN.sharedState.connections.updateValue(
+                connection, forKey: connection.connectionId)
+            // Multi-session: resolve promise callback if present
+            if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
+                callback(nil)
+                OTRN.sharedState.sessionConnectCallbacks.removeValue(forKey: session.sessionId)
+            }
+            let sessionInfo = EventUtils.prepareJSSessionEventData(session);
+            impl?.ot?.emit(onSessionConnected: sessionInfo)
         }
-        let sessionInfo = EventUtils.prepareJSSessionEventData(session);
-        impl?.ot?.emit(onSessionConnected: sessionInfo)
     }
 
-    public func session(_ session: OTSession, didFailWithError error: OTError) {
-        var errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
-        errorInfo["sessionId"] = session.sessionId
-        impl?.ot?.emit(onSessionError: errorInfo)
-    }
-
-    public func session(_ session: OTSession, streamCreated stream: OTStream) {
-        OTRN.sharedState.subscriberStreams.updateValue(stream, forKey: stream.streamId)
-        let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(stream)
-        impl?.ot?.emit(onStreamCreated: streamInfo)
-        Utils.setStreamObservers(stream: stream, isPublisherStream: false)
-    }
-
-    public func session(_ session: OTSession, streamDestroyed stream: OTStream)
-    {
-        let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(
-            stream)
-        // Release the KVO stream observers registered in session(_:streamCreated:)
-        // (mirrors the publisher's teardown) to avoid leaking NSKeyValueObservations.
-        OTRN.sharedState.streamObservers.removeValue(forKey: stream.streamId)
-        OTRN.sharedState.subscriberStreams.removeValue(forKey: stream.streamId)
-        OTRN.sharedState.subscribers.removeValue(forKey: stream.streamId)
-        impl?.ot?.emit(onStreamDestroyed: streamInfo)
-    }
-
-    public func sessionDidDisconnect(_ session: OTSession) {
-        let sessionInfo = EventUtils.prepareJSSessionEventData(session);
-        // Multi-session: resolve promise callback if present
-        if let callback = OTRN.sharedState.sessionDisconnectCallbacks[session.sessionId] {
-            callback(nil)
-            OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId)
+    nonisolated func session(_ session: OTSession, didFailWithError error: OTError) {
+        MainThread.run(session, error) { [self] session, error in
+            var errorInfo: [String: Any] = EventUtils.prepareJSErrorEventData(error)
+            errorInfo["sessionId"] = session.sessionId
+            impl?.ot?.emit(onSessionError: errorInfo)
         }
-        impl?.ot?.emit(onSessionDisconnected: sessionInfo)
+    }
 
-        session.delegate = nil
-        OTRN.sharedState.sessions.removeValue(forKey: session.sessionId)
-        OTRN.sharedState.sessionDelegateHandlers.removeValue(forKey: session.sessionId)
+    nonisolated func session(_ session: OTSession, streamCreated stream: OTStream) {
+        MainThread.run(stream) { [self] stream in
+            OTRN.sharedState.subscriberStreams.updateValue(stream, forKey: stream.streamId)
+            let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(stream)
+            impl?.ot?.emit(onStreamCreated: streamInfo)
+            Utils.setStreamObservers(stream: stream, isPublisherStream: false)
+        }
+    }
+
+    nonisolated func session(_ session: OTSession, streamDestroyed stream: OTStream) {
+        MainThread.run(session, stream) { [self] session, stream in
+            let streamInfo: [String: Any] = EventUtils.prepareJSStreamEventData(
+                stream)
+            // Release the KVO stream observers registered in session(_:streamCreated:)
+            // (mirrors the publisher's teardown) to avoid leaking NSKeyValueObservations.
+            OTRN.sharedState.streamObservers.removeValue(forKey: stream.streamId)
+            OTRN.sharedState.subscriberStreams.removeValue(forKey: stream.streamId)
+            OTRN.sharedState.subscribers.removeValue(forKey: stream.streamId)
+            impl?.ot?.emit(onStreamDestroyed: streamInfo)
+        }
+    }
+
+    nonisolated func sessionDidDisconnect(_ session: OTSession) {
+        MainThread.run(session) { [self] session in
+            let sessionInfo = EventUtils.prepareJSSessionEventData(session);
+            // Multi-session: resolve promise callback if present
+            if let callback = OTRN.sharedState.sessionDisconnectCallbacks[session.sessionId] {
+                callback(nil)
+                OTRN.sharedState.sessionDisconnectCallbacks.removeValue(forKey: session.sessionId)
+            }
+            impl?.ot?.emit(onSessionDisconnected: sessionInfo)
+
+            session.delegate = nil
+            OTRN.sharedState.sessions.removeValue(forKey: session.sessionId)
+            OTRN.sharedState.sessionDelegateHandlers.removeValue(forKey: session.sessionId)
+        }
     }
 
 
-    public func session(
+    nonisolated func session(
         _ session: OTSession, connectionCreated connection: OTConnection
     ) {
-        OTRN.sharedState.connections.updateValue(
-            connection, forKey: connection.connectionId)
-        var connectionInfo = EventUtils.prepareJSConnectionEventData(connection)
-        connectionInfo["sessionId"] = session.sessionId;
-        impl?.ot?.emit(onConnectionCreated: connectionInfo)
+        MainThread.run(session, connection) { [self] session, connection in
+            OTRN.sharedState.connections.updateValue(
+                connection, forKey: connection.connectionId)
+            var connectionInfo = EventUtils.prepareJSConnectionEventData(connection)
+            connectionInfo["sessionId"] = session.sessionId;
+            impl?.ot?.emit(onConnectionCreated: connectionInfo)
+        }
     }
 
-    public func session(
+    nonisolated func session(
         _ session: OTSession, connectionDestroyed connection: OTConnection
     ) {
-        OTRN.sharedState.connections.removeValue(
-            forKey: connection.connectionId)
-        var connectionInfo = EventUtils.prepareJSConnectionEventData(connection)
-        connectionInfo["sessionId"] = session.sessionId;
-        impl?.ot?.emit(onConnectionDestroyed: connectionInfo)
+        MainThread.run(session, connection) { [self] session, connection in
+            OTRN.sharedState.connections.removeValue(
+                forKey: connection.connectionId)
+            var connectionInfo = EventUtils.prepareJSConnectionEventData(connection)
+            connectionInfo["sessionId"] = session.sessionId;
+            impl?.ot?.emit(onConnectionDestroyed: connectionInfo)
+        }
     }
-    public func session(_ session: OTSession, receivedSignalType type: String?, from connection: OTConnection?, with string: String?) {
-        var signalData: Dictionary<String, Any> = [:];
-        signalData["type"] = type;
-        signalData["data"] = string;
-        signalData["connectionId"] = connection?.connectionId;
-        signalData["sessionId"] = session.sessionId;
-        impl?.ot?.emit(onSignalReceived:  signalData)
+    nonisolated func session(_ session: OTSession, receivedSignalType type: String?, from connection: OTConnection?, with string: String?) {
+        MainThread.run(session, connection) { [self] session, connection in
+            var signalData: Dictionary<String, Any> = [:];
+            signalData["type"] = type;
+            signalData["data"] = string;
+            signalData["connectionId"] = connection?.connectionId;
+            signalData["sessionId"] = session.sessionId;
+            impl?.ot?.emit(onSignalReceived:  signalData)
+        }
     }
-    public func session(_ session: OTSession, info muteForced: OTMuteForcedInfo)
-    {
-        var muteForcedInfo: [String: Any] = [:]
-        muteForcedInfo["active"] = muteForced.active
-        muteForcedInfo["sessionId"] = session.sessionId
-        impl?.ot?.emit(onMuteForced: muteForcedInfo)
+    nonisolated func session(_ session: OTSession, info muteForced: OTMuteForcedInfo) {
+        MainThread.run(session, muteForced) { [self] session, muteForced in
+            var muteForcedInfo: [String: Any] = [:]
+            muteForcedInfo["active"] = muteForced.active
+            muteForcedInfo["sessionId"] = session.sessionId
+            impl?.ot?.emit(onMuteForced: muteForcedInfo)
+        }
     }
-    public func session(
+    nonisolated func session(
         _ session: OTSession, archiveStartedWithId archiveId: String,
         name: String?
     ) {
-        let archiveInfo: [String: Any] = [
-            "archiveId": archiveId,
-            "name": name ?? "",
-            "sessionId": session.sessionId,
-        ]
-        impl?.ot?.emit(onArchiveStarted: archiveInfo)
+        MainThread.run(session) { [self] session in
+            let archiveInfo: [String: Any] = [
+                "archiveId": archiveId,
+                "name": name ?? "",
+                "sessionId": session.sessionId,
+            ]
+            impl?.ot?.emit(onArchiveStarted: archiveInfo)
+        }
     }
 
-    public func session(
+    nonisolated func session(
         _ session: OTSession, archiveStoppedWithId archiveId: String
     ) {
-        let archiveInfo: [String: Any] = [
-            "archiveId": archiveId,
-            "name": "",  // Name is not available in stop event
-            "sessionId": session.sessionId,
-        ]
-        impl?.ot?.emit(onArchiveStopped: archiveInfo)
+        MainThread.run(session) { [self] session in
+            let archiveInfo: [String: Any] = [
+                "archiveId": archiveId,
+                "name": "",  // Name is not available in stop event
+                "sessionId": session.sessionId,
+            ]
+            impl?.ot?.emit(onArchiveStopped: archiveInfo)
+        }
     }
-    public func sessionDidBeginReconnecting(_ session: OTSession) {
-        let sessionInfo = EventUtils.prepareJSSessionEventData(session)
-        impl?.ot?.emit(onSessionReconnecting: sessionInfo)
+    nonisolated func sessionDidBeginReconnecting(_ session: OTSession) {
+        MainThread.run(session) { [self] session in
+            let sessionInfo = EventUtils.prepareJSSessionEventData(session)
+            impl?.ot?.emit(onSessionReconnecting: sessionInfo)
+        }
     }
 
-    public func sessionDidReconnect(_ session: OTSession) {
-        let sessionInfo = EventUtils.prepareJSSessionEventData(session)
-        impl?.ot?.emit(onSessionReconnected: sessionInfo)
+    nonisolated func sessionDidReconnect(_ session: OTSession) {
+        MainThread.run(session) { [self] session in
+            let sessionInfo = EventUtils.prepareJSSessionEventData(session)
+            impl?.ot?.emit(onSessionReconnected: sessionInfo)
+        }
     }
 }
 

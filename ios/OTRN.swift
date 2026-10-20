@@ -10,7 +10,8 @@ import Foundation
 import OpenTok
 import React
 
-class OTRN : NSObject {
+@MainActor
+final class OTRN: NSObject {
   static let sharedState = OTRN()
   var opentokModule: OpentokReactNative?
   var sessions = [String: OTSession]()

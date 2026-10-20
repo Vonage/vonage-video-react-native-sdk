@@ -8,23 +8,22 @@
 import Foundation
 import OpenTok
 
-private extension ISO8601DateFormatter {
+@MainActor
+class EventUtils {
     // Shared formatter with millisecond precision for cross-platform consistency.
     // Using a static instance avoids repeated allocation on frequent callsites.
-    static let withMilliseconds: ISO8601DateFormatter = {
+    private static let iso8601WithMilliseconds: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions.insert(.withFractionalSeconds)
         return f
     }()
-}
 
-class EventUtils {
-    
+
     static func prepareJSConnectionEventData(_ connection: OTConnection) -> Dictionary<String, Any> {
         var connectionInfo: Dictionary<String, Any> = [:];
         guard connection != nil else { return connectionInfo }
         connectionInfo["connectionId"] = connection.connectionId;
-        connectionInfo["creationTime"] = ISO8601DateFormatter.withMilliseconds.string(from: connection.creationTime);
+        connectionInfo["creationTime"] = iso8601WithMilliseconds.string(from: connection.creationTime);
         connectionInfo["data"] = connection.data;
         return connectionInfo;
     }
@@ -40,7 +39,7 @@ class EventUtils {
         streamInfo["sessionId"] = stream.session.sessionId;
         streamInfo["hasVideo"] = stream.hasVideo;
         // ISO 8601 UTC format with millisecond precision for cross-platform consistency with Android.
-        streamInfo["creationTime"] = ISO8601DateFormatter.withMilliseconds.string(from: stream.creationTime);
+        streamInfo["creationTime"] = iso8601WithMilliseconds.string(from: stream.creationTime);
         streamInfo["height"] = stream.videoDimensions.height;
         streamInfo["width"] = stream.videoDimensions.width;
         streamInfo["videoType"] = stream.videoType == OTStreamVideoType.screen ? "screen" : "camera"

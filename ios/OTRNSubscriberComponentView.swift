@@ -2,6 +2,7 @@ import Foundation
 import OpenTok
 import React
 
+@MainActor
 @objc public class OTRNSubscriberImpl: NSObject {
     private var sessionId: String?
     private var streamId: String?
@@ -211,13 +212,7 @@ import React
     }
 
     @objc public func cleanup() {
-        if Thread.isMainThread {
-            self._cleanupImpl()
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?._cleanupImpl()
-            }
-        }
+        _cleanupImpl()
     }
 
     private func _cleanupImpl() {
@@ -256,16 +251,13 @@ import React
     }
 }
 
-private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
+@MainActor
+private final class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
     weak var impl: OTRNSubscriberImpl?
     // Cached stream metadata used by high-frequency callbacks.
     // It is optional because callbacks can happen before first successful
     // stream snapshot is captured.
     private var cachedStreamData: [String: Any]?
-    // Concurrent queue for readers/writers access:
-    // - reads use sync and can run concurrently
-    // - writes use barrier for exclusive updates
-    private let cacheQueue = DispatchQueue(label: "subscriber.stream-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -273,193 +265,201 @@ private class SubscriberDelegateHandler: NSObject, OTSubscriberDelegate {
     }
 
     // Refreshes snapshot from OTKit stream object.
-    // Barrier write avoids races with concurrent readers.
-    // Use sync here because callers immediately read/emit after refresh, so we avoid data staleness.
     private func updateCachedStreamData(_ stream: OTStream) {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = EventUtils.prepareJSStreamEventData(stream)
-        }
+        cachedStreamData = EventUtils.prepareJSStreamEventData(stream)
     }
 
     // Returns the latest stream metadata snapshot.
     // Read path is intentionally lightweight for frequent callers.
     func getCachedStreamData() -> [String: Any]? {
-        return cacheQueue.sync {
-            return self.cachedStreamData
-        }
+        cachedStreamData
     }
 
-    // Clears the cached stream data by setting to nil using barrier write.
-    // This ensures readers don't see partial state during transition.
+    // Clears the cached stream data.
     func clearCachedStreamData() {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = nil
+        cachedStreamData = nil
+    }
+
+    nonisolated func subscriberDidConnect(toStream subscriber: OTSubscriberKit) {
+        MainThread.run(subscriber) { [self] subscriber in
+            if let stream = subscriber.stream,
+                let impl = impl
+            {
+                // Prime cache on connect, then propagate it to other handlers.
+                updateCachedStreamData(stream)
+                impl.distributeStreamDataCache()
+                let streamInfo: [String: Any] = [
+                    "stream": getCachedStreamData() ?? [:]
+                ]
+                impl.strictUIViewContainer?.handleSubscriberConnected(streamInfo)
+            }
         }
     }
 
-    func subscriberDidConnect(toStream subscriber: OTSubscriberKit) {
-        if let stream = subscriber.stream,
-            let impl = impl
-        {
-            // Prime cache on connect, then propagate it to other handlers.
-            updateCachedStreamData(stream)
-            impl.distributeStreamDataCache()
-            let streamInfo: [String: Any] = [
-                "stream": getCachedStreamData() ?? [:]
-            ]
-            impl.strictUIViewContainer?.handleSubscriberConnected(streamInfo)
-        }
-    }
-
-    func subscriber(
+    nonisolated func subscriber(
         _ subscriber: OTSubscriberKit, didFailWithError error: OTError
     ) {
-        var subscriberInfo: [String: Any] = [
-            "error": EventUtils.prepareJSErrorEventData(error)
-        ]
-
-        // Always include "stream" key, even if nil (to match TS definition)
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleError(subscriberInfo)
-        }
-    }
-
-    func subscriberDidDisconnect(fromStream subscriber: OTSubscriberKit) {
-        if let stream = subscriber.stream,
-            let impl = impl
-        {
-            let streamInfo: [String: Any] = [
-                "stream": EventUtils.prepareJSStreamEventData(stream)
+        MainThread.run(subscriber, error) { [self] subscriber, error in
+            var subscriberInfo: [String: Any] = [
+                "error": EventUtils.prepareJSErrorEventData(error)
             ]
-            impl.strictUIViewContainer?.handleSubscriberDisconnected(streamInfo)
+
+            // Always include "stream" key, even if nil (to match TS definition)
+            if let stream = subscriber.stream {
+                subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
+                    stream)
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleError(subscriberInfo)
+            }
         }
     }
 
-    func subscriberVideoEnabled(
+    nonisolated func subscriberDidDisconnect(fromStream subscriber: OTSubscriberKit) {
+        MainThread.run(subscriber) { [self] subscriber in
+            if let stream = subscriber.stream,
+                let impl = impl
+            {
+                let streamInfo: [String: Any] = [
+                    "stream": EventUtils.prepareJSStreamEventData(stream)
+                ]
+                impl.strictUIViewContainer?.handleSubscriberDisconnected(streamInfo)
+            }
+        }
+    }
+
+    nonisolated func subscriberVideoEnabled(
         _ subscriber: OTSubscriberKit, reason: OTSubscriberVideoEventReason
     ) {
-        var subscriberInfo: [String: Any] = [
-            "reason": Utils.convertOTSubscriberVideoEventReasonToString(reason)
-        ]
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [
+                "reason": Utils.convertOTSubscriberVideoEventReasonToString(reason)
+            ]
 
-        if let stream = subscriber.stream {
-            // Video state change may affect stream metadata; refresh snapshot.
-            updateCachedStreamData(stream)
-            if let impl = impl {
-                impl.distributeStreamDataCache()
+            if let stream = subscriber.stream {
+                // Video state change may affect stream metadata; refresh snapshot.
+                updateCachedStreamData(stream)
+                if let impl = impl {
+                    impl.distributeStreamDataCache()
+                }
+                subscriberInfo["stream"] = getCachedStreamData() ?? [:]
+            } else {
+                subscriberInfo["stream"] = NSNull()
             }
-            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
 
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoEnabled(subscriberInfo)
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleVideoEnabled(subscriberInfo)
+            }
         }
     }
 
-    func subscriberVideoDisabled(
+    nonisolated func subscriberVideoDisabled(
         _ subscriber: OTSubscriberKit, reason: OTSubscriberVideoEventReason
     ) {
-        var subscriberInfo: [String: Any] = [
-            "reason": Utils.convertOTSubscriberVideoEventReasonToString(reason)
-        ]
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [
+                "reason": Utils.convertOTSubscriberVideoEventReasonToString(reason)
+            ]
 
-        // Always include "stream" key, even if nil (to match TS definition)
-        if let stream = subscriber.stream {
-            // Video state change may affect stream metadata; refresh snapshot.
-            updateCachedStreamData(stream)
-            if let impl = impl {
-                impl.distributeStreamDataCache()
+            // Always include "stream" key, even if nil (to match TS definition)
+            if let stream = subscriber.stream {
+                // Video state change may affect stream metadata; refresh snapshot.
+                updateCachedStreamData(stream)
+                if let impl = impl {
+                    impl.distributeStreamDataCache()
+                }
+                subscriberInfo["stream"] = getCachedStreamData() ?? [:]
+            } else {
+                subscriberInfo["stream"] = NSNull()
             }
-            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
 
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoDisabled(subscriberInfo)
-        }
-    }
-
-    func subscriberVideoDisableWarning(_ subscriber: OTSubscriberKit) {
-        var subscriberInfo: [String: Any] = [:]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoDisableWarning(
-                subscriberInfo)
-        }
-    }
-
-    func subscriberVideoDisableWarningLifted(_ subscriber: OTSubscriberKit) {
-        var subscriberInfo: [String: Any] = [:]
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoDisableWarningLifted(
-                subscriberInfo)
-        }
-    }
-
-    func subscriberVideoDataReceived(_ subscriber: OTSubscriber) {
-        var subscriberInfo: [String: Any] = [:]
-        // This callback fires when video data starts arriving, not continuously.
-        // Use direct OTKit stream lookup here; cache fast-path is unnecessary.
-        if let stream = subscriber.stream {
-            subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
-                stream)
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoDataReceived(subscriberInfo)
-        }
-    }
-
-    func subscriberDidReconnect(toStream subscriber: OTSubscriberKit) {
-        var subscriberInfo: [String: Any] = [:]
-        if let stream = subscriber.stream {
-            // Refresh cache on reconnect: stream state may have changed while
-            // disconnected. Keep emitted payload aligned with current metadata.
-            updateCachedStreamData(stream)
             if let impl = impl {
-                impl.distributeStreamDataCache()
+                impl.strictUIViewContainer?.handleVideoDisabled(subscriberInfo)
             }
-            subscriberInfo["stream"] = getCachedStreamData() ?? [:]
-        } else {
-            subscriberInfo["stream"] = NSNull()
         }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleReconnected(subscriberInfo)
+    }
+
+    nonisolated func subscriberVideoDisableWarning(_ subscriber: OTSubscriberKit) {
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [:]
+            if let stream = subscriber.stream {
+                subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
+                    stream)
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleVideoDisableWarning(
+                    subscriberInfo)
+            }
+        }
+    }
+
+    nonisolated func subscriberVideoDisableWarningLifted(_ subscriber: OTSubscriberKit) {
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [:]
+            if let stream = subscriber.stream {
+                subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
+                    stream)
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleVideoDisableWarningLifted(
+                    subscriberInfo)
+            }
+        }
+    }
+
+    nonisolated func subscriberVideoDataReceived(_ subscriber: OTSubscriber) {
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [:]
+            // This callback fires when video data starts arriving, not continuously.
+            // Use direct OTKit stream lookup here; cache fast-path is unnecessary.
+            if let stream = subscriber.stream {
+                subscriberInfo["stream"] = EventUtils.prepareJSStreamEventData(
+                    stream)
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleVideoDataReceived(subscriberInfo)
+            }
+        }
+    }
+
+    nonisolated func subscriberDidReconnect(toStream subscriber: OTSubscriberKit) {
+        MainThread.run(subscriber) { [self] subscriber in
+            var subscriberInfo: [String: Any] = [:]
+            if let stream = subscriber.stream {
+                // Refresh cache on reconnect: stream state may have changed while
+                // disconnected. Keep emitted payload aligned with current metadata.
+                updateCachedStreamData(stream)
+                if let impl = impl {
+                    impl.distributeStreamDataCache()
+                }
+                subscriberInfo["stream"] = getCachedStreamData() ?? [:]
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleReconnected(subscriberInfo)
+            }
         }
     }
 }
 
-private class SubscriberRtcStatsDelegateHandler: NSObject,
+@MainActor
+private final class SubscriberRtcStatsDelegateHandler: NSObject,
     OTSubscriberKitRtcStatsReportDelegate
 {
     weak var impl: OTRNSubscriberImpl?
     // Snapshot copied from SubscriberDelegateHandler to avoid repeated
     // stream object access in stats callbacks.
     private var cachedStreamData: [String: Any]?
-    // Concurrent read / barrier write queue for cache synchronization.
-    private let cacheQueue = DispatchQueue(label: "subscriber.rtcstats-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -468,47 +468,41 @@ private class SubscriberRtcStatsDelegateHandler: NSObject,
     }
 
     func setCachedStreamData(_ streamData: [String: Any]) {
-        // Exclusive write to prevent partial updates visible to readers.
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = streamData
-        }
+        cachedStreamData = streamData
     }
 
     private func getCachedStreamData() -> [String: Any]? {
-        return cacheQueue.sync {
-            return self.cachedStreamData
-        }
+        cachedStreamData
     }
 
     func clearCachedStreamData() {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = nil
-        }
+        cachedStreamData = nil
     }
 
-    func subscriber(_ subscriber: OTSubscriberKit, rtcStatsReport: String) {
-        var subscriberInfo: [String: Any] = [
-            "jsonStats": rtcStatsReport
-        ]
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleRtcStatsReport(subscriberInfo)
+    nonisolated func subscriber(_ subscriber: OTSubscriberKit, rtcStatsReport: String) {
+        MainThread.run { [self] in
+            var subscriberInfo: [String: Any] = [
+                "jsonStats": rtcStatsReport
+            ]
+            if let cachedStream = getCachedStreamData() {
+                subscriberInfo["stream"] = cachedStream
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleRtcStatsReport(subscriberInfo)
+            }
         }
     }
 }
 
-private class SubscriberAudioLevelDelegateHandler: NSObject,
+@MainActor
+private final class SubscriberAudioLevelDelegateHandler: NSObject,
     OTSubscriberKitAudioLevelDelegate
 {
     weak var impl: OTRNSubscriberImpl?
     // Audio level can be frequent; reuse cached stream metadata.
     private var cachedStreamData: [String: Any]?
-    // Concurrent read / barrier write queue for cache synchronization.
-    private let cacheQueue = DispatchQueue(label: "subscriber.audiolevel-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -517,49 +511,43 @@ private class SubscriberAudioLevelDelegateHandler: NSObject,
     }
 
     func setCachedStreamData(_ streamData: [String: Any]) {
-        // Exclusive write to prevent partial updates visible to readers.
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = streamData
-        }
+        cachedStreamData = streamData
     }
 
     private func getCachedStreamData() -> [String: Any]? {
-        return cacheQueue.sync {
-            return self.cachedStreamData
-        }
+        cachedStreamData
     }
 
     func clearCachedStreamData() {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = nil
-        }
+        cachedStreamData = nil
     }
 
-    func subscriber(
+    nonisolated func subscriber(
         _ subscriber: OTSubscriberKit, audioLevelUpdated audioLevel: Float
     ) {
-        var subscriberInfo: [String: Any] = [
-            "audioLevel": audioLevel
-        ]
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleAudioLevel(subscriberInfo)
+        MainThread.run { [self] in
+            var subscriberInfo: [String: Any] = [
+                "audioLevel": audioLevel
+            ]
+            if let cachedStream = getCachedStreamData() {
+                subscriberInfo["stream"] = cachedStream
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleAudioLevel(subscriberInfo)
+            }
         }
     }
 }
 
-private class SubscriberNetworkStatsDelegateHandler: NSObject,
+@MainActor
+private final class SubscriberNetworkStatsDelegateHandler: NSObject,
     OTSubscriberKitNetworkStatsDelegate
 {
     weak var impl: OTRNSubscriberImpl?
     // Network stats callbacks reuse the same stream metadata snapshot.
     private var cachedStreamData: [String: Any]?
-    // Concurrent read / barrier write queue for cache synchronization.
-    private let cacheQueue = DispatchQueue(label: "subscriber.networkstats-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -567,92 +555,88 @@ private class SubscriberNetworkStatsDelegateHandler: NSObject,
     }
 
     func setCachedStreamData(_ streamData: [String: Any]) {
-        // Exclusive write to prevent partial updates visible to readers.
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = streamData
-        }
+        cachedStreamData = streamData
     }
 
     private func getCachedStreamData() -> [String: Any]? {
-        return cacheQueue.sync {
-            return self.cachedStreamData
-        }
+        cachedStreamData
     }
 
     func clearCachedStreamData() {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = nil
-        }
+        cachedStreamData = nil
     }
 
-    func subscriber(
+    nonisolated func subscriber(
         _ subscriber: OTSubscriberKit,
         videoNetworkStatsUpdated stats: OTSubscriberKitVideoNetworkStats
     ) {
-        var statsDict: Dictionary<String, Any> = EventUtils.prepareSubscriberVideoNetworkStatsEventData(stats);
+        MainThread.run(stats) { [self] stats in
+            var statsDict: Dictionary<String, Any> = EventUtils.prepareSubscriberVideoNetworkStatsEventData(stats);
 
-        var subscriberInfo: [String: Any] = [:]
-        if let jsonData = try? JSONSerialization.data(
-            withJSONObject: statsDict),
-            let jsonString = String(data: jsonData, encoding: .utf8)
-        {
-            subscriberInfo["jsonStats"] = jsonString
-        } else {
-            subscriberInfo["jsonStats"] = ""
-        }
+            var subscriberInfo: [String: Any] = [:]
+            if let jsonData = try? JSONSerialization.data(
+                withJSONObject: statsDict),
+                let jsonString = String(data: jsonData, encoding: .utf8)
+            {
+                subscriberInfo["jsonStats"] = jsonString
+            } else {
+                subscriberInfo["jsonStats"] = ""
+            }
 
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
+            if let cachedStream = getCachedStreamData() {
+                subscriberInfo["stream"] = cachedStream
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
 
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleVideoNetworkStats(subscriberInfo)
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleVideoNetworkStats(subscriberInfo)
+            }
         }
     }
 
-    func subscriber(
+    nonisolated func subscriber(
         _ subscriber: OTSubscriberKit,
         audioNetworkStatsUpdated stats: OTSubscriberKitAudioNetworkStats
     ) {
-        let statsDict: [String: Any] = [
-            "audioPacketsLost": stats.audioPacketsLost,
-            "audioBytesReceived": stats.audioBytesReceived,
-            "audioPacketsReceived": stats.audioPacketsReceived,
-            "timestamp": stats.timestamp,
-        ]
+        MainThread.run(stats) { [self] stats in
+            let statsDict: [String: Any] = [
+                "audioPacketsLost": stats.audioPacketsLost,
+                "audioBytesReceived": stats.audioBytesReceived,
+                "audioPacketsReceived": stats.audioPacketsReceived,
+                "timestamp": stats.timestamp,
+            ]
 
-        var subscriberInfo: [String: Any] = [:]
-        if let jsonData = try? JSONSerialization.data(
-            withJSONObject: statsDict),
-            let jsonString = String(data: jsonData, encoding: .utf8)
-        {
-            subscriberInfo["jsonStats"] = jsonString
-        } else {
-            subscriberInfo["jsonStats"] = ""
-        }
+            var subscriberInfo: [String: Any] = [:]
+            if let jsonData = try? JSONSerialization.data(
+                withJSONObject: statsDict),
+                let jsonString = String(data: jsonData, encoding: .utf8)
+            {
+                subscriberInfo["jsonStats"] = jsonString
+            } else {
+                subscriberInfo["jsonStats"] = ""
+            }
 
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
+            if let cachedStream = getCachedStreamData() {
+                subscriberInfo["stream"] = cachedStream
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
 
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleAudioNetworkStats(subscriberInfo)
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleAudioNetworkStats(subscriberInfo)
+            }
         }
     }
 }
 
-private class SubscriberCaptionsDelegateHandler: NSObject,
+@MainActor
+private final class SubscriberCaptionsDelegateHandler: NSObject,
     OTSubscriberKitCaptionsDelegate
 {
     weak var impl: OTRNSubscriberImpl?
     // Captions events include stream payload; reuse cached metadata snapshot.
     private var cachedStreamData: [String: Any]?
-    // Concurrent read / barrier write queue for cache synchronization.
-    private let cacheQueue = DispatchQueue(label: "subscriber.captions-cache", attributes: .concurrent)
 
     init(impl: OTRNSubscriberImpl) {
         super.init()
@@ -660,38 +644,33 @@ private class SubscriberCaptionsDelegateHandler: NSObject,
     }
 
     func setCachedStreamData(_ streamData: [String: Any]) {
-        // Exclusive write to prevent partial updates visible to readers.
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = streamData
-        }
+        cachedStreamData = streamData
     }
 
     private func getCachedStreamData() -> [String: Any]? {
-        return cacheQueue.sync {
-            return self.cachedStreamData
-        }
+        cachedStreamData
     }
 
     func clearCachedStreamData() {
-        cacheQueue.sync(flags: .barrier) {
-            self.cachedStreamData = nil
-        }
+        cachedStreamData = nil
     }
 
-    func subscriber(
+    nonisolated func subscriber(
         _ subscriber: OTSubscriberKit, caption text: String, isFinal: Bool
     ) {
-        var subscriberInfo: [String: Any] = [
-            "text": text,
-            "isFinal": isFinal,
-        ]
-        if let cachedStream = getCachedStreamData() {
-            subscriberInfo["stream"] = cachedStream
-        } else {
-            subscriberInfo["stream"] = NSNull()
-        }
-        if let impl = impl {
-            impl.strictUIViewContainer?.handleCaptionReceived(subscriberInfo)
+        MainThread.run { [self] in
+            var subscriberInfo: [String: Any] = [
+                "text": text,
+                "isFinal": isFinal,
+            ]
+            if let cachedStream = getCachedStreamData() {
+                subscriberInfo["stream"] = cachedStream
+            } else {
+                subscriberInfo["stream"] = NSNull()
+            }
+            if let impl = impl {
+                impl.strictUIViewContainer?.handleCaptionReceived(subscriberInfo)
+            }
         }
     }
 }
