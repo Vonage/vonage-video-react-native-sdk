@@ -36,6 +36,19 @@ target 'ReactNativeTesApp' do
       # :ccache_enabled => true
     )
     
+    # Swift language mode and concurrency checking for the SDK pod only.
+    # The defaults keep the podspec's choice; scripts/ios-swift-language-mode-check.sh
+    # overrides them per build, e.g. OTRN_SWIFT_LANGUAGE_MODE=5 OTRN_STRICT_CONCURRENCY=complete
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'OpentokReactNative'
+      target.build_configurations.each do |config|
+        config.build_settings['OTRN_SWIFT_LANGUAGE_MODE'] = config.build_settings['SWIFT_VERSION'] || '5.0'
+        config.build_settings['OTRN_STRICT_CONCURRENCY'] = 'minimal'
+        config.build_settings['SWIFT_VERSION'] = '$(OTRN_SWIFT_LANGUAGE_MODE)'
+        config.build_settings['SWIFT_STRICT_CONCURRENCY'] = '$(OTRN_STRICT_CONCURRENCY)'
+      end
+    end
+
     # Fix for C++20 compilation issues with Xcode 26+
     # Affects pods like fmt, Yoga, and other C++ libraries
     installer.pods_project.targets.each do |target|
