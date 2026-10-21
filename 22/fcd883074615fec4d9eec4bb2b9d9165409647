@@ -1,0 +1,33 @@
+detox.config.js
+  s_6545e906e1164b::t_fcaf4894440f42 39-41
+.github/workflows/ci-pr-tests.yml
+  s_6545e906e1164b::t_995cfc6933d7d7 106,110-127,134-135,137
+  s_6545e906e1164b::t_cc8b6a7b301cbe 280
+  s_6545e906e1164b::t_d4d7292dcd4207 161,163,173-175,179,183,187,191,197
+  s_6545e906e1164b::t_bb1bacd7d2e58a 302
+package.json
+  s_6545e906e1164b::t_90c97103feb647 59
+scripts/ci-start-metro.sh
+  s_6545e906e1164b::t_8457c6dd351528 1-35
+React-native-TestApp/.detoxrc.js
+  s_6545e906e1164b::t_4892d4e673cb26 48-50
+scripts/ci-select-ios-simulator.sh
+  s_6545e906e1164b::t_8299c88ca17b85 1-55,57-77
+  s_6545e906e1164b::t_8f85b27de796f2 56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "22fcd883074615fec4d9eec4bb2b9d9165409647",
+  "prompts": {},
+  "sessions": {
+    "s_6545e906e1164b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_73ff8f44-76d3-41bf-a29a-94c86bc46443",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
