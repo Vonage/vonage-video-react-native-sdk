@@ -25,7 +25,48 @@ class OTRN : NSObject {
   var streamObservers = [String: [NSKeyValueObservation]]()
   var connections = [String: OTConnection]()
   var sessionDelegateHandlers = [String: AnyObject]()
+  private let pendingPublishLock = NSLock()
+  private var pendingPublishes = [String: String]()
+
   override init() {
     super.init()
+  }
+
+  /// Publishes right away when the native publisher exists. Otherwise the request is kept until the
+  /// publisher view creates the publisher (see `publishPending`), instead of being silently dropped.
+  func requestPublish(sessionId: String, publisherId: String) {
+    pendingPublishLock.lock()
+    guard publishers[publisherId] != nil else {
+      pendingPublishes[publisherId] = sessionId
+      pendingPublishLock.unlock()
+      return
+    }
+    pendingPublishLock.unlock()
+    publishNow(sessionId: sessionId, publisherId: publisherId)
+  }
+
+  func publishPending(publisherId: String) {
+    pendingPublishLock.lock()
+    let sessionId = pendingPublishes.removeValue(forKey: publisherId)
+    pendingPublishLock.unlock()
+    if let sessionId = sessionId {
+      publishNow(sessionId: sessionId, publisherId: publisherId)
+    }
+  }
+
+  func cancelPendingPublish(publisherId: String) {
+    pendingPublishLock.lock()
+    pendingPublishes.removeValue(forKey: publisherId)
+    pendingPublishLock.unlock()
+  }
+
+  private func publishNow(sessionId: String, publisherId: String) {
+    guard let publisher = publishers[publisherId],
+      let session = sessions[sessionId]
+    else {
+      return
+    }
+    var error: OTError?
+    session.publish(publisher, error: &error)
   }
 }
