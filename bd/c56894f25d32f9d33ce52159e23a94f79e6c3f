@@ -1,0 +1,25 @@
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_6545e906e1164b::t_27d80810e410e5 4-12,14-15,20-23,27,36,54,58,63-68,75,78-79,81-91,97,101,104-105,107-108,110-112,119-120,122-123,125,133-134,136-140,142,144
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_6545e906e1164b::t_33238e8c3b211e 4-11,14-15,21,26-27,34,44,48,53-58,67-68,70-71,73,75,80,82,84,86,88-89,91-92,102-103,108-109,111,117,136,141,149-150,154-155
+React-native-TestApp/__tests__/helpers/itIf.js
+  s_6545e906e1164b::t_ccd21a3d3d3697 1-8
+React-native-TestApp/__tests__/helpers/moderation.js
+  s_6545e906e1164b::t_948f5b5243383a 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bdc56894f25d32f9d33ce52159e23a94f79e6c3f",
+  "prompts": {},
+  "sessions": {
+    "s_6545e906e1164b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_73ff8f44-76d3-41bf-a29a-94c86bc46443",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
