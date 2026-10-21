@@ -1,0 +1,20 @@
+ios/OTRNPublisherComponentView.swift
+  s_6545e906e1164b::t_94efc9a1de7205 184
+  s_6545e906e1164b::t_ee599abb8bc3e3 411-413
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bd3a99108b487adf3c442f7827fe525343f05c21",
+  "prompts": {},
+  "sessions": {
+    "s_6545e906e1164b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_73ff8f44-76d3-41bf-a29a-94c86bc46443",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
