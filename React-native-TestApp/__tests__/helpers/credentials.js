@@ -51,4 +51,14 @@ async function getRelayedCredentials() {
   return creds.relayed;
 }
 
-module.exports = { getCredentials, getRelayedCredentials };
+/**
+ * Returns the dedicated moderation session credentials (routed, includes a moderator bot token).
+ *
+ * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], moderatorBotToken: string, mediaMode: string}>}
+ */
+async function getModerationCredentials() {
+  const creds = readCredentials();
+  return creds.moderation;
+}
+
+module.exports = { getCredentials, getRelayedCredentials, getModerationCredentials };

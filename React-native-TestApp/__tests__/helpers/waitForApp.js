@@ -25,4 +25,21 @@ async function waitForAppReady(timeout = 90000) {
   }
 }
 
-module.exports = { waitForAppReady };
+/**
+ * Launches the app, retrying once after terminating it if the first launch fails.
+ *
+ * @param {object} params - Passed to device.launchApp()
+ */
+async function launchAppWithRetry(params) {
+  try {
+    await device.launchApp(params);
+  } catch (e) {
+    console.warn(`[launchApp] First launch failed (${e.message}). Retrying once.`);
+    try {
+      await device.terminateApp();
+    } catch (_) {}
+    await device.launchApp(params);
+  }
+}
+
+module.exports = { waitForAppReady, launchAppWithRetry };

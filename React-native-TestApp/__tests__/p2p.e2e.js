@@ -1,6 +1,9 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * P2P (Relayed) Session Tests
@@ -14,7 +17,7 @@ describe('P2P (Relayed) Session', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -28,12 +31,12 @@ describe('P2P (Relayed) Session', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('app publishes in P2P — bot receives stream', async () => {

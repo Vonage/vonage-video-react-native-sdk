@@ -10,7 +10,7 @@ const crypto = require('crypto');
  * Supports:
  *   - forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionId)
  *   - forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId)
- *   - forceUnpublish(apiKey, apiSecret, apiUrl, sessionId, streamId)
+ *   - disableMuteAll(apiKey, apiSecret, apiUrl, sessionId)
  */
 
 function generateJwt(apiKey, apiSecret) {
@@ -81,18 +81,21 @@ async function forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId) {
 }
 
 /**
- * Force-unpublishes a stream from a session via REST API.
+ * Disables the session-wide force-mute state (and unmutes nothing else) via REST API.
  */
-async function forceUnpublish(apiKey, apiSecret, apiUrl, sessionId, streamId) {
+async function disableMuteAll(apiKey, apiSecret, apiUrl, sessionId) {
   const jwt = generateJwt(apiKey, apiSecret);
-  const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/stream/${streamId}`;
-  const res = await httpRequest('DELETE', url, {
-    'X-OPENTOK-AUTH': jwt,
-    'Content-Type': 'application/json',
-  });
-  if (res.status !== 204 && res.status !== 200) {
-    throw new Error(`forceUnpublish failed: HTTP ${res.status} — ${res.body}`);
+  const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/mute`;
+  const body = JSON.stringify({ active: false });
+  const res = await httpRequest(
+    'POST',
+    url,
+    { 'X-OPENTOK-AUTH': jwt, 'Content-Type': 'application/json' },
+    body
+  );
+  if (res.status !== 200) {
+    throw new Error(`disableMuteAll failed: HTTP ${res.status} — ${res.body}`);
   }
 }
 
-module.exports = { forceDisconnect, forceMuteStream, forceUnpublish };
+module.exports = { forceDisconnect, forceMuteStream, disableMuteAll };

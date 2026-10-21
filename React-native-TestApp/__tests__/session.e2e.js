@@ -1,4 +1,5 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
@@ -15,7 +16,7 @@ describe('Session Lifecycle', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -29,12 +30,12 @@ describe('Session Lifecycle', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('connect and disconnect cleanly', async () => {

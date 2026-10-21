@@ -1,6 +1,7 @@
 'use strict';
 
 const { chromium } = require('playwright');
+const { withTimeout } = require('./poll');
 
 /**
  * jsSDKTesterBot - A headless Chromium-based bot that joins a Vonage Video session
@@ -197,6 +198,62 @@ class jsSDKTesterBot {
   }
 
   /**
+   * Returns the audio/video state of the bot's own published stream.
+   * @returns {Promise<{hasAudio: boolean|null, hasVideo: boolean|null}>}
+   */
+  async getPublisherState() {
+    return this.page.evaluate(() => {
+      const stream = window.botPublisher && window.botPublisher.stream;
+      return {
+        hasAudio: stream ? stream.hasAudio : null,
+        hasVideo: stream ? stream.hasVideo : null,
+      };
+    });
+  }
+
+  /**
+   * Returns the streamId of the bot's own published stream, or null.
+   * @returns {Promise<string|null>}
+   */
+  async getPublisherStreamId() {
+    return this.page.evaluate(() => {
+      const stream = window.botPublisher && window.botPublisher.stream;
+      return stream ? stream.streamId : null;
+    });
+  }
+
+  /**
+   * Returns the connectionId of the bot's session connection, or null.
+   * @returns {Promise<string|null>}
+   */
+  async getConnectionId() {
+    return this.page.evaluate(() =>
+      window.botSession && window.botSession.connection
+        ? window.botSession.connection.connectionId
+        : null
+    );
+  }
+
+  /**
+   * Force-unpublishes another participant's stream (requires a moderator token).
+   * @param {string} streamId - Stream to unpublish
+   */
+  async forceUnpublish(streamId) {
+    await this.page.evaluate(
+      (id) =>
+        new Promise((resolve, reject) => {
+          const stream = window.botSession.streams.get(id);
+          if (!stream) {
+            reject(new Error(`Stream ${id} not found in bot session`));
+            return;
+          }
+          window.botSession.forceUnpublish(stream, (err) => (err ? reject(err) : resolve()));
+        }),
+      streamId
+    );
+  }
+
+  /**
    * Waits until the bot receives at least one stream from a remote participant.
    * @param {number} [timeout] - Max wait time in ms (defaults to constructor timeout)
    */
@@ -308,14 +365,15 @@ class jsSDKTesterBot {
    */
   async close() {
     try {
-      await this.disconnect();
+      await withTimeout(this.disconnect(), 15000, 'bot disconnect()');
     } catch (e) {
       // Ignore errors during cleanup
     }
     if (this.browser) {
-      await this.browser.close();
+      const browser = this.browser;
       this.browser = null;
       this.page = null;
+      await withTimeout(browser.close().catch(() => {}), 15000, 'bot browser.close()');
     }
   }
 }

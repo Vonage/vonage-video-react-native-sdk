@@ -1,4 +1,5 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
@@ -15,7 +16,7 @@ describe('Publisher Options', () => {
   let session;
 
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -34,7 +35,7 @@ describe('Publisher Options', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 

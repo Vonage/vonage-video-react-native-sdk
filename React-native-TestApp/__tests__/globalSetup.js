@@ -75,6 +75,13 @@ module.exports = async function globalSetup() {
   const tokenApp = generateToken(routedSessionId, { role: 'moderator', data: 'participant=app' });
   const tokenSubscriber = generateToken(routedSessionId, { role: 'subscriber', data: 'participant=subscriber' });
 
+  // Dedicated session for moderation specs: force-mute state is sticky per
+  // session, so it must not leak into other specs.
+  const moderationSession = await createSession({ mediaMode: 'routed' });
+  const moderationSessionId = moderationSession.sessionId;
+  const moderationTokenApp = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=app' });
+  const moderatorBotToken = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=moderator-bot' });
+
   const relayedSession = await createSession({ mediaMode: 'relayed' });
   const relayedSessionId = relayedSession.sessionId;
   const relayedTokenApp = generateToken(relayedSessionId, { role: 'moderator', data: 'participant=app' });
@@ -92,6 +99,17 @@ module.exports = async function globalSetup() {
       tokenSubscriber,
       mediaMode: 'routed',
     },
+    moderation: {
+      apiKey,
+      apiSecret,
+      apiUrl,
+      jsSdkUrl,
+      sessionId: moderationSessionId,
+      tokenApp: moderationTokenApp,
+      botTokens: generateBotTokens(moderationSessionId),
+      moderatorBotToken,
+      mediaMode: 'routed',
+    },
     relayed: {
       apiKey,
       apiSecret,
@@ -107,6 +125,7 @@ module.exports = async function globalSetup() {
   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2));
   console.log('[globalSetup] Credentials written to', CREDENTIALS_PATH);
   console.log('[globalSetup] routedSession:', routedSessionId);
+  console.log('[globalSetup] moderationSession:', moderationSessionId);
   console.log('[globalSetup] relayedSession:', relayedSessionId);
   console.log('[globalSetup] bot tokens per session:', botPoolSize);
 };

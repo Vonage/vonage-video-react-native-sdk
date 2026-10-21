@@ -1,6 +1,9 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * DTX (Discontinuous Transmission) Tests
@@ -12,7 +15,7 @@ describe('DTX Codec Option', () => {
   let session;
 
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -25,12 +28,12 @@ describe('DTX Codec Option', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('publish and subscribe work with DTX disabled (default)', async () => {

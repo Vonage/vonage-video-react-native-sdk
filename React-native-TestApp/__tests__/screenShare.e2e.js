@@ -1,4 +1,5 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
@@ -14,7 +15,7 @@ describe.skip('Screen Sharing', () => {
   let session;
 
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -27,12 +28,12 @@ describe.skip('Screen Sharing', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('screen share toggle publishes a new stream that the bot receives', async () => {

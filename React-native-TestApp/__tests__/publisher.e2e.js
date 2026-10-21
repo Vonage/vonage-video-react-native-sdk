@@ -1,4 +1,5 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
@@ -13,7 +14,7 @@ describe('Publish and Subscribe', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -27,12 +28,12 @@ describe('Publish and Subscribe', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('RN app publishes → bot receives stream', async () => {

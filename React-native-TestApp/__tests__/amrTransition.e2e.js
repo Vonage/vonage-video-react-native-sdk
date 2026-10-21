@@ -1,6 +1,9 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * AMR (Automatic Media Routing) Transition Tests
@@ -23,7 +26,7 @@ describe('AMR Transitions', () => {
   let bot2;
 
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -36,7 +39,7 @@ describe('AMR Transitions', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 

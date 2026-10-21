@@ -1,8 +1,9 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 describe('App Launch Test', () => {
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       launchArgs: {
         detoxPrintBusyIdleResources: 'YES',

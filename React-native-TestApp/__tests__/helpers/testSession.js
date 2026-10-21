@@ -2,6 +2,7 @@
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
 const { clearCapturedEvents } = require('./eventCapture');
+const { withTimeout } = require('./poll');
 
 /**
  * TestSession - Encapsulates session lifecycle for isolated E2E tests.
@@ -45,6 +46,12 @@ class TestSession {
   static async createRelayed(botOptions = {}) {
     const { getRelayedCredentials } = require('./credentials');
     const credentials = await getRelayedCredentials();
+    return new TestSession({ credentials, botOptions });
+  }
+
+  static async createModeration(botOptions = {}) {
+    const { getModerationCredentials } = require('./credentials');
+    const credentials = await getModerationCredentials();
     return new TestSession({ credentials, botOptions });
   }
 
@@ -205,25 +212,24 @@ class TestSession {
     } catch (_) {}
   }
 
+  async closeBots() {
+    const bots = this.activeBots;
+    this.activeBots = [];
+    for (const bot of bots) {
+      await withTimeout(bot.close().catch(() => {}), 30000, 'bot.close()');
+    }
+  }
+
   // --- Cleanup ---
 
   /**
    * Per-test cleanup: close all bot browsers, disconnect app, clear events.
-   * Bots are fully destroyed (browser closed) — no reuse.
+   * Every step is time-bounded so one stuck step cannot hang the whole spec.
    */
   async cleanup() {
-    for (const bot of this.activeBots) {
-      try {
-        await bot.close();
-      } catch (_) {}
-    }
-    this.activeBots = [];
-
-    await this.disconnectApp();
-
-    try {
-      await clearCapturedEvents();
-    } catch (_) {}
+    await this.closeBots();
+    await withTimeout(this.disconnectApp(), 15000, 'disconnectApp()');
+    await withTimeout(clearCapturedEvents().catch(() => {}), 5000, 'clearCapturedEvents()');
   }
 
   /**
@@ -231,12 +237,7 @@ class TestSession {
    * Safety net — call in afterAll.
    */
   async teardown() {
-    for (const bot of this.activeBots) {
-      try {
-        await bot.close();
-      } catch (_) {}
-    }
-    this.activeBots = [];
+    await this.closeBots();
   }
 }
 

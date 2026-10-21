@@ -103,7 +103,7 @@ LOGCAT_PID=$!
 
 # Keep the continuous host logcat above; per-test logcat shutdowns in Detox
 # coincide with ADB transport loss and abort the remaining suites on CI.
-if ! npx detox test -c android.emu.debug --record-logs none --take-screenshots failing -- --testTimeout=240000 --testPathIgnorePatterns /node_modules/ '\.stress\.js$'; then
+if ! npx detox test -c android.emu.debug --record-logs none --take-screenshots failing -- --testTimeout=240000 --testPathIgnorePatterns /node_modules/ '\.stress\.js$' --json --outputFile=artifacts/jest-results-android.json; then
   echo "=== Detox failed: collecting Android diagnostics ==="
   adb -s "$DEVICE_ID" devices || true
   adb -s "$DEVICE_ID" shell getprop ro.build.version.release || true

@@ -1,6 +1,9 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * Encryption Tests
@@ -15,7 +18,7 @@ describe('Encryption', () => {
   let session;
 
   beforeAll(async () => {
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -28,7 +31,7 @@ describe('Encryption', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 

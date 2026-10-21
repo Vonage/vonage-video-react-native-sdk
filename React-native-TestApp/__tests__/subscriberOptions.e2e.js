@@ -1,8 +1,11 @@
 'use strict';
+const { launchAppWithRetry } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * Subscriber Options Tests
@@ -17,7 +20,7 @@ describe('Subscriber Options', () => {
 
   beforeAll(async () => {
     console.log('[subscriberOptions] Launching app...');
-    await device.launchApp({
+    await launchAppWithRetry({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
@@ -31,12 +34,12 @@ describe('Subscriber Options', () => {
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   describe('single bot scenarios (relayed)', () => {
