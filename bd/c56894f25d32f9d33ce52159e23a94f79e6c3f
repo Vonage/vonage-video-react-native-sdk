@@ -1,25 +1,86 @@
-React-native-TestApp/__tests__/moderation.e2e.js
-  s_6545e906e1164b::t_27d80810e410e5 4-12,14-15,20-23,27,36,54,58,63-68,75,78-79,81-91,97,101,104-105,107-108,110-112,119-120,122-123,125,133-134,136-140,142,144
-React-native-TestApp/__tests__/moderationAdvanced.e2e.js
-  s_6545e906e1164b::t_33238e8c3b211e 4-11,14-15,21,26-27,34,44,48,53-58,67-68,70-71,73,75,80,82,84,86,88-89,91-92,102-103,108-109,111,117,136,141,149-150,154-155
+.github/workflows/ci-pr-tests.yml
+  9afa2beeedc32657 193-202,306-315
+React-native-TestApp/__tests__/amrTransition.e2e.js
+  9afa2beeedc32657 2,6-7,29,42
+React-native-TestApp/__tests__/app.e2e.js
+  9afa2beeedc32657 2,6
+React-native-TestApp/__tests__/dtx.e2e.js
+  9afa2beeedc32657 2,6-7,18,31,36
+React-native-TestApp/__tests__/encryption.e2e.js
+  9afa2beeedc32657 2,6-7,21,34
+React-native-TestApp/__tests__/globalSetup.js
+  9afa2beeedc32657 78-84,102-112,128
+React-native-TestApp/__tests__/helpers/credentials.js
+  9afa2beeedc32657 54-64
 React-native-TestApp/__tests__/helpers/itIf.js
-  s_6545e906e1164b::t_ccd21a3d3d3697 1-8
+  9afa2beeedc32657 1-8
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  9afa2beeedc32657 4,200-255,368,373,376
 React-native-TestApp/__tests__/helpers/moderation.js
-  s_6545e906e1164b::t_948f5b5243383a 1-29
+  9afa2beeedc32657 1-29
+React-native-TestApp/__tests__/helpers/openTokRest.js
+  9afa2beeedc32657 13,84,86,88-97,101
+React-native-TestApp/__tests__/helpers/poll.js
+  9afa2beeedc32657 1-25
+React-native-TestApp/__tests__/helpers/testSession.js
+  9afa2beeedc32657 5,52-57,215-222,227,230-232,240
+React-native-TestApp/__tests__/helpers/waitForApp.js
+  9afa2beeedc32657 28-45
+React-native-TestApp/__tests__/moderation.e2e.js
+  9afa2beeedc32657 2,4-12,14-15,20-23,27,36,54,58,63-68,75,78-79,81-91,97,101,104-105,107-108,110-112,119-120,122-123,125,133-134,136-140,142,144
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  9afa2beeedc32657 2,4-11,14-15,21,26-27,34,44,48,53-58,67-68,70-71,73,75,80,82,84,86,88-89,91-92,102-103,108-109,111,117,136,141,149-150,154-155
+React-native-TestApp/__tests__/p2p.e2e.js
+  9afa2beeedc32657 2,6-7,20,34,39
+React-native-TestApp/__tests__/publisher.e2e.js
+  9afa2beeedc32657 2,17,31,36
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  9afa2beeedc32657 2,19,38
+React-native-TestApp/__tests__/screenShare.e2e.js
+  9afa2beeedc32657 2,18,31,36
+React-native-TestApp/__tests__/session.e2e.js
+  9afa2beeedc32657 2,19,33,38
+React-native-TestApp/__tests__/subscriber.e2e.js
+  9afa2beeedc32657 2,8-9,15,29,34
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  9afa2beeedc32657 2,8-9,23,37,42
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  9afa2beeedc32657 824-828
+package.json
+  9afa2beeedc32657 59
+scripts/e2e-results-summary.jq
+  9afa2beeedc32657 1-9
+scripts/run-android-e2e-in-emulator.sh
+  9afa2beeedc32657 106
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "bdc56894f25d32f9d33ce52159e23a94f79e6c3f",
-  "prompts": {},
-  "sessions": {
-    "s_6545e906e1164b": {
+  "prompts": {
+    "9afa2beeedc32657": {
       "agent_id": {
-        "tool": "kiro",
-        "id": "sess_73ff8f44-76d3-41bf-a29a-94c86bc46443",
-        "model": "auto"
+        "tool": "github-copilot",
+        "id": "de74614f-e56a-42dc-9fbb-61e57c3bb316",
+        "model": "gpt-4o"
       },
-      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-21T11:24:34.724Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-21T11:24:34.724Z"
+        }
+      ],
+      "total_additions": 403,
+      "total_deletions": 398,
+      "accepted_lines": 403,
+      "overriden_lines": 0
     }
   }
 }
