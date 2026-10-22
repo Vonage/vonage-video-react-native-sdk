@@ -1,0 +1,20 @@
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  h_25a96a0890a0d0 267-279
+React-native-TestApp/__tests__/helpers/openTokRest.js
+  h_25a96a0890a0d0 16-17,49-51
+React-native-TestApp/__tests__/moderation.e2e.js
+  h_25a96a0890a0d0 140
+scripts/e2e-results-summary.jq
+  h_25a96a0890a0d0 6-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1f76f78c653afc1c1f6b01f454f248017ff5d999",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
