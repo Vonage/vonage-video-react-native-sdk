@@ -183,6 +183,7 @@ class TestSession {
     } catch (_) {}
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(30000);
   }
 
   async connectAppWithCredentials(apiKey, sessionId, token) {
@@ -196,6 +197,7 @@ class TestSession {
     await element(by.id('tokenInput')).replaceText(token);
     await element(by.id('submitButton')).tap();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(30000);
   }
 
   async disconnectApp() {
