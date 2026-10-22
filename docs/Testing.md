@@ -112,8 +112,6 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
 | Screen Sharing | `screenShare.e2e.js` | Toggle screen share on and off, the bot receives each new stream (see the header of the file for its current status) |
 
-Files named `*.stress.js` are opt-in stress suites. The default scripts (`test:e2e:ios`, `test:e2e:android` and the CI ones) ignore them; run them explicitly with `--testPathPattern`.
-
 ## Architecture
 
 ### Sessions
@@ -135,8 +133,6 @@ All tests use `TestSession`, which encapsulates the session lifecycle:
 ```javascript
 const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
-
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 describe('Feature', () => {
   let session;
@@ -199,7 +195,6 @@ Inside its page it keeps `window.botSession`, `window.botPublisher` and `window.
 | `getPublisherState()` | `{ hasAudio, hasVideo }` of the bot's own published stream |
 | `getPublisherStreamId()` / `getConnectionId()` | IDs for REST calls and payload checks |
 | `setPublishAudio(on)` / `setPublishVideo(on)` | Mute or unmute the bot's own microphone/camera |
-| `churnVideo(iterations, intervalMs?)` | Toggle the bot's camera off/on quickly (stress) |
 | `forceUnpublish(streamId)` | Force-unpublish another participant's stream. Needs a moderator token (`session.credentials.moderatorBotToken`) |
 | `disconnect()` / `close()` | Leave the session / also close the browser |
 | `waitForStream({ streamId?, timeout? })` | Wait for a specific remote stream, or for any subscribed stream |
@@ -238,7 +233,7 @@ expect(event.streamId).toBeTruthy();
 
 1. Create `React-native-TestApp/__tests__/<name>.e2e.js` from the skeleton above. The default Jest config picks up `*.e2e.js`.
 2. Pick the session factory (`create`, `createRelayed` or `createModeration`).
-3. Keep `jest.retryTimes(1, { logErrorsBeforeRetry: true })` at the top of **every** spec. It is explicit on purpose, so the possibility of a retry is visible in each file. One retry is the maximum: a test that needs more is broken, not flaky.
+3. Do not add retries to the spec. The suite allows one retry per test, configured once in `setupRetries.js`: a test that needs more is broken, not flaky.
 4. Make the spec self-contained: its own `connectApp()` and its own bots per test. Do not depend on state left by another test or spec.
 5. Add the spec to the table in this file.
 
@@ -291,16 +286,16 @@ The test is reported as skipped with the reason in its title, and the CI summary
 5. **Set capture filters BEFORE the action that triggers the event** — otherwise the event fires before capture is active
 6. **Use condition-based waits, not sleeps** (see "Choosing how to wait")
 7. **Guard `session` in `afterEach`/`afterAll`** and keep cleanup time-bounded
-8. **Keep one explicit retry** (`jest.retryTimes(1)`) in every spec, and never more
+8. **Do not configure retries per spec**: the single retry lives in `setupRetries.js`
 
 ## CI
 
 Tests run on every PR via GitHub Actions (`ci-pr-tests.yml`). The `globalSetup` reads credentials from GitHub Secrets (`VONAGE_API_KEY`, `VONAGE_API_SECRET`, `API_URL`), which are passed as environment variables to the test step.
 
-- **iOS** runs as a matrix of two legs, `ios26` (`macos-26-xlarge`, Xcode 26.6) and `ios27` (`xcode-27-xlarge`). Each leg selects a simulator of its iOS major with `scripts/ci-select-ios-simulator.sh <major>` and passes its UDID to Detox through `DETOX_DEVICE_ID`. A leg marked `experimental: true` does not fail the run. To roll the matrix forward, edit only the two `include` entries.
+- **iOS** runs as a matrix of two legs, `ios26` (`macos-26-xlarge`, Xcode 26.6) and `ios27` (`xcode-27-xlarge`). Each leg selects a simulator of its iOS major with `scripts/ci-select-ios-simulator.sh <major>` and passes its UUID to Detox through `DETOX_DEVICE_ID`. A leg marked `experimental: true` does not fail the run. To roll the matrix forward, edit only the two `include` entries.
 - **Android** runs on an emulator through `scripts/run-android-e2e-in-emulator.sh`.
 - Both start Metro with `scripts/ci-start-metro.sh React-native-TestApp`.
-- CI uses `npm run test:e2e:ios:ci` (headless, no stress suites). To reproduce a leg locally: `DETOX_DEVICE_ID=<udid> npm run test:e2e:ios:ci`.
+- CI uses `npm run test:e2e:ios:ci` (headless). To reproduce a leg locally: `DETOX_DEVICE_ID=<udid> npm run test:e2e:ios:ci`.
 - Jest writes `artifacts/jest-results-<platform>.json`. The job summary (`scripts/e2e-results-summary.jq`) lists passed, failed, skipped, **passed after retry** and suites that did not run. A test that passes after a retry is not hidden: it is listed, so repeated entries are the signal to fix that test.
 
 ## Resources
