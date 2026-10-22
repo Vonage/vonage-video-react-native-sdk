@@ -1,16 +1,36 @@
 AGENTS.md
-  h_25a96a0890a0d0 120-121
+  8f56d07ee591e916 120-121
 docs/Testing.md
-  h_25a96a0890a0d0 20,107-108,113-115,119-130,133,136,139-140,145-149,153,158,163,169-170,175-188,192,194-211,230-284,287,292-294,298-304
+  8f56d07ee591e916 20,107-108,113-115,119-130,133,136,139-140,145-149,153,158,163,169-170,175-188,192,194-211,230-284,287,292-294,298-304
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "e4eac43f872b4718643d59325d9bdbd5577a1b9e",
-  "prompts": {},
-  "humans": {
-    "h_25a96a0890a0d0": {
-      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+  "prompts": {
+    "8f56d07ee591e916": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "a92b22da-b0d3-4cbc-b0ce-d19d19345a65",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-22T09:50:50.794Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-22T09:50:50.794Z"
+        }
+      ],
+      "total_additions": 133,
+      "total_deletions": 28,
+      "accepted_lines": 133,
+      "overriden_lines": 0
     }
   }
 }
