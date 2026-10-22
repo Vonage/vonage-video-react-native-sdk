@@ -1,0 +1,18 @@
+React-native-TestApp/__tests__/screenShare.e2e.js
+  h_25a96a0890a0d0 92-96
+ios/OTRN.swift
+  h_25a96a0890a0d0 36,48-50,52
+ios/OTRNPublisherComponentView.swift
+  h_25a96a0890a0d0 183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "04383351ac720337940cf2589189b02b4b3196f2",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
