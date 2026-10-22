@@ -6,7 +6,7 @@ const { expect: jestExpect } = require('expect');
 /**
  * The app toggles screen sharing on and off and a remote bot receives each new stream.
  */
-describe.skip('Screen Sharing', () => {
+describe('Screen Sharing', () => {
   let session;
 
   beforeAll(async () => {

@@ -110,7 +110,7 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | P2P | `p2p.e2e.js` | Publish/subscribe in relayed sessions, unpublish/republish, audio/video toggles |
 | DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
 | Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
-| Screen Sharing | `screenShare.e2e.js` | Toggle screen share on and off, the bot receives each new stream (see the header of the file for its current status) |
+| Screen Sharing | `screenShare.e2e.js` | Toggle screen share on and off, the bot receives each new stream |
 
 ## Architecture
 
