@@ -1,5 +1,5 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
@@ -17,14 +17,10 @@ describe('P2P (Relayed) Session', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.createRelayed({ timeout: 45000 });
@@ -47,7 +43,7 @@ describe('P2P (Relayed) Session', () => {
     const bot = await session.addBot({ subscriberTimeout: 45000 });
 
     try {
-      await bot.waitForSubscriber(45000);
+      await bot.waitForStream({ timeout: 45000 });
     } catch (e) {
       const state = await bot.getState();
       throw new Error(`P2P: Bot did not receive app stream. State: ${JSON.stringify(state)}`);

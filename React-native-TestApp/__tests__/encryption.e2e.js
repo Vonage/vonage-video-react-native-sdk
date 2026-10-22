@@ -1,5 +1,5 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
@@ -18,14 +18,10 @@ describe('Encryption', () => {
   let session;
 
   beforeAll(async () => {
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
 
     session = await TestSession.create();
   });
@@ -59,7 +55,7 @@ describe('Encryption', () => {
     console.log('[encryption] Subscriber view appeared — stream received.');
 
     // Verify bot sees the app's stream
-    await bot.waitForSubscriber(15000);
+    await bot.waitForStream({ timeout: 15000 });
     console.log('[encryption] Bot received app stream.');
 
     // Verify no errors on app side

@@ -1,5 +1,5 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
@@ -15,14 +15,10 @@ describe('DTX Codec Option', () => {
   let session;
 
   beforeAll(async () => {
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
 
     session = await TestSession.create({ timeout: 30000 });
   });
@@ -44,7 +40,7 @@ describe('DTX Codec Option', () => {
     console.log('[dtx-off] Subscriber visible.');
 
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForStream({ timeout: 30000 });
     } catch (e) {
       const state = await bot.getState();
       throw new Error(`Bot did not receive app stream with DTX=false. State: ${JSON.stringify(state)}`);
@@ -64,7 +60,7 @@ describe('DTX Codec Option', () => {
     console.log('[dtx-on] Subscriber visible (DTX=true).');
 
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForStream({ timeout: 30000 });
     } catch (e) {
       const state = await bot.getState();
       throw new Error(`Bot did not receive app stream with DTX=true. State: ${JSON.stringify(state)}`);

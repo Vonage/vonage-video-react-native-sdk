@@ -1,9 +1,9 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
-
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * Screen Sharing Tests
@@ -11,20 +11,21 @@ const { expect: jestExpect } = require('expect');
  * Verifies that the RN app can toggle screen sharing on and off,
  * and that a remote bot receives the screen share stream.
  */
+// Skipped since 8ee55b8. On iOS the screen share stream is never created because publish() is
+// dropped when the native publisher view has not created the publisher yet.
 describe.skip('Screen Sharing', () => {
   let session;
 
   beforeAll(async () => {
-    await launchAppWithRetry({
+    session = await TestSession.create();
+  });
+
+  beforeEach(async () => {
+    // Relaunch so the screen sharing state of a previous test does not leak into this one
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
-
-    session = await TestSession.create();
   });
 
   afterAll(async () => {
@@ -36,98 +37,44 @@ describe.skip('Screen Sharing', () => {
     if (session) await session.cleanup();
   });
 
-  it('screen share toggle publishes a new stream that the bot receives', async () => {
-    await session.connectApp();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-    console.log('[screenShare] Connected and publishing with camera.');
-
-    // Add bot — it subscribes to the initial camera stream
-    console.log('[screenShare] Adding bot...');
-    const bot = await session.addBot();
-
-    const stateBeforeToggle = await bot.getState();
-    jestExpect(stateBeforeToggle.subscriberCount).toBeGreaterThanOrEqual(1);
-    console.log('[screenShare] Bot subscribed to camera stream.');
-
-    // Reset bot streamCreated flag so we can detect the new screen share stream
-    await bot.page.evaluate(() => { window.botState.streamCreated = false; });
-
-    // Toggle screen share — this destroys the camera publisher and creates a screen publisher
+  // The publisher remounts with the other video source, which destroys the old stream and
+  // creates a new one, so callers wait for a new stream instead of relying on subscriberCount.
+  async function toggleScreenShare() {
     await element(by.id('tabSession')).tap();
     await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
     await element(by.id('toggleScreenShare')).tap();
-    console.log('[screenShare] Toggled screen share ON.');
+    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
+  }
 
-    // Wait for publisher to remount with screen source
+  it('screen share toggle publishes a new stream that the bot receives', async () => {
+    await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
-    // Wait for the bot to receive the new screen share stream.
-    // The toggle causes streamDestroyed (camera) then streamCreated (screen),
-    // so subscriberCount drops to 0 briefly before going back to 1.
-    console.log('[screenShare] Waiting for bot to receive screen share stream...');
-    try {
-      await bot.waitForSubscriber(30000);
-    } catch (e) {
-      const state = await bot.getState();
-      console.log('[screenShare] Bot state at timeout:', JSON.stringify(state));
-      throw new Error(
-        `Bot did not receive screen share stream within 30s. State: ${JSON.stringify(state)}`
-      );
-    }
+    const bot = await session.addBot();
+    await bot.waitForStream();
 
-    // Verify bot received a NEW streamCreated (not just the old camera one)
-    const stateAfterToggle = await bot.getState();
-    console.log('[screenShare] Bot state after toggle:', JSON.stringify(stateAfterToggle));
-    jestExpect(stateAfterToggle.subscriberCount).toBeGreaterThanOrEqual(1);
-    jestExpect(stateAfterToggle.streamCreated).toBe(true);
+    const streamCount = await bot.getStreamCount();
+    await toggleScreenShare();
+    await bot.waitForNewStream(streamCount, 30000);
+
+    jestExpect((await bot.getState()).subscriberCount).toBeGreaterThanOrEqual(1);
   });
 
   it('toggling screen share off restores camera publishing to bot', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
 
-    // Add bot
     const bot = await session.addBot();
-    const stateInitial = await bot.getState();
-    jestExpect(stateInitial.subscriberCount).toBeGreaterThanOrEqual(1);
+    await bot.waitForStream();
 
-    // Toggle screen share ON
-    await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
-    await element(by.id('toggleScreenShare')).tap();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-    console.log('[screenShare] Screen share ON.');
+    let streamCount = await bot.getStreamCount();
+    await toggleScreenShare();
+    await bot.waitForNewStream(streamCount, 30000);
 
-    // Wait for bot to get the screen stream
-    try {
-      await bot.waitForSubscriber(30000);
-    } catch (_) {}
+    streamCount = await bot.getStreamCount();
+    await toggleScreenShare();
+    await bot.waitForNewStream(streamCount, 30000);
 
-    // Reset streamCreated flag to detect the camera stream after toggle off
-    await bot.page.evaluate(() => { window.botState.streamCreated = false; });
-
-    // Toggle screen share OFF (back to camera)
-    await element(by.id('tabSession')).tap();
-    await waitFor(element(by.id('toggleScreenShare'))).toBeVisible().withTimeout(5000);
-    await element(by.id('toggleScreenShare')).tap();
-    console.log('[screenShare] Toggled screen share OFF.');
-
-    // Publisher should remount with camera
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-
-    // Bot should receive the new camera stream
-    try {
-      await bot.waitForSubscriber(30000);
-    } catch (e) {
-      const state = await bot.getState();
-      throw new Error(
-        `Bot did not receive camera stream after toggle off within 30s. State: ${JSON.stringify(state)}`
-      );
-    }
-
-    const stateAfterRevert = await bot.getState();
-    console.log('[screenShare] Bot state after revert:', JSON.stringify(stateAfterRevert));
-    jestExpect(stateAfterRevert.subscriberCount).toBeGreaterThanOrEqual(1);
-    jestExpect(stateAfterRevert.streamCreated).toBe(true);
+    jestExpect((await bot.getState()).subscriberCount).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,14 +1,9 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { forceDisconnect, forceMuteStream } = require('./helpers/openTokRest');
-const {
-  openModerationTab,
-  waitForPublisherAudio,
-  waitForBotDisconnected,
-  resetMuteState,
-} = require('./helpers/moderation');
+const { openModerationTab, resetMuteState } = require('./helpers/moderation');
 const { itIf } = require('./helpers/itIf');
 const { expect: jestExpect } = require('expect');
 
@@ -33,7 +28,7 @@ describe('Moderation', () => {
     // at launch-time via launchArgs prevents this. On Android the equivalent
     // device.disableSynchronization() call below is sufficient.
     const isIOS = device.getPlatform() === 'ios';
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       ...(isIOS
         ? {
@@ -45,10 +40,6 @@ describe('Moderation', () => {
         : {}),
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.createModeration();
@@ -75,7 +66,7 @@ describe('Moderation', () => {
     await openModerationTab();
     await element(by.id('muteAll')).tap();
 
-    await waitForPublisherAudio(bot, false);
+    await bot.waitForPublisherAudio(false);
   });
 
   itIf(isAndroid, 'iOS does not deliver session muteForced to JS (issue #306)')(
@@ -107,7 +98,7 @@ describe('Moderation', () => {
     const { apiKey, apiSecret, apiUrl, sessionId } = session.credentials;
     await forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionId);
 
-    await waitForBotDisconnected(bot);
+    await bot.waitForDisconnected();
     const event = await waitForEvent('connectionDestroyed', 15000);
     jestExpect(event.connectionId).toBe(connectionId);
   });
@@ -122,7 +113,7 @@ describe('Moderation', () => {
     const { apiKey, apiSecret, apiUrl, sessionId } = session.credentials;
     await forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId);
 
-    await waitForPublisherAudio(bot, false);
+    await bot.waitForPublisherAudio(false);
   });
 
   it('forceUnpublish removes bot stream from app', async () => {
@@ -137,7 +128,7 @@ describe('Moderation', () => {
       token: session.credentials.moderatorBotToken,
       waitForSubscriber: false,
     });
-    await moderatorBot.waitForStream(streamId);
+    await moderatorBot.waitForStream({ streamId });
 
     await moderatorBot.forceUnpublish(streamId);
 

@@ -26,11 +26,12 @@ async function waitForAppReady(timeout = 90000) {
 }
 
 /**
- * Launches the app, retrying once after terminating it if the first launch fails.
+ * Launches the app (one retry after terminating it if the first launch fails), disables Detox
+ * synchronization and waits for the UI to be ready. Use it in `beforeAll` or `beforeEach`.
  *
  * @param {object} params - Passed to device.launchApp()
  */
-async function launchAppWithRetry(params) {
+async function launchAndWaitForApp(params) {
   try {
     await device.launchApp(params);
   } catch (e) {
@@ -40,6 +41,8 @@ async function launchAppWithRetry(params) {
     } catch (_) {}
     await device.launchApp(params);
   }
+  await device.disableSynchronization();
+  await waitForAppReady();
 }
 
-module.exports = { waitForAppReady, launchAppWithRetry };
+module.exports = { waitForAppReady, launchAndWaitForApp };
