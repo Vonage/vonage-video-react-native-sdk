@@ -105,7 +105,7 @@ LOGCAT_PID=$!
 # coincide with ADB transport loss and abort the remaining suites on CI.
 mkdir -p artifacts
 
-if ! npx detox test -c android.emu.debug --record-logs none --take-screenshots failing -- --testTimeout=240000 --testPathIgnorePatterns /node_modules/ '\.stress\.js$' --json --outputFile=artifacts/jest-results-android.json; then
+if ! npx detox test -c android.emu.debug --record-logs none --take-screenshots failing -- --testTimeout=240000 --json --outputFile=artifacts/jest-results-android.json; then
   echo "=== Detox failed: collecting Android diagnostics ==="
   adb -s "$DEVICE_ID" devices || true
   adb -s "$DEVICE_ID" shell getprop ro.build.version.release || true

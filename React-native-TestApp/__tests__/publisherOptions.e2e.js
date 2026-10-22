@@ -3,16 +3,9 @@ const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Publisher Options Tests
- *
- * Tests various publisher configurations: audio-only, video-only,
- * camera switching, unpublish/republish.
- *
- * These tests don't require a bot — they verify the publisher UI behavior.
- * Session is connected once and stays connected for all tests.
+ * Publisher configurations (audio-only, video-only, camera switching, unpublish/republish).
+ * No bots: the session is connected once and stays connected for all tests.
  */
 describe('Publisher Options', () => {
   let session;
@@ -27,7 +20,6 @@ describe('Publisher Options', () => {
     await session.connectApp();
     console.log('[publisherOptions] Connected.');
 
-    // Wait for publisher to be active
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[publisherOptions] Publisher active.');
   });
@@ -83,7 +75,6 @@ describe('Publisher Options', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[audio-only] Publishing audio only.');
 
-    // Restore
     await element(by.id('hasVideo')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });
@@ -95,7 +86,6 @@ describe('Publisher Options', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[video-only] Publishing video only.');
 
-    // Restore
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
   });

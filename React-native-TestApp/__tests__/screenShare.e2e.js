@@ -3,16 +3,9 @@ const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Screen Sharing Tests
- *
- * Verifies that the RN app can toggle screen sharing on and off,
- * and that a remote bot receives the screen share stream.
+ * The app toggles screen sharing on and off and a remote bot receives each new stream.
  */
-// Skipped since 8ee55b8. On iOS the screen share stream is never created because publish() is
-// dropped when the native publisher view has not created the publisher yet.
 describe.skip('Screen Sharing', () => {
   let session;
 

@@ -5,13 +5,8 @@ const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Session Lifecycle Tests
- *
- * Tests session operations: connect/disconnect cycles,
- * disconnect while publishing/subscribing, and signal reception.
+ * Connect/disconnect cycles and disconnecting while publishing or subscribing.
  */
 describe('Session Lifecycle', () => {
   let session;
@@ -37,15 +32,12 @@ describe('Session Lifecycle', () => {
   });
 
   it('connect and disconnect cleanly', async () => {
-    // Connect app (defensive disconnect built-in)
     console.log('[session] Connecting...');
     await session.connectApp();
     console.log('[session] Connected.');
 
-    // Verify session connected event indicator
     await waitFor(element(by.id('session-sessionConnected'))).not.toHaveText('0').withTimeout(5000);
 
-    // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
     await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
@@ -53,18 +45,15 @@ describe('Session Lifecycle', () => {
   });
 
   it('reconnect after disconnect', async () => {
-    // Connect
     console.log('[session] Connecting...');
     await session.connectApp();
     console.log('[session] Connected.');
 
-    // Disconnect
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
     await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected.');
 
-    // Reconnect
     console.log('[session] Reconnecting...');
     await session.connectApp();
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
@@ -72,39 +61,31 @@ describe('Session Lifecycle', () => {
   });
 
   it('disconnect while publishing does not crash', async () => {
-    // Connect app
     console.log('[session] Connecting...');
     await session.connectApp();
 
-    // Wait for publisher to appear (confirms we are actively publishing)
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(30000);
     console.log('[session] Publishing. Disconnecting...');
 
-    // Disconnect while publishing
     await session.disconnectApp();
     await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     console.log('[session] Disconnected while publishing — no crash.');
   });
 
   it('disconnect while subscribing does not crash', async () => {
-    // Connect app
     console.log('[session] Connecting for subscribe test...');
     await session.connectApp();
 
-    // Set up capture for streamCreated payload verification
     await setCaptureFilter(['streamCreated']);
 
-    // Add bot — addBot() waits for subscriber view
     console.log('[session] Adding bot...');
     const bot = await session.addBot();
     console.log('[session] Subscribing.');
 
-    // Verify streamCreated payload contains valid stream info
     const streamEvent = await waitForEvent('streamCreated');
     console.log('[session] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
 
-    // Disconnect while subscribing
     console.log('[session] Disconnecting...');
     await session.disconnectApp();
     await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);

@@ -6,20 +6,9 @@ const { forceDisconnect, forceMuteStream } = require('./helpers/openTokRest');
 const { openModerationTab, resetMuteState } = require('./helpers/moderation');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Advanced Moderation Tests
- *
- * Tests SDK-level moderation actions using the event capture system:
- *   - forceDisconnect via REST removes bot connection
- *   - disableForceMute after forceMuteAll allows new publishers to publish audio
- *   - forceMuteStream targets a specific stream
- *   - streamCreated payload contains expected fields
- *   - connection events fire with valid data
- *
- * Runs against the dedicated moderation session. Each test is self-contained
- * with its own bots, and session-wide mute state is reset after every test.
+ * Moderation actions checked through REST and event capture. Runs on the dedicated moderation
+ * session; session-wide mute state is reset after every test.
  */
 describe('Moderation Advanced', () => {
   let session;

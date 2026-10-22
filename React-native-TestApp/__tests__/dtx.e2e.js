@@ -3,13 +3,8 @@ const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * DTX (Discontinuous Transmission) Tests
- *
- * Verifies publish/subscribe works with DTX enabled and disabled.
- * Uses TestSession for credential management and bot lifecycle.
+ * Publish/subscribe with DTX (Discontinuous Transmission) enabled and disabled.
  */
 describe('DTX Codec Option', () => {
   let session;

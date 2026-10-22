@@ -7,15 +7,10 @@ const { openModerationTab, resetMuteState } = require('./helpers/moderation');
 const { itIf } = require('./helpers/itIf');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Moderation Tests
- *
- * Tests moderator actions: forceMuteAll, forceDisconnect, forceMuteStream and
- * forceUnpublish. The app connects with a moderator token to a dedicated
- * moderation session; bots join per test. Session-wide mute state is reset
- * after every test.
+ * Moderator actions (forceMuteAll, forceDisconnect, forceMuteStream, forceUnpublish) from an app
+ * connected with a moderator token. Runs on the dedicated moderation session; session-wide mute
+ * state is reset after every test.
  */
 describe('Moderation', () => {
   let session;
@@ -23,10 +18,7 @@ describe('Moderation', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    // On iOS, Detox tries to synchronize *during* launchApp() itself, which hangs
-    // indefinitely when the Video SDK keeps the main queue busy. Disabling sync
-    // at launch-time via launchArgs prevents this. On Android the equivalent
-    // device.disableSynchronization() call below is sufficient.
+    // On iOS, Detox synchronizes during launchApp() and hangs while the Video SDK keeps the main queue busy
     const isIOS = device.getPlatform() === 'ios';
     await launchAndWaitForApp({
       newInstance: true,

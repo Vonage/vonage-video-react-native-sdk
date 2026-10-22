@@ -1,13 +1,6 @@
 'use strict';
 
-/**
- * Waits for the test app to fully load (bundle loaded, UI rendered).
- * Polls for the submitButton to appear, with a generous timeout for CI.
- *
- * Call this after device.launchApp() + device.disableSynchronization().
- *
- * @param {number} [timeout=90000] - Max wait time in ms
- */
+/** Polls until the connection form is visible (bundle loaded, UI rendered). */
 async function waitForAppReady(timeout = 90000) {
   const pollInterval = 2000;
   const maxAttempts = Math.ceil(timeout / pollInterval);
