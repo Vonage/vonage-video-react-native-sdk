@@ -1,0 +1,16 @@
+AGENTS.md
+  h_25a96a0890a0d0 121
+docs/Testing.md
+  h_25a96a0890a0d0 236,289,295,298
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "91f713f36c0f6c14b8fd06adc1a0cda9de3fdae4",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
