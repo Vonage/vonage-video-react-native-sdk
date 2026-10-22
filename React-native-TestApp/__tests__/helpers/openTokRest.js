@@ -13,6 +13,8 @@ const crypto = require('crypto');
  *   - disableMuteAll(apiKey, apiSecret, apiUrl, sessionId)
  */
 
+const REQUEST_TIMEOUT_MS = 30000;
+
 function generateJwt(apiKey, apiSecret) {
   const header = Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'HS256' })).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
@@ -43,6 +45,9 @@ function httpRequest(method, url, headers, body) {
       let data = '';
       res.on('data', (chunk) => (data += chunk));
       res.on('end', () => resolve({ status: res.statusCode, body: data }));
+    });
+    req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      req.destroy(new Error(`${method} ${parsedUrl.pathname} timed out after ${REQUEST_TIMEOUT_MS}ms`));
     });
     req.on('error', reject);
     if (body) req.write(body);

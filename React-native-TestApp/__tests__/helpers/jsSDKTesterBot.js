@@ -265,6 +265,19 @@ class jsSDKTesterBot {
   }
 
   /**
+   * Waits until a specific remote stream is known to the bot's session.
+   * @param {string} streamId
+   * @param {number} [timeout] - Max wait time in ms (defaults to constructor timeout)
+   */
+  async waitForStream(streamId, timeout) {
+    await this.page.waitForFunction(
+      (id) => !!(window.botSession && window.botSession.streams.get(id)),
+      streamId,
+      { timeout: timeout || this.options.timeout }
+    );
+  }
+
+  /**
    * Sends a signal to the session.
    * @param {string} type - Signal type
    * @param {string} data - Signal data
