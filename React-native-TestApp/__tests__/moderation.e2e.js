@@ -137,7 +137,7 @@ describe('Moderation', () => {
       token: session.credentials.moderatorBotToken,
       waitForSubscriber: false,
     });
-    await moderatorBot.waitForSubscriber();
+    await moderatorBot.waitForStream(streamId);
 
     await moderatorBot.forceUnpublish(streamId);
 
