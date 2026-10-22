@@ -1,0 +1,25 @@
+src/__tests__/OTPublisher.preservation.test.js
+  s_654a013ed908b8::t_89d88e0d01244d 1-354
+src/__tests__/OTPublisher.transformers.test.js
+  s_654a013ed908b8::t_78324145df22eb 1-150
+src/OTPublisher.js
+  s_654a013ed908b8::t_1eaf6c45a8b119 137-154
+src/types.ts
+  s_654a013ed908b8::t_e56bb67a15d06c 327-328
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "9fb0d7df55a1d7f79aa23b28245edf89b3b3b950",
+  "prompts": {},
+  "sessions": {
+    "s_654a013ed908b8": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_18202fe1-5d4a-4324-a10e-bd653a6448fb",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

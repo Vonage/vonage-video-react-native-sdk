@@ -1,0 +1,38 @@
+src/OTSubscriber.js
+  s_dbd03af25e4553::t_675e0af9bf6416 119-123
+  s_dbd03af25e4553::t_e666670a77035b 93-94,96
+src/__tests__/OTSubscriber.test.js
+  s_dbd03af25e4553::t_c19eb36f81dd6b 1-110
+src/__tests__/OTSessionHelper.test.js
+  s_dbd03af25e4553::t_38582aee936e23 26-84
+  s_dbd03af25e4553::t_f0d16d90031b66 6
+  s_dbd03af25e4553::t_50e54cc5e562f3 85-86
+src/helpers/OTSessionHelper.js
+  s_dbd03af25e4553::t_00cd1c06f87f40 91-95
+src/OTSession.js
+  s_dbd03af25e4553::t_25627c69de78ca 22-28,33
+  s_dbd03af25e4553::t_561eda50e90258 107-189
+  s_dbd03af25e4553::t_afb2d642df97b4 79-98
+  s_dbd03af25e4553::t_7330abf28e29ac 267-275
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca53c6155fd48c6338d41a52972c3c470c3bd73d",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_dbd03af25e4553": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_385c04a6-c994-4ccf-9ae9-49b0bfb9823c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

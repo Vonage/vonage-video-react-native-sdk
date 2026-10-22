@@ -1,0 +1,15 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  h_25a96a0890a0d0 369,404,436
+  h_25a96a0890a0d0 370,405,437
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "c035a823aaa0c6b3a9c1be8b09fdab98c0772fe7",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

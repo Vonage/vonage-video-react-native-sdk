@@ -1,0 +1,96 @@
+ios/include/OpentokReactNativeObjC/OTRNPublisherComponentView.h
+  s_dab0fa39b9492f::t_e1d8e99f26430f 1-2
+ios/OTRNSubscriberComponentView.swift
+  s_dab0fa39b9492f::t_dcbd07f0f37f5c 6-9
+  s_dab0fa39b9492f::t_9669672d7b0373 10-11
+  h_25a96a0890a0d0 4
+ios/OpentokReactNative.swift
+  s_dab0fa39b9492f::t_a0bcfedd1ae12c 10-11
+  s_dab0fa39b9492f::t_ca9db5aacce453 6-9
+  h_25a96a0890a0d0 4
+ios/include/OpentokReactNativeObjC/OTRNSubscriberComponentView.h
+  s_dab0fa39b9492f::t_e2fae72915ee20 1-2
+ios/Package.swift
+  s_dab0fa39b9492f::t_d1044769a0199d 41-51
+  s_dab0fa39b9492f::t_a41db0e134f7b1 112,120,126,151,157-163
+  s_dab0fa39b9492f::t_533a24764a7444 136-141
+  s_dab0fa39b9492f::t_fff6404ffff2de 82-89,91-102
+  s_dab0fa39b9492f::t_4b7e75762a5200 1-30,38-40,52-57,69-80,105-111,113-119,121-125,127-135,142-150,152-156,164-168
+  s_dab0fa39b9492f::t_dff8cb0a00ff51 31-37
+  s_dab0fa39b9492f::t_17eb182ce9f05a 58-63
+  s_dab0fa39b9492f::t_945044be73b0f1 81,90
+  s_dab0fa39b9492f::t_c053758f9e3f58 64-68
+  s_dab0fa39b9492f::t_305bb5c36341ad 103-104
+.github/workflows/ci-pr-tests.yml
+  s_dab0fa39b9492f::t_281dbaea85f874 66-77,79
+ios/README.md
+  s_dab0fa39b9492f::t_b97322b06584f2 58-59
+  s_dab0fa39b9492f::t_b89b98ff75bd90 883,885-886
+React-native-TestApp/ios/FabricComponentRegistrar.mm
+  s_dab0fa39b9492f::t_f813f45930918e 3-4
+ios/OTRNSubscriberComponentView.mm
+  s_dab0fa39b9492f::t_b606d6295f9513 12,14
+  s_dab0fa39b9492f::t_4f38e94c2e0713 15
+React-native-TestApp/.detoxrc.js
+  s_dab0fa39b9492f::t_e4237b05d1fa0e 24-25,30
+README.md
+  s_dab0fa39b9492f::t_ec15bb685c69f5 37-52
+ios/OTRN.swift
+  h_25a96a0890a0d0 12
+.gitignore
+  s_dab0fa39b9492f::t_bb73031b26f9b6 77-79
+  h_25a96a0890a0d0 75
+  h_25a96a0890a0d0 76
+@types/index.d.ts
+  s_dab0fa39b9492f::t_974124ef1f07b1 666-669
+  s_dab0fa39b9492f::t_e4683b55f9a9f6 680-683
+ios/OTRNPublisherComponentView.swift
+  h_25a96a0890a0d0 4
+  s_dab0fa39b9492f::t_af4c3adcac03ed 10-11
+  s_dab0fa39b9492f::t_9ce9a440a6ce88 6-9
+detox.config.js
+  s_dab0fa39b9492f::t_2fa38663ea71eb 20-21,26
+ios/include/OpentokReactNativeObjC/OpentokReactNativeSwift-Swift.h
+  s_dab0fa39b9492f::t_f9198a67fb701a 27-33
+  s_dab0fa39b9492f::t_d3ddbf1f3be5c2 1-26,34-127
+ios/OpentokReactNative.mm
+  s_dab0fa39b9492f::t_c7e1bb2c0fc81e 9-13
+  s_dab0fa39b9492f::t_1876385c9d45f8 6,8
+  s_dab0fa39b9492f::t_693ac49ef10f06 4
+AGENTS.md
+  s_dab0fa39b9492f::t_053e5b4ea57bca 17,21,94,154
+ios/OTRNPublisherComponentView.mm
+  s_dab0fa39b9492f::t_a79c3eead11840 15
+  s_dab0fa39b9492f::t_d9205b0e46ad32 12,14
+OpentokReactNative.podspec
+  s_dab0fa39b9492f::t_3d8dc8e091d929 26-29
+React-native-TestApp/ios/.gitignore
+  h_25a96a0890a0d0 1-6
+React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/.spm-injected.json
+  h_25a96a0890a0d0 1-189
+React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/project.pbxproj
+  h_25a96a0890a0d0 15-20,53-58,119-126,130,133,151-155,213,222,229,231,238-244,246-250,254,274-342,359-361,376-440,456-458,658-672
+React-native-TestApp/ios/ReactNativeTesApp.xcodeproj/xcshareddata/xcschemes/ReactNativeTesApp.xcscheme
+  h_25a96a0890a0d0 8-213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0ff539c7cf769511678c7d2bb0e5c65fbad1e565",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_dab0fa39b9492f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_44ffd75b-ecbe-4ea7-a70e-2f819fafe26c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

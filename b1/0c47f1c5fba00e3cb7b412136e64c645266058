@@ -1,0 +1,33 @@
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  s_4f1ec41b0aa468::t_0f16dc9f07170a 15,19
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_4f1ec41b0aa468::t_2630f86f23369b 205-206,208
+  s_4f1ec41b0aa468::t_7566a1c7fb7318 185
+  s_4f1ec41b0aa468::t_bfb965f9c37383 184
+  s_4f1ec41b0aa468::t_b7a22d17240c39 209
+React-native-TestApp/__tests__/session.e2e.js
+  s_4f1ec41b0aa468::t_23ed7e5cc98411 120
+  s_4f1ec41b0aa468::t_6df5dc78bc1652 95
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_4f1ec41b0aa468::t_7d685d52dafba2 10-11,18-19,40-41,54,57,59,61,63,82-83,85-86,91-92,103-106,116-117,122,138,151,154-155,157-158,163,176-177,180
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  s_4f1ec41b0aa468::t_98852d4f9a7636 130
+  s_4f1ec41b0aa468::t_04d5962cc2d950 250-258
+  s_4f1ec41b0aa468::t_893ce0d7b184ae 231-232,238-245
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b10c47f1c5fba00e3cb7b412136e64c645266058",
+  "prompts": {},
+  "sessions": {
+    "s_4f1ec41b0aa468": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_a6a1af4e-9a7a-4297-8490-60b6042bb816",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

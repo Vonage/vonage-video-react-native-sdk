@@ -1,0 +1,35 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  h_25a96a0890a0d0 193,198
+  h_25a96a0890a0d0 189-192,194-197,199-202
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_ce55cec5e89d7f::t_68263bbeb9b231 53-59,232-234,236-238,240
+  s_ce55cec5e89d7f::t_9de2cd1cc74b74 241-242
+React-native-TestApp/__tests__/cameraChurn.stress.js
+  h_25a96a0890a0d0 87,119,149,181,205
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_ce55cec5e89d7f::t_1ce0f6e37af0a2 36-42,101-103,105-107,109
+  s_ce55cec5e89d7f::t_fba39653cfeb3b 110-111
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  h_25a96a0890a0d0 85-87,89-91,93-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "8c5c357c29c428067cf3d0a2ce300c429b252ddc",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_ce55cec5e89d7f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_fed30d36-383b-449f-9743-d76fc0216985",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

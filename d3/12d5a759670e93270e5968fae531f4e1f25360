@@ -1,0 +1,19 @@
+React-native-TestApp/__tests__/helpers/waitForApp.js
+  s_d34cb1a085c9a7::t_fe4a1e76a38093 7-9,12-13,15,22-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d312d5a759670e93270e5968fae531f4e1f25360",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+package-lock.json
+  420bd4befa2219d8 44,17014-17034
+package.json
+  420bd4befa2219d8 131
+src/OTSubscriber.js
+  420bd4befa2219d8 25
+src/__tests__/OTSubscriberLateMount.test.js
+  420bd4befa2219d8 1-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "c489001279a3dc314308f7e364346d6ee5533078",
+  "prompts": {
+    "420bd4befa2219d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10a97-3bbe-70b1-b262-1e6c69604c47",
+        "model": "gpt-6"
+      },
+      "human_author": "czoli1976 <czoli1976@users.noreply.github.com>",
+      "total_additions": 136,
+      "total_deletions": 1,
+      "accepted_lines": 136,
+      "overriden_lines": 0,
+      "custom_attributes": {
+        "model_detail": "GPT-6 family; exact runtime variant is not exposed.",
+        "attribution_origin": "Direct record of additions produced by this Codex session; vg-ai executable unavailable."
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+.github/workflows/ci-pr-tests.yml
+  cb170e3acb4a9ae1 1-2
+React-native-TestApp/__tests__/cameraChurn.stress.js
+  cb170e3acb4a9ae1 1-216
+React-native-TestApp/__tests__/globalSetup.js
+  cb170e3acb4a9ae1 1-12
+React-native-TestApp/__tests__/helpers/credentials.js
+  cb170e3acb4a9ae1 1-2
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  cb170e3acb4a9ae1 1-43
+React-native-TestApp/__tests__/helpers/testSession.js
+  cb170e3acb4a9ae1 1-57
+React-native-TestApp/__tests__/jest.e2e.config.js
+  cb170e3acb4a9ae1 1-6
+android/build.gradle
+  cb170e3acb4a9ae1 1
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  cb170e3acb4a9ae1 1-25
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  cb170e3acb4a9ae1 1-15
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  cb170e3acb4a9ae1 1-109
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  cb170e3acb4a9ae1 1-12
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  cb170e3acb4a9ae1 1-15
+ios/OTRNPublisherComponentView.mm
+  cb170e3acb4a9ae1 1-10
+ios/OTRNSubscriberComponentView.mm
+  cb170e3acb4a9ae1 1-10
+package.json
+  cb170e3acb4a9ae1 1-2
+src/OTPublisher.js
+  cb170e3acb4a9ae1 1-26
+src/OTPublisherNativeComponent.ts
+  cb170e3acb4a9ae1 1-3
+src/OTSession.js
+  cb170e3acb4a9ae1 1-104
+src/OTSubscriber.js
+  cb170e3acb4a9ae1 1-8
+src/OTSubscriberNativeComponent.ts
+  cb170e3acb4a9ae1 1-3
+src/OTSubscriberView.js
+  cb170e3acb4a9ae1 1-28
+src/helpers/OTSessionHelper.js
+  cb170e3acb4a9ae1 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "27b1fb6de4f806f6bf861e7b62a102b682e2eb43",
+  "prompts": {
+    "cb170e3acb4a9ae1": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "0634d7e9-9a40-4865-ad40-9bb694b95045",
+        "model": "gpt-4o"
+      },
+      "human_author": "Ignacio de la Cruz <ignacio.delacruz@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-09-23T10:40:08.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-09-23T10:40:08.000Z"
+        }
+      ],
+      "total_additions": 715,
+      "total_deletions": 221,
+      "accepted_lines": 715,
+      "overriden_lines": 0
+    }
+  }
+}

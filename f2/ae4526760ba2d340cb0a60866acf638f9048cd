@@ -1,0 +1,67 @@
+src/OTSubscriberView.js
+  s_41a30bf0398932::t_cb864ab293398b 144-149,157-165
+  s_41a30bf0398932::t_9f530221e78952 91-93,101-116,123
+  s_41a30bf0398932::t_ac972bbd9f3b98 7-33
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  s_41a30bf0398932::t_7281d45ce5c9e6 51-54
+  s_41a30bf0398932::t_36f7f6734d41bb 274-285
+  s_41a30bf0398932::t_479ad529f97143 435-436
+  s_41a30bf0398932::t_a5e26843daa2e0 471-472,485-486
+  s_41a30bf0398932::t_6841f673232cda 443-444
+  s_41a30bf0398932::t_0e14571f118ab0 95,98
+src/OTPublisherNativeComponent.ts
+  s_41a30bf0398932::t_a07102012c5c67 68-70
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  s_41a30bf0398932::t_3195e6641b7b20 35-37
+  s_41a30bf0398932::t_ba78dd1ca853c4 101-112
+  s_41a30bf0398932::t_21aae0252d050e 392-393
+  s_41a30bf0398932::t_dbbcf0ded440e8 457-458,469-470,473,476-477
+  s_41a30bf0398932::t_9c5c569f01cf60 426-427,436-437,440,443-444
+src/OTPublisher.js
+  s_41a30bf0398932::t_685f3b6a76d0dd 245-255
+  s_41a30bf0398932::t_31b85b7a0cd93f 190-192,205-211,215-225
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  h_25a96a0890a0d0 349
+  s_41a30bf0398932::t_a00a2c956e2ee4 350-353
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  s_41a30bf0398932::t_ff200fa590f735 194-208
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  s_41a30bf0398932::t_e1e511e37c0d2d 42-54
+android/src/main/java/com/opentokreactnative/utils/EventUtils.java
+  s_41a30bf0398932::t_2d5d617457ce10 13-16,20-36,42,55
+ios/OTRNSubscriberComponentView.mm
+  s_41a30bf0398932::t_61c7032904cb07 93-95
+  s_41a30bf0398932::t_8511faa38546b3 149-152
+  s_41a30bf0398932::t_529d67c77d8784 278
+  s_41a30bf0398932::t_9dbc6b8e2f6f5c 242
+  s_41a30bf0398932::t_810c7a62c497e3 260
+src/OTSubscriberNativeComponent.ts
+  s_41a30bf0398932::t_21ed3cce61daeb 80-82
+ios/OTRNPublisherComponentView.mm
+  s_41a30bf0398932::t_7e7820aee12a4b 220
+  s_41a30bf0398932::t_f0444786256140 148-151
+  s_41a30bf0398932::t_0e28b1384de3a5 200
+  s_41a30bf0398932::t_eecbfa4ea91f0f 210
+  s_41a30bf0398932::t_f05c704f89f2e0 31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f2ae4526760ba2d340cb0a60866acf638f9048cd",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_41a30bf0398932": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_ae51f9c6-f2b1-464b-8ee0-91cac0a5a96e",
+        "model": "auto"
+      },
+      "human_author": null
+    }
+  }
+}

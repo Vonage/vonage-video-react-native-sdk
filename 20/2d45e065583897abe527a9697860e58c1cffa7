@@ -1,0 +1,22 @@
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  h_b9583e878a641a 6-7,12,28-29,52-63,81-83,86-94,115-126,129,132-163,165-169,171-172,190-193,198,202,206-209,214,218,222,229,235,237-241,244,302,454-539
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  h_b9583e878a641a 93-99
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  h_b9583e878a641a 202-203,212-218,388,390-401,405-412
+src/OTSubscriber.js
+  h_b9583e878a641a 93-94,96,100-107
+src/helpers/OTSessionHelper.js
+  h_b9583e878a641a 55-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "202d45e065583897abe527a9697860e58c1cffa7",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}

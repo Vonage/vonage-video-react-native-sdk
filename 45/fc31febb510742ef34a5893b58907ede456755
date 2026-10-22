@@ -1,0 +1,32 @@
+React-native-TestApp/__tests__/session.e2e.js
+  s_d47b7ff10ee53b::t_d90b2f2e4f1bb9 111
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_d47b7ff10ee53b::t_42e2b7461a9657 99
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_d47b7ff10ee53b::t_20885ca4697c2b 80
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d47b7ff10ee53b::t_5e347ca5be2988 73,79
+  s_d47b7ff10ee53b::t_38b87509180d9a 134
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_d47b7ff10ee53b::t_556c51f1953fb7 148,150,153
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_d47b7ff10ee53b::t_236ad8c684eb8a 199
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_d47b7ff10ee53b::t_3a7a9f141b14bb 69,75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "45fc31febb510742ef34a5893b58907ede456755",
+  "prompts": {},
+  "sessions": {
+    "s_d47b7ff10ee53b": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_9ee328c4-a1af-4f4b-96ef-5e3761b45f5d",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  s_d34cb1a085c9a7::t_1ae4e93fb2760c 22-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b36847f1f9076dfd73074151be65235b89cd3c82",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

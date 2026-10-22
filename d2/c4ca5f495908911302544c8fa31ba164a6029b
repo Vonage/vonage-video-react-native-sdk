@@ -1,0 +1,46 @@
+React-native-TestApp/__tests__/encryption.e2e.js
+  s_d34cb1a085c9a7::t_b7838e1b30b816 3,41,45,55,63,77-78
+React-native-TestApp/__tests__/session.e2e.js
+  s_d34cb1a085c9a7::t_b6e9287595bacf 3,47,52,65,71,81,86,111,153
+React-native-TestApp/__tests__/subscriber.e2e.js
+  s_d34cb1a085c9a7::t_217cb32bb1947b 3,48-49,99,103
+React-native-TestApp/__tests__/publisher.e2e.js
+  s_d34cb1a085c9a7::t_8457e7d2973183 3,42,46-47,71,88,92
+React-native-TestApp/__tests__/moderation.e2e.js
+  s_d34cb1a085c9a7::t_82620e05796437 3,73-74,220
+React-native-TestApp/__tests__/app.e2e.js
+  s_d34cb1a085c9a7::t_0f5d47826a9f10 1-4,35,59,63
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_d34cb1a085c9a7::t_bef14e1020a1f9 121,131
+  s_d34cb1a085c9a7::t_879bb9467be814 150
+  s_d34cb1a085c9a7::t_9e90b11aaa1f4d 110
+  s_d34cb1a085c9a7::t_9f52498ec8c68c 189,191,195,204-205,207-209,212,217-219,221-222
+  s_d34cb1a085c9a7::t_97a0327ff9e0b9 190,192-194,196-203,206,210-211,213-216,220,223
+  s_d34cb1a085c9a7::t_13f86c071f9a75 137,144
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  s_d34cb1a085c9a7::t_dcf46118670005 3
+  s_d34cb1a085c9a7::t_72f2829a9c76d9 217
+  s_d34cb1a085c9a7::t_b71c49e24cbda8 15-17,57-58,81,86,98,103,117,128,135,147,159,174,192,213-216
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  s_d34cb1a085c9a7::t_130bfd30755b31 3,119,152,199
+React-native-TestApp/__tests__/p2p.e2e.js
+  s_d34cb1a085c9a7::t_158a4e0507602a 3,86
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  s_d34cb1a085c9a7::t_705c1d51d60457 3,32,46,50,58,62,67,71,74,80,82,87,93,98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "d2c4ca5f495908911302544c8fa31ba164a6029b",
+  "prompts": {},
+  "sessions": {
+    "s_d34cb1a085c9a7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_657f2559-97c1-4629-9efc-873587bd0bdf",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

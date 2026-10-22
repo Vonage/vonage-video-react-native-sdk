@@ -1,0 +1,26 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  s_ce55cec5e89d7f::t_ca6ed3ca32a2a8 220
+  s_ce55cec5e89d7f::t_8835c6afdc5b9f 202
+  s_ce55cec5e89d7f::t_74425657d3c732 407
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "493385e0801dd69cd2b1715b9343a6eea9ca9bda",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_ce55cec5e89d7f": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_fed30d36-383b-449f-9743-d76fc0216985",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

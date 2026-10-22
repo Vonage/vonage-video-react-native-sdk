@@ -1,0 +1,36 @@
+package.json
+  3bab2a00f250c74f 59
+scripts/run-android-e2e-in-emulator.sh
+  3bab2a00f250c74f 106-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "d696e52e48eea9392a63bf7638648e284427d0dc",
+  "prompts": {
+    "3bab2a00f250c74f": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "6aa7cd5f-4fe1-4028-a4dd-7f10ddb5f281",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-21T11:27:02.755Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-21T11:27:02.755Z"
+        }
+      ],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}

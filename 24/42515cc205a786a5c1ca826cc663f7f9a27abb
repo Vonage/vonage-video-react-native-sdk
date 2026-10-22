@@ -1,0 +1,36 @@
+React-native-TestApp/__tests__/p2p.e2e.js
+  9c549c2297544aca 1
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  9c549c2297544aca 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "2442515cc205a786a5c1ca826cc663f7f9a27abb",
+  "prompts": {
+    "9c549c2297544aca": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "8d49f00e-5efa-46aa-89af-ef708a4deb75",
+        "model": "gpt-4o"
+      },
+      "human_author": "igorperunovicvonage <igor.perunovic@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-10-16T09:09:48.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-16T09:09:48.000Z"
+        }
+      ],
+      "total_additions": 3,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}

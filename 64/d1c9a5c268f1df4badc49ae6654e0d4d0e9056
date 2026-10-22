@@ -1,0 +1,25 @@
+.kiro/steering/development-guide.md
+  s_169f9eb109ffd7::t_83d973fd271278 97-102
+  s_169f9eb109ffd7::t_dd3a74fc38b679 94-96
+  s_169f9eb109ffd7::t_dc92ef39c2124b 103-105
+.kiro/specs/e2e-bot-testing/TEST_COVERAGE.md
+  s_169f9eb109ffd7::t_6ae83f5e70bb69 14,18-185
+  s_169f9eb109ffd7::t_c29eb38c19ac1d 11-13
+  s_169f9eb109ffd7::t_775febbc281a37 15-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "64d1c9a5c268f1df4badc49ae6654e0d4d0e9056",
+  "prompts": {},
+  "sessions": {
+    "s_169f9eb109ffd7": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_2a59cb58-3712-4f44-a9eb-16901c54111c",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

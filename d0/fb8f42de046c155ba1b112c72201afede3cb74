@@ -1,0 +1,19 @@
+React-native-TestApp/android/app/build.gradle
+  s_2259db5f642856::t_c991d0a02f27d7 284
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d0fb8f42de046c155ba1b112c72201afede3cb74",
+  "prompts": {},
+  "sessions": {
+    "s_2259db5f642856": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_e7f7f203-ead7-4102-b8f5-0a5f499c77eb",
+        "model": "auto"
+      },
+      "human_author": "Jose Antonio Olivera Ortega <joseantonio.oliveraortega@vonage.com>"
+    }
+  }
+}

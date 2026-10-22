@@ -1,0 +1,16 @@
+package-lock.json
+  h_b9583e878a641a 12,6188-6190
+package.json
+  h_b9583e878a641a 99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "87a28fbc76b52e2127a33dd86066df33c4bba404",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}

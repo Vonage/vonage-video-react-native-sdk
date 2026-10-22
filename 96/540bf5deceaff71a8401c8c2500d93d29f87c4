@@ -1,0 +1,51 @@
+React-native-TestApp/__tests__/jest.e2e.config.js
+  s_b8f859cc3258fe::t_1394d34f151707 5-8
+  s_b8f859cc3258fe::t_063427f5d1c423 4,9
+React-native-TestApp/__tests__/cameraChurn.stress.js
+  s_b8f859cc3258fe::t_ec451cf7674538 9-10,12-13
+  s_b8f859cc3258fe::t_5365df9cb632a7 60
+  s_b8f859cc3258fe::t_601fc6f6c93f6d 1-8,11,14-59,61-147
+.gitignore
+  s_b8f859cc3258fe::t_6bcdd80b9f3658 77-85
+  h_25a96a0890a0d0 75
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  s_b8f859cc3258fe::t_e970b323d77655 229,232-234,236-239,242-244,246-249,254-271
+  s_b8f859cc3258fe::t_bee4912d789c83 230-231,235,240-241,245,250-253
+package.json
+  s_b8f859cc3258fe::t_f5351a7b49ee17 64
+  s_b8f859cc3258fe::t_e9d2854bb4b45b 58
+React-native-TestApp/__tests__/globalSetup.js
+  s_b8f859cc3258fe::t_496142c2fa8646 67,70-72
+  s_b8f859cc3258fe::t_8cabdbc08748e0 111
+  s_b8f859cc3258fe::t_e9f1c5b3dc8af3 64-66,68-69,91,102
+React-native-TestApp/__tests__/helpers/credentials.js
+  s_b8f859cc3258fe::t_f7f080f1f3e232 47
+  s_b8f859cc3258fe::t_eecde50bd3da7d 37
+React-native-TestApp/__tests__/helpers/testSession.js
+  s_b8f859cc3258fe::t_1ebfc2d22cdcef 121-122,124,138,140
+  s_b8f859cc3258fe::t_2e98b9847b5543 120,123,125-137,139,141-147
+  s_b8f859cc3258fe::t_6f2d745889b15a 33-34
+  s_b8f859cc3258fe::t_2f0e5917d8792c 54-55,65-71
+  s_b8f859cc3258fe::t_2b15c8d70346e3 90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "96540bf5deceaff71a8401c8c2500d93d29f87c4",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  },
+  "sessions": {
+    "s_b8f859cc3258fe": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_c6675b6d-ad9a-4543-b52c-65e4f6488c49",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

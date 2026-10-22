@@ -1,0 +1,19 @@
+android/src/main/java/com/opentokreactnative/OTScreenCapturer.java
+  s_30a08209d6ed08::t_4fed6272019e9f 67-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "faa2e9d3cf8a8f8608bc5d9a85aad9cee27cc409",
+  "prompts": {},
+  "sessions": {
+    "s_30a08209d6ed08": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_08f6da35-52e0-42d9-802b-faf604270a61",
+        "model": "auto"
+      },
+      "human_author": null
+    }
+  }
+}
