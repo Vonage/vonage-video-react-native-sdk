@@ -1,56 +1,76 @@
 AGENTS.md
-  h_25a96a0890a0d0 120-121
+  0874b963f591c4a1 120-121
 React-native-TestApp/__tests__/amrTransition.e2e.js
-  h_25a96a0890a0d0 2,29
+  0874b963f591c4a1 2,29
 React-native-TestApp/__tests__/app.e2e.js
-  h_25a96a0890a0d0 2-4,8
+  0874b963f591c4a1 2-4,8
 React-native-TestApp/__tests__/dtx.e2e.js
-  h_25a96a0890a0d0 2,18,43,63
+  0874b963f591c4a1 2,18,43,63
 React-native-TestApp/__tests__/encryption.e2e.js
-  h_25a96a0890a0d0 2,21,58
+  0874b963f591c4a1 2,21,58
 React-native-TestApp/__tests__/helpers/credentials.js
-  h_25a96a0890a0d0 21,35,37-39,41-42,44-49,52
+  0874b963f591c4a1 21,35,37-39,41-42,44-49,52
 React-native-TestApp/__tests__/helpers/eventCapture.js
-  h_25a96a0890a0d0 75
+  0874b963f591c4a1 75
 React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
-  h_25a96a0890a0d0 4,123,132,184,247-252,255-283,285-287,292-295,297-312,317-320,322-326,328-344
+  0874b963f591c4a1 4,123,132,184,247-252,255-283,285-287,292-295,297-312,317-320,322-326,328-344
 React-native-TestApp/__tests__/helpers/moderation.js
-  h_25a96a0890a0d0 14
+  0874b963f591c4a1 14
 React-native-TestApp/__tests__/helpers/testSession.js
-  h_25a96a0890a0d0 5-6,18,28,43,47,51,205,211,214-218
+  0874b963f591c4a1 5-6,18,28,43,47,51,205,211,214-218
 React-native-TestApp/__tests__/helpers/timeout.js
-  h_25a96a0890a0d0 14
+  0874b963f591c4a1 1-14
 React-native-TestApp/__tests__/helpers/waitForApp.js
-  h_25a96a0890a0d0 29-30,34,44-45,48
+  0874b963f591c4a1 29-30,34,44-45,48
 React-native-TestApp/__tests__/moderation.e2e.js
-  h_25a96a0890a0d0 2,6,31,69,101,116,131
+  0874b963f591c4a1 2,6,31,69,101,116,131
 React-native-TestApp/__tests__/moderationAdvanced.e2e.js
-  h_25a96a0890a0d0 2,6,29,66,77,83,102
+  0874b963f591c4a1 2,6,29,66,77,83,102
 React-native-TestApp/__tests__/p2p.e2e.js
-  h_25a96a0890a0d0 2,20,46
+  0874b963f591c4a1 2,20,46
 React-native-TestApp/__tests__/publisher.e2e.js
-  h_25a96a0890a0d0 2,8-9,19,56
+  0874b963f591c4a1 2,8-9,19,56
 React-native-TestApp/__tests__/publisherOptions.e2e.js
-  h_25a96a0890a0d0 2,6-7,21
+  0874b963f591c4a1 2,6-7,21
 React-native-TestApp/__tests__/screenShare.e2e.js
-  h_25a96a0890a0d0 2,6-7,22-23,38-46,52,54-56,58,66,68-70,72-74,76
+  0874b963f591c4a1 2,6-7,22-23,38-46,52,54-56,58,66,68-70,72-74,76
 React-native-TestApp/__tests__/session.e2e.js
-  h_25a96a0890a0d0 2,8-9,21
+  0874b963f591c4a1 2,8-9,21
 React-native-TestApp/__tests__/subscriber.e2e.js
-  h_25a96a0890a0d0 2,15,76
+  0874b963f591c4a1 2,15,76
 React-native-TestApp/__tests__/subscriberOptions.e2e.js
-  h_25a96a0890a0d0 2,23
+  0874b963f591c4a1 2,23
 docs/Testing.md
-  h_25a96a0890a0d0 20,107-108,113-115,119-130,133,136,139-140,145-149,153,158,163,169-170,175-188,192,194-211,230-284,287,292-294,298-304
+  0874b963f591c4a1 20,107-108,113-115,119-130,133,136,139-140,145-149,153,158,163,169-170,175-188,192,194-211,230-284,287,292-294,298-304
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "15d6a9746685cf93820d816eef882b0f57cfa4d1",
-  "prompts": {},
-  "humans": {
-    "h_25a96a0890a0d0": {
-      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+  "prompts": {
+    "0874b963f591c4a1": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "c2f49039-497a-43ff-bffe-39922c9bff78",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-22T09:56:26.401Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-22T09:56:26.401Z"
+        }
+      ],
+      "total_additions": 346,
+      "total_deletions": 345,
+      "accepted_lines": 346,
+      "overriden_lines": 0
     }
   }
 }
