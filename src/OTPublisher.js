@@ -37,12 +37,7 @@ const getParsedStatsPayload = (nativeEvent) => {
     return parsedJsonStats;
   }
 
-  const parsedLegacyStats = parseStatsString(nativeEvent.stats);
-  if (parsedLegacyStats !== undefined) {
-    return parsedLegacyStats;
-  }
-
-  return nativeEvent.stats ?? nativeEvent.jsonStats ?? nativeEvent;
+  return nativeEvent.jsonStats ?? nativeEvent;
 };
 
 export default class OTPublisher extends React.Component {
@@ -99,15 +94,16 @@ export default class OTPublisher extends React.Component {
             permissionsGranted: true,
           });
         })
-        .catch((error) => {
-          // Read the current props so a parent that re-rendered with a new error
-          // handler still receives permission-denial errors (matches the render
-          // onError path, which also uses this.props.eventHandlers).
-          this.props.eventHandlers?.error?.(error);
-        });
+        .catch(this.reportPermissionsError);
     } else {
       OT.publish(this.context.sessionId, this.state.publisherId);
     }
+  };
+
+  reportPermissionsError = (error) => {
+    if (this.permissionsErrorReported) return;
+    this.permissionsErrorReported = true;
+    this.props.eventHandlers?.error?.(error);
   };
 
   initComponent = () => {
@@ -145,12 +141,7 @@ export default class OTPublisher extends React.Component {
             permissionsGranted: true,
           });
         })
-        .catch((error) => {
-          // Read the current props so a parent that re-rendered with a new error
-          // handler still receives permission-denial errors (matches the render
-          // onError path, which also uses this.props.eventHandlers).
-          this.props.eventHandlers?.error?.(error);
-        });
+        .catch(this.reportPermissionsError);
     } else {
       // Context and publisherId might not be available immediately
       // So we delay the publish call slightly
@@ -222,6 +213,9 @@ export default class OTPublisher extends React.Component {
       <OTRNPublisher
         sessionId={this.context.sessionId}
         publisherId={this.state.publisherId}
+        emitAudioLevel={!!this.props.eventHandlers?.audioLevel}
+        emitAudioNetworkStats={!!this.props.eventHandlers?.audioNetworkStats}
+        emitVideoNetworkStats={!!this.props.eventHandlers?.videoNetworkStats}
         onError={(event) => {
           this.props.eventHandlers?.error?.(event.nativeEvent);
         }}
@@ -234,19 +228,24 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}
         onStreamDestroyed={this.onStreamDestroyed}
-        onAudioLevel={(event) => {
-          this.props.eventHandlers?.audioLevel?.(event.nativeEvent);
-        }}
+        onAudioLevel={
+          this.props.eventHandlers?.audioLevel
+            ? (event) => {
+                this.props.eventHandlers.audioLevel(event.nativeEvent);
+              }
+            : undefined
+        }
         onMuteForced={(event) => {
           this.props.eventHandlers?.muteForced?.();
         }}
-        onAudioNetworkStats={(event) => {
-          // Backward compatibility:
-          // - preferred key: jsonStats (iOS and updated Android)
-          // - deprecated legacy Android key: stats
-          const eventData = getParsedStatsPayload(event.nativeEvent);
-          this.props.eventHandlers?.audioNetworkStats?.(eventData);
-        }}
+        onAudioNetworkStats={
+          this.props.eventHandlers?.audioNetworkStats
+            ? (event) => {
+                const eventData = getParsedStatsPayload(event.nativeEvent);
+                this.props.eventHandlers.audioNetworkStats(eventData);
+              }
+            : undefined
+        }
         onRtcStatsReport={(event) => {
           this.props.eventHandlers?.rtcStatsReport?.(
             getParsedStatsPayload(event.nativeEvent)
@@ -266,13 +265,14 @@ export default class OTPublisher extends React.Component {
         onVideoEnabled={(event) => {
           this.props.eventHandlers?.videoEnabled?.(event.nativeEvent);
         }}
-        onVideoNetworkStats={(event) => {
-          // Backward compatibility:
-          // - preferred key: jsonStats (iOS and updated Android)
-          // - deprecated legacy Android key: stats
-          const eventData = getParsedStatsPayload(event.nativeEvent);
-          this.props.eventHandlers?.videoNetworkStats?.(eventData);
-        }}
+        onVideoNetworkStats={
+          this.props.eventHandlers?.videoNetworkStats
+            ? (event) => {
+                const eventData = getParsedStatsPayload(event.nativeEvent);
+                this.props.eventHandlers.videoNetworkStats(eventData);
+              }
+            : undefined
+        }
         style={this.props.style}
         {...this.state.publisherProperties}
       />

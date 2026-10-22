@@ -1,6 +1,4 @@
-// Regression test for #190: the Android permission-denial .catch must surface
-// the error to the CURRENT props.eventHandlers.error (not a stale cached
-// reference), matching the render onError path.
+// Regression tests for #190: Android permission denial reaches eventHandlers.error.
 
 jest.mock('react-native', () => ({
   Platform: { OS: 'android' },
@@ -8,7 +6,7 @@ jest.mock('react-native', () => ({
 }));
 jest.mock('../OT', () => ({
   OT: { publish: jest.fn() },
-  checkAndroidPermissions: jest.fn(() => Promise.reject(new Error('permission denied'))),
+  checkAndroidPermissions: jest.fn(),
 }));
 jest.mock('react-native-uuid', () => ({ v4: () => 'pub-uuid-1' }));
 jest.mock('../OTPublisherNativeComponent', () => 'OTRNPublisher');
@@ -23,34 +21,60 @@ jest.mock('../helpers/OTSessionHelper', () => ({
   getPublisherStream: jest.fn(() => null),
 }));
 
+import { checkAndroidPermissions } from '../OT';
 import OTPublisher from '../OTPublisher';
+
+const permissionsError = {
+  type: 'Permissions error',
+  permissionsDenied: ['android.permission.CAMERA'],
+};
 
 const flush = async () => {
   await Promise.resolve();
   await Promise.resolve();
 };
 
+const makePublisher = (error) => {
+  const publisher = new OTPublisher({ eventHandlers: { error }, properties: {} });
+  publisher.context = { sessionId: 'sid-1' };
+  publisher.setState = jest.fn();
+  return publisher;
+};
+
 describe('OTPublisher permission-denial error routing', () => {
+  beforeEach(() => {
+    checkAndroidPermissions.mockReset();
+  });
+
   it('dispatches to the current props.eventHandlers.error after a re-render', async () => {
-    const errA = jest.fn();
-    const errB = jest.fn();
+    let rejectPermissions;
+    checkAndroidPermissions.mockReturnValue(
+      new Promise((_, reject) => {
+        rejectPermissions = reject;
+      })
+    );
+    const errorA = jest.fn();
+    const errorB = jest.fn();
+    const publisher = makePublisher(errorA);
 
-    const pub = new OTPublisher({ eventHandlers: { error: errA }, properties: {} });
-    pub.context = { sessionId: 'sid-1' };
-    pub.setState = jest.fn();
-
-    // Let the constructor's initComponent permission .catch settle, then reset.
-    await flush();
-    errA.mockClear();
-    errB.mockClear();
-
-    // Parent re-renders with a new error handler.
-    pub.props = { ...pub.props, eventHandlers: { error: errB } };
-
-    pub.onSessionConnected();
+    publisher.props = { ...publisher.props, eventHandlers: { error: errorB } };
+    rejectPermissions(permissionsError);
     await flush();
 
-    expect(errB).toHaveBeenCalledWith(expect.any(Error));
-    expect(errA).not.toHaveBeenCalled();
+    expect(errorB).toHaveBeenCalledWith(permissionsError);
+    expect(errorA).not.toHaveBeenCalled();
+  });
+
+  it('reports a denial once when both permission checks reject', async () => {
+    checkAndroidPermissions.mockRejectedValue(permissionsError);
+    const error = jest.fn();
+    const publisher = makePublisher(error);
+    await flush();
+
+    publisher.onSessionConnected();
+    await flush();
+
+    expect(checkAndroidPermissions).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
   });
 });
