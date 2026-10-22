@@ -1,0 +1,60 @@
+AGENTS.md
+  h_25a96a0890a0d0 121
+React-native-TestApp/__tests__/amrTransition.e2e.js
+  h_25a96a0890a0d0 7-8
+React-native-TestApp/__tests__/app.e2e.js
+  h_25a96a0890a0d0 23,27,33,40,47,52,54,58,62,76
+React-native-TestApp/__tests__/dtx.e2e.js
+  h_25a96a0890a0d0 7
+React-native-TestApp/__tests__/encryption.e2e.js
+  h_25a96a0890a0d0 7-8
+React-native-TestApp/__tests__/globalSetup.js
+  h_25a96a0890a0d0 4-6
+React-native-TestApp/__tests__/helpers/credentials.js
+  h_25a96a0890a0d0 4-5,13,33
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  h_25a96a0890a0d0 4-5,8,12,25,40
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  h_25a96a0890a0d0 7-8,21,44,65,169,174,185,193,202,219-220,232,252-253,259,269,282,292,299,306,327,332
+React-native-TestApp/__tests__/helpers/openTokRest.js
+  h_25a96a0890a0d0 6,74
+React-native-TestApp/__tests__/helpers/testSession.js
+  h_25a96a0890a0d0 9-10,38,40,69-70,101,128-129,144,151
+React-native-TestApp/__tests__/helpers/waitForApp.js
+  h_25a96a0890a0d0 3
+React-native-TestApp/__tests__/jest.e2e.config.js
+  h_25a96a0890a0d0 4,8-9
+React-native-TestApp/__tests__/moderation.e2e.js
+  h_25a96a0890a0d0 11-13,21
+React-native-TestApp/__tests__/moderationAdvanced.e2e.js
+  h_25a96a0890a0d0 10-11
+React-native-TestApp/__tests__/p2p.e2e.js
+  h_25a96a0890a0d0 7
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  h_25a96a0890a0d0 7-8
+React-native-TestApp/__tests__/screenShare.e2e.js
+  h_25a96a0890a0d0 7
+React-native-TestApp/__tests__/session.e2e.js
+  h_25a96a0890a0d0 9
+React-native-TestApp/__tests__/setupRetries.js
+  h_25a96a0890a0d0 1-2
+React-native-TestApp/__tests__/subscriberOptions.e2e.js
+  h_25a96a0890a0d0 9-10
+docs/Testing.md
+  h_25a96a0890a0d0 236,289,295,298
+package.json
+  h_25a96a0890a0d0 58-59,65
+scripts/run-android-e2e-in-emulator.sh
+  h_25a96a0890a0d0 108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3ff6800437938c005333cfcf57fb95aabdefcfb2",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
