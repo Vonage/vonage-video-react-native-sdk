@@ -3,15 +3,7 @@
 const https = require('https');
 const crypto = require('crypto');
 
-/**
- * Minimal OpenTok REST API client for moderation tests.
- * Uses the REST API directly (no opentok npm dependency).
- *
- * Supports:
- *   - forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionId)
- *   - forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId)
- *   - disableMuteAll(apiKey, apiSecret, apiUrl, sessionId)
- */
+/** Minimal OpenTok REST client for the moderation tests (no opentok package dependency). */
 
 const REQUEST_TIMEOUT_MS = 30000;
 
@@ -55,9 +47,6 @@ function httpRequest(method, url, headers, body) {
   });
 }
 
-/**
- * Force-disconnects a connection from a session via REST API.
- */
 async function forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionId) {
   const jwt = generateJwt(apiKey, apiSecret);
   const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/connection/${connectionId}`;
@@ -70,9 +59,6 @@ async function forceDisconnect(apiKey, apiSecret, apiUrl, sessionId, connectionI
   }
 }
 
-/**
- * Force-mutes a specific stream in a session via REST API.
- */
 async function forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId) {
   const jwt = generateJwt(apiKey, apiSecret);
   const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/stream/${streamId}/mute`;
@@ -85,9 +71,7 @@ async function forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId) {
   }
 }
 
-/**
- * Disables the session-wide force-mute state (and unmutes nothing else) via REST API.
- */
+/** Disables the session-wide force-mute state. */
 async function disableMuteAll(apiKey, apiSecret, apiUrl, sessionId) {
   const jwt = generateJwt(apiKey, apiSecret);
   const url = `${apiUrl}/v2/project/${apiKey}/session/${sessionId}/mute`;

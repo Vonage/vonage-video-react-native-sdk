@@ -3,13 +3,8 @@ const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Screen Sharing Tests
- *
- * Verifies that the RN app can toggle screen sharing on and off,
- * and that a remote bot receives the screen share stream.
+ * The app toggles screen sharing on and off and a remote bot receives each new stream.
  */
 describe('Screen Sharing', () => {
   let session;

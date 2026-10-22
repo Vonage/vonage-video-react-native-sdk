@@ -118,7 +118,7 @@ cd ios && pod install && cd ..
 - Framework: Detox (iOS and Android)
 - Bot: Playwright (Chromium) for simulating a remote participant
 - Location: `React-native-TestApp/__tests__/*.e2e.js`, helpers in `React-native-TestApp/__tests__/helpers/`
-- **Adding or extending E2E tests:** read `docs/Testing.md` first (helpers API, how to wait, skip and retry policy). Every spec keeps an explicit `jest.retryTimes(1)`.
+- **Adding or extending E2E tests:** read `docs/Testing.md` first.
 
 **iOS:**
 ```bash

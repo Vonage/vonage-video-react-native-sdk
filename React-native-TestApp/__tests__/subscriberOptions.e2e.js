@@ -5,15 +5,9 @@ const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
-jest.retryTimes(1, { logErrorsBeforeRetry: true });
-
 /**
- * Subscriber Options Tests
- *
- * Tests subscriber behavior with various configurations and multi-bot scenarios.
- * Organized into two groups by topology:
- *   - Single bot (relayed): toggle video/audio, unsubscribe/resubscribe, volume
- *   - Multi bot (routed): multiple subscribers, disconnect behavior
+ * Subscriber behavior with a single bot (relayed: toggles, unsubscribe, volume) and with several
+ * bots (routed: multiple subscribers, disconnect behavior).
  */
 describe('Subscriber Options', () => {
   let session;
@@ -44,20 +38,16 @@ describe('Subscriber Options', () => {
 
       await setCaptureFilter(['streamCreated', 'connectionCreated']);
 
-      // addBot() waits for subscriber to appear
       await session.addBot();
       console.log('[sub] Subscriber visible.');
 
-      // Verify event indicators
       await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
       await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
-      // Verify streamCreated payload
       const streamEvent = await waitForEvent('streamCreated');
       jestExpect(streamEvent.streamId).toBeTruthy();
       jestExpect(typeof streamEvent.streamId).toBe('string');
 
-      // Verify connectionCreated payload
       const connEvent = await waitForEvent('connectionCreated');
       jestExpect(connEvent.connectionId).toBeTruthy();
       jestExpect(typeof connEvent.connectionId).toBe('string');
@@ -67,16 +57,13 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Toggle video off
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('toggleSubscribeVideo'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeVideo')).tap();
       console.log('[subVideo] Toggled subscribeToVideo off.');
 
-      // Subscriber should still exist (audio-only now)
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
 
-      // Toggle video back on
       await element(by.id('toggleSubscribeVideo')).tap();
       console.log('[subVideo] Toggled subscribeToVideo on.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -87,14 +74,12 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Toggle audio off
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('toggleSubscribeAudio'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
 
-      // Toggle audio back on
       await element(by.id('toggleSubscribeAudio')).tap();
       console.log('[subAudio] Toggled subscribeToAudio on.');
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -105,13 +90,11 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Unsubscribe
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('unsubscribe'))).toBeVisible().withTimeout(5000);
       await element(by.id('unsubscribe')).tap();
       console.log('[unsubscribe] Tapped unsubscribe.');
 
-      // Wait for subscriber to disappear
       await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
       console.log('[unsubscribe] Subscriber view removed.');
     });
@@ -120,16 +103,13 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Unsubscribe first
       await element(by.id('tabSubscriber')).tap();
       await element(by.id('unsubscribe')).tap();
       await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(5000);
 
-      // Resubscribe
       await element(by.id('resubscribe')).tap();
       console.log('[resubscribe] Tapped resubscribe.');
 
-      // Subscriber view should reappear
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[resubscribe] Subscriber view restored.');
     });
@@ -138,7 +118,6 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Set volume to 0
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('setVolume0'))).toBeVisible().withTimeout(5000);
       await element(by.id('setVolume0')).tap();
@@ -151,7 +130,6 @@ describe('Subscriber Options', () => {
       await session.connectApp();
       await session.addBot();
 
-      // Set volume to 50
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('setVolume50'))).toBeVisible().withTimeout(5000);
       await element(by.id('setVolume50')).tap();
@@ -184,11 +162,9 @@ describe('Subscriber Options', () => {
       const bot2 = await session.addBot();
       console.log('[persist] Bot2 joined.');
 
-      // Disconnect bot2
       await bot2.disconnect();
       console.log('[persist] Bot2 disconnected.');
 
-      // Subscriber should still exist (bot1 is still publishing)
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[persist] Subscriber still visible after bot2 left.');
     });
@@ -202,15 +178,12 @@ describe('Subscriber Options', () => {
       const bot2 = await session.addBot();
       console.log('[disappear] Bot2 joined and receiving app stream.');
 
-      // Disconnect bot2 first
       await bot2.disconnect();
       console.log('[disappear] Bot2 disconnected.');
 
-      // Disconnect bot1 (last one)
       await bot1.disconnect();
       console.log('[disappear] Bot1 disconnected (last bot).');
 
-      // Wait for subscriber to disappear after all bots disconnected
       await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(30000);
       console.log('[disappear] Subscriber gone after all bots disconnected.');
     });
