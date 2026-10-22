@@ -2,16 +2,12 @@ name: Publish All
 
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run mode (test without publishing)'
-        required: true
-        type: boolean
-        default: true
+
+permissions:
+  contents: read
 
 jobs:
   check-tokens:
-    if: inputs.dry_run == true
     runs-on: ubuntu-latest
     steps:
       - name: Check token validity and expiry
@@ -116,10 +112,10 @@ jobs:
 
           exit $FAILED
 
-  publish-opentok-npm:
+  verify-opentok-npm:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -135,7 +131,7 @@ jobs:
       - name: Apply opentok-react-native package configuration
         run: |
           # Update package.json
-          jq '.name = "opentok-react-native" | .scripts["version:published"] = "npm show opentok-react-native version"' package.json > package.json.tmp
+          jq '.name = "opentok-react-native"' package.json > package.json.tmp
           mv package.json.tmp package.json
           # Rebuild lockfile to sync with package.json changes
           npm install --package-lock-only --ignore-scripts
@@ -150,13 +146,13 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           if [[ $VERSION == *"-alpha"* ]]; then
-            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: alpha"
           elif [[ $VERSION == *"-beta"* ]]; then
-            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: beta"
           else
-            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag=" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing without explicit tag (npm default)"
           fi
 
@@ -175,22 +171,38 @@ jobs:
         run: |
           export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK }}"
           export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
-          printf "${NPMRC}" > .npmrc
+          printf '%b' "${NPMRC}" > .npmrc
 
       - name: Check if version already published
         id: published
+        env:
+          PACKAGE_NAME: 'opentok-react-native'
+          REGISTRY_URL: 'https://registry.npmjs.org/'
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
-
-          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
-            echo "⚠️  Warning: Version $VERSION is already published on NPM!"
-            echo "Skipping opentok-react-native @ npmjs.com"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - opentok-react-native @ npmjs.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -202,20 +214,10 @@ jobs:
             npm publish --dry-run
           fi
 
-      - name: Publish to NPM
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
-        run: |
-          TAG="${{ steps.npm-tag.outputs.tag }}"
-          if [ -n "$TAG" ]; then
-            npm publish --tag "$TAG"
-          else
-            npm publish
-          fi
-
-  publish-opentok-github:
+  verify-opentok-github:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -231,7 +233,7 @@ jobs:
       - name: Apply @opentok/opentok-react-native package configuration
         run: |
           # Update package.json
-          jq '.name = "@opentok/opentok-react-native" | .scripts["version:published"] = "npm show @opentok/opentok-react-native version"' package.json > package.json.tmp
+          jq '.name = "@opentok/opentok-react-native"' package.json > package.json.tmp
           mv package.json.tmp package.json
           # Rebuild lockfile to sync with package.json changes
           npm install --package-lock-only --ignore-scripts
@@ -246,13 +248,13 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           if [[ $VERSION == *"-alpha"* ]]; then
-            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: alpha"
           elif [[ $VERSION == *"-beta"* ]]; then
-            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: beta"
           else
-            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag=" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing without explicit tag (npm default)"
           fi
 
@@ -271,22 +273,38 @@ jobs:
         run: |
           export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK_GITHUB }}"
           export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
-          printf "${NPMRC}" > .npmrc
+          printf '%b' "${NPMRC}" > .npmrc
 
       - name: Check if version already published
         id: published
+        env:
+          PACKAGE_NAME: '@opentok/opentok-react-native'
+          REGISTRY_URL: 'https://npm.pkg.github.com/'
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
-
-          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
-            echo "⚠️  Warning: Version $VERSION is already published!"
-            echo "Skipping @opentok/opentok-react-native @ github.com"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @opentok/opentok-react-native @ github.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -298,26 +316,10 @@ jobs:
             npm publish --dry-run
           fi
 
-      - name: Publish to GitHub Package Registry
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
-        run: |
-          TAG="${{ steps.npm-tag.outputs.tag }}"
-          if [ -n "$TAG" ]; then
-            npm publish --tag "$TAG"
-          else
-            npm publish
-          fi
-
-      - name: Verify publication
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
-        run: |
-          sleep 10
-          npm view @opentok/opentok-react-native@${{ github.ref_name }} version
-
-  publish-vonage-npm:
+  verify-vonage-npm:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -340,13 +342,13 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           if [[ $VERSION == *"-alpha"* ]]; then
-            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: alpha"
           elif [[ $VERSION == *"-beta"* ]]; then
-            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: beta"
           else
-            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag=" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing without explicit tag (npm default)"
           fi
 
@@ -365,22 +367,38 @@ jobs:
         run: |
           export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE }}"
           export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
-          printf "${NPMRC}" > .npmrc
+          printf '%b' "${NPMRC}" > .npmrc
 
       - name: Check if version already published
         id: published
+        env:
+          PACKAGE_NAME: '@vonage/client-sdk-video-react-native'
+          REGISTRY_URL: 'https://registry.npmjs.org/'
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
-
-          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
-            echo "⚠️  Warning: Version $VERSION is already published on NPM!"
-            echo "Skipping @vonage/client-sdk-video-react-native @ npmjs.com"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ npmjs.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -392,28 +410,10 @@ jobs:
             npm publish --dry-run
           fi
 
-      - name: Publish to NPM
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
-        run: |
-          TAG="${{ steps.npm-tag.outputs.tag }}"
-          if [ -n "$TAG" ]; then
-            npm publish --tag "$TAG"
-          else
-            npm publish
-          fi
-
-      - name: Create tag
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
-        uses: negz/create-tag@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: v${{github.ref_name }}
-          message: New v${{github.ref_name}} tag created!
-
-  publish-vonage-github:
+  verify-vonage-github:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -436,13 +436,13 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           if [[ $VERSION == *"-alpha"* ]]; then
-            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: alpha"
           elif [[ $VERSION == *"-beta"* ]]; then
-            echo "tag=beta" >> $GITHUB_OUTPUT
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing with tag: beta"
           else
-            echo "tag=" >> $GITHUB_OUTPUT
+            echo "tag=" >> "$GITHUB_OUTPUT"
             echo "📦 Publishing without explicit tag (npm default)"
           fi
 
@@ -461,22 +461,38 @@ jobs:
         run: |
           export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE_GITHUB }}"
           export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
-          printf "${NPMRC}" > .npmrc
+          printf '%b' "${NPMRC}" > .npmrc
 
       - name: Check if version already published
         id: published
+        env:
+          PACKAGE_NAME: '@vonage/client-sdk-video-react-native'
+          REGISTRY_URL: 'https://npm.pkg.github.com/'
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
-
-          if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
-            echo "⚠️  Warning: Version $VERSION is already published!"
-            echo "Skipping @vonage/client-sdk-video-react-native @ github.com"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ github.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -488,8 +504,202 @@ jobs:
             npm publish --dry-run
           fi
 
+  publish-opentok-npm:
+    needs: [check-tokens, verify-opentok-npm, verify-opentok-github, verify-vonage-npm, verify-vonage-github]
+    if: needs.verify-opentok-npm.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Apply opentok-react-native package configuration
+        run: |
+          # Update package.json
+          jq '.name = "opentok-react-native"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK }}"
+          export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
+          printf '%b' "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        id: published
+        env:
+          PACKAGE_NAME: 'opentok-react-native'
+          REGISTRY_URL: 'https://registry.npmjs.org/'
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
+          fi
+
+      - name: Publish to NPM
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+  publish-opentok-github:
+    needs: [check-tokens, verify-opentok-npm, verify-opentok-github, verify-vonage-npm, verify-vonage-github]
+    if: needs.verify-opentok-github.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Apply @opentok/opentok-react-native package configuration
+        run: |
+          # Update package.json
+          jq '.name = "@opentok/opentok-react-native"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          # Rebuild lockfile to sync with package.json changes
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_OPENTOK_GITHUB }}"
+          export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
+          printf '%b' "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        id: published
+        env:
+          PACKAGE_NAME: '@opentok/opentok-react-native'
+          REGISTRY_URL: 'https://npm.pkg.github.com/'
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
+          fi
+
       - name: Publish to GitHub Package Registry
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
         run: |
           TAG="${{ steps.npm-tag.outputs.tag }}"
           if [ -n "$TAG" ]; then
@@ -499,25 +709,268 @@ jobs:
           fi
 
       - name: Verify publication
-        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          sleep 10
+          npm view @opentok/opentok-react-native@${{ github.ref_name }} version
+
+  publish-vonage-npm:
+    needs: [check-tokens, verify-opentok-npm, verify-opentok-github, verify-vonage-npm, verify-vonage-github]
+    if: needs.verify-vonage-npm.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE }}"
+          export NPMRC="//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}"
+          printf '%b' "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        id: published
+        env:
+          PACKAGE_NAME: '@vonage/client-sdk-video-react-native'
+          REGISTRY_URL: 'https://registry.npmjs.org/'
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
+          fi
+
+      - name: Publish to NPM
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Create tag
+        if: steps.published.outputs.skip != 'true'
+        uses: negz/create-tag@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v${{github.ref_name }}
+          message: New v${{github.ref_name}} tag created!
+
+  publish-vonage-github:
+    needs: [check-tokens, verify-opentok-npm, verify-opentok-github, verify-vonage-npm, verify-vonage-github]
+    if: needs.verify-vonage-github.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      skip: ${{ steps.published.outputs.skip }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run prepare
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ $VERSION == *"-alpha"* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: alpha"
+          elif [[ $VERSION == *"-beta"* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing with tag: beta"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "📦 Publishing without explicit tag (npm default)"
+          fi
+
+      - name: Verify version matches package.json
+        run: |
+          PACKAGE_VERSION=$(npm run version:local --silent)
+          BRANCH_VERSION="${{ github.ref_name }}"
+
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "❌ Error: Version mismatch!"
+            echo "Package.json has version $PACKAGE_VERSION but branch name indicates $BRANCH_VERSION"
+            exit 1
+          fi
+
+      - name: Build .npmrc file
+        run: |
+          export NPM_GITHUB_AUTH_TOKEN="${{ secrets.NPM_TOKEN_VONAGE_GITHUB }}"
+          export NPMRC="always-auth=true\nregistry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=${NPM_GITHUB_AUTH_TOKEN}"
+          printf '%b' "${NPMRC}" > .npmrc
+
+      - name: Check if version already published
+        id: published
+        env:
+          PACKAGE_NAME: '@vonage/client-sdk-video-react-native'
+          REGISTRY_URL: 'https://npm.pkg.github.com/'
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ERROR_LOG="$RUNNER_TEMP/npm-view-error.log"
+          if PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$REGISTRY_URL" 2>"$ERROR_LOG"); then
+            if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
+              echo "⚠️  Warning: $PACKAGE_NAME@$VERSION is already published on $REGISTRY_URL, skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -z "$PUBLISHED_VERSION" ]; then
+              echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Unexpected version '$PUBLISHED_VERSION' for $PACKAGE_NAME@$VERSION on $REGISTRY_URL"
+              exit 1
+            fi
+          elif grep -q "code E404" "$ERROR_LOG"; then
+            echo "📦 $PACKAGE_NAME@$VERSION is not published on $REGISTRY_URL yet"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$ERROR_LOG"
+            echo "::error::Could not check whether $PACKAGE_NAME@$VERSION is published on $REGISTRY_URL"
+            exit 1
+          fi
+
+      - name: Publish to GitHub Package Registry
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          if [ -n "$TAG" ]; then
+            npm publish --tag "$TAG"
+          else
+            npm publish
+          fi
+
+      - name: Verify publication
+        if: steps.published.outputs.skip != 'true'
         run: |
           sleep 10
           npm view @vonage/client-sdk-video-react-native@${{ github.ref_name }} version
 
   summary:
     runs-on: ubuntu-latest
-    needs: [publish-opentok-npm, publish-opentok-github, publish-vonage-npm, publish-vonage-github]
+    needs: [check-tokens, verify-opentok-npm, verify-opentok-github, verify-vonage-npm, verify-vonage-github, publish-opentok-npm, publish-opentok-github, publish-vonage-npm, publish-vonage-github]
     if: always()
     steps:
       - name: Summary
+        env:
+          VERSION: ${{ github.ref_name }}
+          CHECK_TOKENS_RESULT: ${{ needs.check-tokens.result }}
+          OPENTOK_NPM_VERIFY_RESULT: ${{ needs.verify-opentok-npm.result }}
+          OPENTOK_NPM_VERIFY_SKIP: ${{ needs.verify-opentok-npm.outputs.skip }}
+          OPENTOK_NPM_PUBLISH_RESULT: ${{ needs.publish-opentok-npm.result }}
+          OPENTOK_NPM_PUBLISH_SKIP: ${{ needs.publish-opentok-npm.outputs.skip }}
+          OPENTOK_GITHUB_VERIFY_RESULT: ${{ needs.verify-opentok-github.result }}
+          OPENTOK_GITHUB_VERIFY_SKIP: ${{ needs.verify-opentok-github.outputs.skip }}
+          OPENTOK_GITHUB_PUBLISH_RESULT: ${{ needs.publish-opentok-github.result }}
+          OPENTOK_GITHUB_PUBLISH_SKIP: ${{ needs.publish-opentok-github.outputs.skip }}
+          VONAGE_NPM_VERIFY_RESULT: ${{ needs.verify-vonage-npm.result }}
+          VONAGE_NPM_VERIFY_SKIP: ${{ needs.verify-vonage-npm.outputs.skip }}
+          VONAGE_NPM_PUBLISH_RESULT: ${{ needs.publish-vonage-npm.result }}
+          VONAGE_NPM_PUBLISH_SKIP: ${{ needs.publish-vonage-npm.outputs.skip }}
+          VONAGE_GITHUB_VERIFY_RESULT: ${{ needs.verify-vonage-github.result }}
+          VONAGE_GITHUB_VERIFY_SKIP: ${{ needs.verify-vonage-github.outputs.skip }}
+          VONAGE_GITHUB_PUBLISH_RESULT: ${{ needs.publish-vonage-github.result }}
+          VONAGE_GITHUB_PUBLISH_SKIP: ${{ needs.publish-vonage-github.outputs.skip }}
         run: |
-          echo "## Publish All Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Dry Run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Publication Targets" >> $GITHUB_STEP_SUMMARY
-          echo "1. opentok-react-native @ npmjs.com" >> $GITHUB_STEP_SUMMARY
-          echo "2. @opentok/opentok-react-native @ github.com" >> $GITHUB_STEP_SUMMARY
-          echo "3. @vonage/client-sdk-video-react-native @ npmjs.com" >> $GITHUB_STEP_SUMMARY
-          echo "4. @vonage/client-sdk-video-react-native @ github.com" >> $GITHUB_STEP_SUMMARY
+          target_status() {
+            local VERIFY_RESULT="$1" VERIFY_SKIP="$2" PUBLISH_RESULT="$3" PUBLISH_SKIP="$4"
+            if [ "$VERIFY_RESULT" != "success" ]; then
+              echo "❌ Verification $VERIFY_RESULT"
+            elif [ "$VERIFY_SKIP" == "true" ] || { [ "$PUBLISH_RESULT" == "success" ] && [ "$PUBLISH_SKIP" == "true" ]; }; then
+              echo "⏭️ Skipped (already published)"
+            elif [ "$PUBLISH_RESULT" == "success" ]; then
+              echo "✅ Published"
+            elif [ "$PUBLISH_RESULT" == "skipped" ]; then
+              echo "⏸️ Not published (a verification job failed)"
+            elif [ "$PUBLISH_RESULT" == "cancelled" ]; then
+              echo "🚫 Cancelled"
+            else
+              echo "❌ Failed or not approved"
+            fi
+          }
+
+          {
+            echo "## Publish All Summary"
+            echo ""
+            echo "- **Version**: $VERSION"
+            echo "- **Token check**: $CHECK_TOKENS_RESULT"
+            echo ""
+            echo "| Target | Status |"
+            echo "|---|---|"
+            echo "| opentok-react-native @ npmjs.com | $(target_status "$OPENTOK_NPM_VERIFY_RESULT" "$OPENTOK_NPM_VERIFY_SKIP" "$OPENTOK_NPM_PUBLISH_RESULT" "$OPENTOK_NPM_PUBLISH_SKIP") |"
+            echo "| @opentok/opentok-react-native @ github.com | $(target_status "$OPENTOK_GITHUB_VERIFY_RESULT" "$OPENTOK_GITHUB_VERIFY_SKIP" "$OPENTOK_GITHUB_PUBLISH_RESULT" "$OPENTOK_GITHUB_PUBLISH_SKIP") |"
+            echo "| @vonage/client-sdk-video-react-native @ npmjs.com | $(target_status "$VONAGE_NPM_VERIFY_RESULT" "$VONAGE_NPM_VERIFY_SKIP" "$VONAGE_NPM_PUBLISH_RESULT" "$VONAGE_NPM_PUBLISH_SKIP") |"
+            echo "| @vonage/client-sdk-video-react-native @ github.com | $(target_status "$VONAGE_GITHUB_VERIFY_RESULT" "$VONAGE_GITHUB_VERIFY_SKIP" "$VONAGE_GITHUB_PUBLISH_RESULT" "$VONAGE_GITHUB_PUBLISH_SKIP") |"
+          } >> "$GITHUB_STEP_SUMMARY"
