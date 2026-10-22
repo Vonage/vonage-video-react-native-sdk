@@ -1,5 +1,5 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
@@ -12,14 +12,10 @@ describe('Subscriber Tests', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.create();
@@ -77,12 +73,7 @@ describe('Subscriber Tests', () => {
     const bot = await session.addBot();
 
     // Get bot's streamId before disconnect for later verification
-    const botStreamId = await bot.page.evaluate(() => {
-      if (window.botPublisher && window.botPublisher.stream) {
-        return window.botPublisher.stream.streamId;
-      }
-      return null;
-    });
+    const botStreamId = await bot.getPublisherStreamId();
     console.log('[subscriber] Bot streamId before disconnect:', botStreamId);
 
     // Bot disconnects — we explicitly disconnect rather than relying on cleanup

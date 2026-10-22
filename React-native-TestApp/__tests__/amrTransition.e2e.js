@@ -1,5 +1,5 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
@@ -26,14 +26,10 @@ describe('AMR Transitions', () => {
   let bot2;
 
   beforeAll(async () => {
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
 
     session = await TestSession.create({ timeout: 30000 });
   });

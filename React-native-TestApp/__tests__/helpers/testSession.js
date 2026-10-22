@@ -2,7 +2,8 @@
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
 const { clearCapturedEvents } = require('./eventCapture');
-const { withTimeout } = require('./poll');
+const { withTimeout } = require('./timeout');
+const { getCredentials } = require('./credentials');
 
 /**
  * TestSession - Encapsulates session lifecycle for isolated E2E tests.
@@ -14,6 +15,7 @@ const { withTimeout } = require('./poll');
  * Usage:
  *   const session = await TestSession.create();          // routed
  *   const session = await TestSession.createRelayed();   // P2P
+ *   const session = await TestSession.createModeration(); // dedicated moderation session
  *
  *   beforeAll: session = await TestSession.create();
  *   in test:   const bot = await session.addBot();   // fresh browser, waits for subscriber
@@ -23,7 +25,7 @@ const { withTimeout } = require('./poll');
 class TestSession {
   /**
    * @param {object} params
-   * @param {object} params.credentials - Result of getCredentials() or getRelayedCredentials()
+   * @param {object} params.credentials - Result of getCredentials(name)
    * @param {object} [params.botOptions={}] - Options passed to jsSDKTesterBot constructor
    */
   constructor({ credentials, botOptions = {} }) {
@@ -38,21 +40,15 @@ class TestSession {
   // --- Factory methods ---
 
   static async create(botOptions = {}) {
-    const { getCredentials } = require('./credentials');
-    const credentials = await getCredentials();
-    return new TestSession({ credentials, botOptions });
+    return new TestSession({ credentials: await getCredentials('routed'), botOptions });
   }
 
   static async createRelayed(botOptions = {}) {
-    const { getRelayedCredentials } = require('./credentials');
-    const credentials = await getRelayedCredentials();
-    return new TestSession({ credentials, botOptions });
+    return new TestSession({ credentials: await getCredentials('relayed'), botOptions });
   }
 
   static async createModeration(botOptions = {}) {
-    const { getModerationCredentials } = require('./credentials');
-    const credentials = await getModerationCredentials();
-    return new TestSession({ credentials, botOptions });
+    return new TestSession({ credentials: await getCredentials('moderation'), botOptions });
   }
 
   // --- Bot management ---
@@ -192,32 +188,11 @@ class TestSession {
     await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
   }
 
-  async connectAppWithCredentials(apiKey, sessionId, token) {
-    try {
-      await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
-    } catch (_) {}
-
-    await element(by.id('apiKeyInput')).replaceText(apiKey);
-    await element(by.id('sessionIdInput')).replaceText(sessionId);
-    await element(by.id('tokenInput')).replaceText(token);
-    await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
-  }
-
   async disconnectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     } catch (_) {}
-  }
-
-  async closeBots() {
-    const bots = this.activeBots;
-    this.activeBots = [];
-    for (const bot of bots) {
-      await withTimeout(bot.close().catch(() => {}), 30000, 'bot.close()');
-    }
   }
 
   // --- Cleanup ---
@@ -227,17 +202,20 @@ class TestSession {
    * Every step is time-bounded so one stuck step cannot hang the whole spec.
    */
   async cleanup() {
-    await this.closeBots();
+    await this.teardown();
     await withTimeout(this.disconnectApp(), 15000, 'disconnectApp()');
     await withTimeout(clearCapturedEvents().catch(() => {}), 5000, 'clearCapturedEvents()');
   }
 
   /**
-   * Final teardown: close any remaining bot browsers.
-   * Safety net — call in afterAll.
+   * Closes all bot browsers, each close time-bounded. Call in afterAll as a safety net.
    */
   async teardown() {
-    await this.closeBots();
+    const bots = this.activeBots;
+    this.activeBots = [];
+    for (const bot of bots) {
+      await withTimeout(bot.close().catch(() => {}), 30000, 'bot.close()');
+    }
   }
 }
 

@@ -72,4 +72,4 @@ async function waitForEvent(eventType, timeout = 30000) {
   throw new Error(`Timed out waiting for event: ${eventType}`);
 }
 
-module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent };
+module.exports = { setCaptureFilter, clearCapturedEvents, waitForEvent };

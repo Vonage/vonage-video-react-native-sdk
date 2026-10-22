@@ -1,14 +1,9 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { forceDisconnect, forceMuteStream } = require('./helpers/openTokRest');
-const {
-  openModerationTab,
-  waitForPublisherAudio,
-  waitForBotDisconnected,
-  resetMuteState,
-} = require('./helpers/moderation');
+const { openModerationTab, resetMuteState } = require('./helpers/moderation');
 const { expect: jestExpect } = require('expect');
 
 jest.retryTimes(1, { logErrorsBeforeRetry: true });
@@ -31,14 +26,10 @@ describe('Moderation Advanced', () => {
 
   beforeAll(async () => {
     console.log('[moderationAdv] Launching app...');
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[moderationAdv] App ready.');
 
     session = await TestSession.createModeration();
@@ -72,7 +63,7 @@ describe('Moderation Advanced', () => {
 
       const event = await waitForEvent('connectionDestroyed', 15000);
       jestExpect(event.connectionId).toBe(connectionId);
-      await waitForBotDisconnected(bot);
+      await bot.waitForDisconnected();
     });
   });
 
@@ -83,13 +74,13 @@ describe('Moderation Advanced', () => {
 
       await openModerationTab();
       await element(by.id('muteAll')).tap();
-      await waitForPublisherAudio(firstBot, false);
+      await firstBot.waitForPublisherAudio(false);
 
       await waitFor(element(by.id('disableForceMute'))).toBeVisible().withTimeout(5000);
       await element(by.id('disableForceMute')).tap();
 
       const secondBot = await session.addBot({ waitForSubscriber: false });
-      await waitForPublisherAudio(secondBot, true);
+      await secondBot.waitForPublisherAudio(true);
     });
   });
 
@@ -108,7 +99,7 @@ describe('Moderation Advanced', () => {
       const { apiKey, apiSecret, apiUrl, sessionId } = session.credentials;
       await forceMuteStream(apiKey, apiSecret, apiUrl, sessionId, streamId);
 
-      await waitForPublisherAudio(bot, false);
+      await bot.waitForPublisherAudio(false);
     });
 
     it('streamCreated payload contains expected fields', async () => {

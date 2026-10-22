@@ -1,9 +1,11 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * Basic connectivity tests verifying publish/subscribe between
@@ -14,14 +16,10 @@ describe('Publish and Subscribe', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.create();
@@ -55,7 +53,7 @@ describe('Publish and Subscribe', () => {
     // Wait for bot to receive app stream
     console.log('[publish→bot] Waiting for bot to receive app stream (30s)...');
     try {
-      await bot.waitForSubscriber(30000);
+      await bot.waitForStream({ timeout: 30000 });
     } catch (e) {
       const state = await bot.getState();
       console.log('[publish→bot] Bot state at timeout:', JSON.stringify(state));

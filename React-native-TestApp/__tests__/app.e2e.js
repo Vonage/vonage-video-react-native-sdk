@@ -1,18 +1,17 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 describe('App Launch Test', () => {
   beforeAll(async () => {
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       launchArgs: {
         detoxPrintBusyIdleResources: 'YES',
       },
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    
-    // Disable synchronization to avoid timing issues
-    await device.disableSynchronization();
   });
 
   afterAll(async () => {

@@ -1,7 +1,7 @@
 'use strict';
 
 const { chromium } = require('playwright');
-const { withTimeout } = require('./poll');
+const { withTimeout } = require('./timeout');
 
 /**
  * jsSDKTesterBot - A headless Chromium-based bot that joins a Vonage Video session
@@ -120,9 +120,7 @@ class jsSDKTesterBot {
             publishing: false,
             subscriberCount: 0,
             error: null,
-            lastSignal: null,
-            muteForced: false,
-            streamCreated: false,
+            streamCreatedCount: 0,
           };
 
           const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
@@ -131,19 +129,11 @@ class jsSDKTesterBot {
             if (!window.botState.connected) return;
             session.subscribe(event.stream, 'videos', { insertMode: 'append' });
             window.botState.subscriberCount++;
-            window.botState.streamCreated = true;
+            window.botState.streamCreatedCount++;
           });
 
           session.on('streamDestroyed', () => {
             window.botState.subscriberCount = Math.max(0, window.botState.subscriberCount - 1);
-          });
-
-          session.on('signal', (event) => {
-            window.botState.lastSignal = { type: event.type, data: event.data };
-          });
-
-          session.on('muteForced', () => {
-            window.botState.muteForced = true;
           });
 
           session.on('sessionDisconnected', () => {
@@ -191,7 +181,7 @@ class jsSDKTesterBot {
 
   /**
    * Returns the current bot state.
-   * @returns {Promise<{connected: boolean, publishing: boolean, subscriberCount: number, error: string|null, lastSignal: object|null, muteForced: boolean, streamCreated: boolean}>}
+   * @returns {Promise<{connected: boolean, publishing: boolean, subscriberCount: number, error: string|null, streamCreatedCount: number}>}
    */
   async getState() {
     return this.page.evaluate(() => window.botState);
@@ -254,45 +244,104 @@ class jsSDKTesterBot {
   }
 
   /**
-   * Waits until the bot receives at least one stream from a remote participant.
+   * Waits until a condition holds inside the bot's page. The check runs in the browser, so it does
+   * not cost a round trip per poll. Fails with a message that names the condition.
+   *
+   * @param {Function} predicate - Runs in the page; receives `arg`
+   * @param {*} arg - Serializable argument passed to the predicate
+   * @param {string} label - What is being waited for, used in the timeout error
    * @param {number} [timeout] - Max wait time in ms (defaults to constructor timeout)
    */
-  async waitForSubscriber(timeout) {
-    await this.page.waitForFunction(
+  async waitForCondition(predicate, arg, label, timeout) {
+    const ms = timeout || this.options.timeout;
+    try {
+      await this.page.waitForFunction(predicate, arg, { timeout: ms });
+    } catch (e) {
+      if (e.name !== 'TimeoutError') throw e;
+      throw new Error(`Timed out after ${ms}ms waiting for ${label}`);
+    }
+  }
+
+  /**
+   * Waits for a remote stream: a specific one when `streamId` is given, otherwise any stream the
+   * bot is subscribed to.
+   *
+   * @param {object} [options]
+   * @param {string} [options.streamId]
+   * @param {number} [options.timeout]
+   */
+  async waitForStream({ streamId, timeout } = {}) {
+    if (streamId) {
+      await this.waitForCondition(
+        (id) => !!(window.botSession && window.botSession.streams.get(id)),
+        streamId,
+        `stream ${streamId}`,
+        timeout
+      );
+      return;
+    }
+    await this.waitForCondition(
       () => window.botState.subscriberCount > 0,
-      { timeout: timeout || this.options.timeout }
+      undefined,
+      'a remote stream',
+      timeout
     );
   }
 
   /**
-   * Waits until a specific remote stream is known to the bot's session.
-   * @param {string} streamId
-   * @param {number} [timeout] - Max wait time in ms (defaults to constructor timeout)
+   * Returns how many remote streams the bot has seen created so far. Take it before an action,
+   * then pass it to `waitForNewStream` to wait for a stream created after that point.
+   *
+   * @returns {Promise<number>}
    */
-  async waitForStream(streamId, timeout) {
-    await this.page.waitForFunction(
-      (id) => !!(window.botSession && window.botSession.streams.get(id)),
-      streamId,
-      { timeout: timeout || this.options.timeout }
+  async getStreamCount() {
+    return this.page.evaluate(() => window.botState.streamCreatedCount);
+  }
+
+  /**
+   * Waits for a remote stream created after `previousCount` (see `getStreamCount`).
+   *
+   * @param {number} previousCount
+   * @param {number} [timeout]
+   */
+  async waitForNewStream(previousCount, timeout) {
+    await this.waitForCondition(
+      (count) => window.botState.streamCreatedCount > count,
+      previousCount,
+      'a new remote stream',
+      timeout
     );
   }
 
   /**
-   * Sends a signal to the session.
-   * @param {string} type - Signal type
-   * @param {string} data - Signal data
+   * Waits until the bot's own published stream has (or lacks) audio, for example after a mute.
+   *
+   * @param {boolean} expected
+   * @param {number} [timeout]
    */
-  async sendSignal(type, data) {
-    await this.page.evaluate(
-      ({ type, data }) => {
-        return new Promise((resolve, reject) => {
-          window.botSession.signal({ type, data }, (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
-        });
+  async waitForPublisherAudio(expected, timeout = 15000) {
+    await this.waitForCondition(
+      (value) => {
+        const stream = window.botPublisher && window.botPublisher.stream;
+        return !!stream && stream.hasAudio === value;
       },
-      { type, data }
+      expected,
+      `bot published stream hasAudio=${expected}`,
+      timeout
+    );
+  }
+
+  /**
+   * Waits until the bot's session is disconnected, for example after a force disconnect.
+   *
+   * @param {number} [timeout]
+   */
+  async waitForDisconnected(timeout = 15000) {
+    await this.waitForCondition(
+      () => !window.botState.connected,
+      undefined,
+      'the bot to be disconnected',
+      timeout
     );
   }
 

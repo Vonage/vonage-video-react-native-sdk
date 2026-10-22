@@ -18,7 +18,7 @@ const CREDENTIALS_PATH = path.join(__dirname, '../.e2e-credentials.json');
  * Reads the generated credentials file.
  * Throws with clear instructions if the file doesn't exist.
  *
- * @returns {object} Parsed credentials object with `routed` and `relayed` sections
+ * @returns {object} Parsed credentials object with one section per session
  */
 function readCredentials() {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
@@ -32,33 +32,21 @@ function readCredentials() {
 }
 
 /**
- * Returns routed session credentials.
+ * Returns the credentials of one of the sessions created by globalSetup.js.
  *
- * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], tokenSubscriber: string, mediaMode: string}>}
+ * - `routed`: default session for most specs
+ * - `relayed`: P2P session
+ * - `moderation`: dedicated routed session for moderation specs, with a moderator bot token
+ *
+ * @param {'routed'|'relayed'|'moderation'} [name='routed']
+ * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], mediaMode: string, tokenSubscriber?: string, moderatorBotToken?: string}>}
  */
-async function getCredentials() {
-  const creds = readCredentials();
-  return creds.routed;
+async function getCredentials(name = 'routed') {
+  const creds = readCredentials()[name];
+  if (!creds) {
+    throw new Error(`No '${name}' session in the generated E2E credentials.`);
+  }
+  return creds;
 }
 
-/**
- * Returns relayed (P2P) session credentials.
- *
- * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], mediaMode: string}>}
- */
-async function getRelayedCredentials() {
-  const creds = readCredentials();
-  return creds.relayed;
-}
-
-/**
- * Returns the dedicated moderation session credentials (routed, includes a moderator bot token).
- *
- * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], moderatorBotToken: string, mediaMode: string}>}
- */
-async function getModerationCredentials() {
-  const creds = readCredentials();
-  return creds.moderation;
-}
-
-module.exports = { getCredentials, getRelayedCredentials, getModerationCredentials };
+module.exports = { getCredentials };

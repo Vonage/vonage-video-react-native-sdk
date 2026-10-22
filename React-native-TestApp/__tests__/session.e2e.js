@@ -1,9 +1,11 @@
 'use strict';
-const { launchAppWithRetry } = require('./helpers/waitForApp');
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
+
+jest.retryTimes(1, { logErrorsBeforeRetry: true });
 
 /**
  * Session Lifecycle Tests
@@ -16,14 +18,10 @@ describe('Session Lifecycle', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await launchAppWithRetry({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.create();
