@@ -33,7 +33,7 @@ class OTRN : NSObject {
   }
 
   /// Publishes right away when the native publisher exists. Otherwise the request is kept until the
-  /// publisher view creates the publisher (see `publishPending`), instead of being silently dropped.
+  /// publisher view creates the publisher (see `registerPublisher`), instead of being silently dropped.
   func requestPublish(sessionId: String, publisherId: String) {
     pendingPublishLock.lock()
     guard publishers[publisherId] != nil else {
@@ -45,8 +45,11 @@ class OTRN : NSObject {
     publishNow(sessionId: sessionId, publisherId: publisherId)
   }
 
-  func publishPending(publisherId: String) {
+  /// Makes the publisher visible to `requestPublish` only once it is fully configured, and runs a
+  /// publish request that arrived before that. Store and lookup share the lock so none is missed.
+  func registerPublisher(_ publisher: OTPublisher, publisherId: String) {
     pendingPublishLock.lock()
+    publishers[publisherId] = publisher
     let sessionId = pendingPublishes.removeValue(forKey: publisherId)
     pendingPublishLock.unlock()
     if let sessionId = sessionId {

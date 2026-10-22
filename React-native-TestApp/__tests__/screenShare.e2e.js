@@ -89,10 +89,11 @@ describe('Screen Sharing', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
     console.log('[screenShare] Screen share ON.');
 
-    // Wait for bot to get the screen stream
-    try {
-      await bot.waitForSubscriber(30000);
-    } catch (_) {}
+    // Wait for the bot to get the screen stream
+    await pollUntil(async () => (await bot.getState()).streamCreated, {
+      timeout: 30000,
+      label: 'bot to receive the screen share stream',
+    });
 
     // Reset streamCreated flag to detect the camera stream after toggle off
     await bot.page.evaluate(() => { window.botState.streamCreated = false; });

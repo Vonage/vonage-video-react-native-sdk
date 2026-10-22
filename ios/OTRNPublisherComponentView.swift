@@ -124,7 +124,6 @@ import React
         publisher.networkStatsDelegate = publisherNetworkStatsDelegateHandler
         publisher.rtcStatsReportDelegate = publisherRtcStatsDelegateHandler
 
-        OTRN.sharedState.publishers.updateValue(publisher, forKey: publisherId)
 
         if let videoSource = properties["videoSource"] as? String,
             videoSource == "screen"
@@ -181,7 +180,7 @@ import React
             publisherUIView = pubView
         }
 
-        OTRN.sharedState.publishPending(publisherId: publisherId)
+        OTRN.sharedState.registerPublisher(publisher, publisherId: publisherId)
     }
     @objc public func setSessionId(_ sessionId: String) {
         self.sessionId = sessionId
