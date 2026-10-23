@@ -1,0 +1,25 @@
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+  includeBuild("../node_modules/@react-native/gradle-plugin")
+}
+
+rootProject.name = "OpentokReactNative"
+includeBuild("../node_modules/@react-native/gradle-plugin")
+
+gradle.rootProject { project ->
+  project.buildscript.dependencies.add("classpath", "com.facebook.react:react-native-gradle-plugin")
+
+  def reactAndroidProperties = new Properties()
+  new File(settingsDir, "../node_modules/react-native/ReactAndroid/gradle.properties").withInputStream {
+    reactAndroidProperties.load(it)
+  }
+  def reactGroup = reactAndroidProperties.getProperty("react.internal.publishingGroup", "com.facebook.react")
+  def reactVersion = reactAndroidProperties.getProperty("VERSION_NAME")
+  project.configurations.configureEach {
+    resolutionStrategy.force("${reactGroup}:react-android:${reactVersion}")
+  }
+}
