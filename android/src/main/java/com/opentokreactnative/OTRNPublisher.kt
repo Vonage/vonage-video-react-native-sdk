@@ -236,6 +236,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
+        // onAttachedToWindow fires again after every detach; a second Publisher would
+        // orphan the first in the shared map and contend for the camera.
+        if (publisher != null) return
+        val resolvedPublisherId = this.props?.get("publisherId") as? String ?: return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -339,7 +343,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
-        val resolvedPublisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
             .put(resolvedPublisherId, publisher ?: return);
         registeredPublisherId = resolvedPublisherId
