@@ -10,6 +10,15 @@ import { each } from 'underscore';
 const MAX_SAFE_INTEGER = 32767;
 
 const sanitizeResolution = (resolution) => {
+  if (typeof resolution === 'string') {
+    const match = /^(\d+)x(\d+)$/.exec(resolution);
+    const valid =
+      match &&
+      [match[1], match[2]].every((d) => +d > 0 && +d <= MAX_SAFE_INTEGER);
+    return valid
+      ? resolution
+      : { width: MAX_SAFE_INTEGER, height: MAX_SAFE_INTEGER };
+  }
   if (
     typeof resolution !== 'object' ||
     (resolution &&
@@ -124,4 +133,12 @@ const sanitizeStreamProperties = (streamProperties) => {
   });
 };
 
-export { sanitizeProperties, sanitizeStreamProperties };
+const nativeResolution = (resolution) => {
+  const sanitized = sanitizeResolution(resolution);
+  if (typeof sanitized === 'string') return sanitized;
+  const dimension = (value) =>
+    Number.isFinite(value) && value > 0 ? value : MAX_SAFE_INTEGER;
+  return `${dimension(sanitized.width)}x${dimension(sanitized.height)}`;
+};
+
+export { sanitizeProperties, sanitizeStreamProperties, nativeResolution };

@@ -10,6 +10,112 @@ on:
         default: true
 
 jobs:
+  check-tokens:
+    if: inputs.dry_run == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check token validity and expiry
+        env:
+          NPM_TOKEN_VONAGE: ${{ secrets.NPM_TOKEN_VONAGE }}
+          NPM_TOKEN_OPENTOK: ${{ secrets.NPM_TOKEN_OPENTOK }}
+          NPM_TOKEN_VONAGE_GITHUB: ${{ secrets.NPM_TOKEN_VONAGE_GITHUB }}
+          NPM_TOKEN_OPENTOK_GITHUB: ${{ secrets.NPM_TOKEN_OPENTOK_GITHUB }}
+        run: |
+          FAILED=0
+
+          print_expiry() {
+            local NAME="$1" EXPIRY="$2"
+            local EXPIRY_TS NOW_TS DAYS_LEFT
+            EXPIRY_TS=$(date -d "$EXPIRY" +%s 2>/dev/null) || { echo "::warning::$NAME expires on $EXPIRY"; return; }
+            NOW_TS=$(date +%s)
+            DAYS_LEFT=$(( (EXPIRY_TS - NOW_TS) / 86400 ))
+            echo "::warning::$NAME expires on $(date -u -d "@$EXPIRY_TS" '+%Y-%m-%d %H:%M:%S UTC') ($DAYS_LEFT days left)"
+          }
+
+          check_npmjs_token() {
+            local NAME="$1" TOKEN="${!1}"
+            echo "🔑 $NAME (registry.npmjs.org)"
+            if [ -z "$TOKEN" ]; then
+              echo "::error::$NAME is not set"
+              FAILED=1
+              return
+            fi
+
+            local USERNAME
+            USERNAME=$(curl -sf -H "Authorization: Bearer $TOKEN" https://registry.npmjs.org/-/whoami | jq -r '.username // empty')
+            if [ -z "$USERNAME" ]; then
+              echo "::error::$NAME is invalid or expired"
+              FAILED=1
+              return
+            fi
+            echo "✅ Valid (user: $USERNAME)"
+
+            local REDACTED="${TOKEN:0:8}...${TOKEN: -4}"
+            local EXPIRY="" PAGE=0 RESPONSE
+            while [ -z "$EXPIRY" ] && [ "$PAGE" -lt 10 ]; do
+              RESPONSE=$(curl -sf -H "Authorization: Bearer $TOKEN" "https://registry.npmjs.org/-/npm/v1/tokens?page=$PAGE&perPage=100") || break
+              [ "$(echo "$RESPONSE" | jq '.objects | length')" -gt 0 ] || break
+              EXPIRY=$(echo "$RESPONSE" | jq -r --arg t "$REDACTED" '[.objects[] | select(.token == $t) | .expiry // empty] | first // empty')
+              PAGE=$((PAGE + 1))
+            done
+
+            if [ -n "$EXPIRY" ]; then
+              print_expiry "$NAME" "$EXPIRY"
+            else
+              echo "::warning::$NAME expiry unavailable (token cannot list account tokens, or has no expiry)"
+            fi
+          }
+
+          check_github_token() {
+            local NAME="$1" TOKEN="${!1}"
+            echo "🔑 $NAME (npm.pkg.github.com)"
+            if [ -z "$TOKEN" ]; then
+              echo "::error::$NAME is not set"
+              FAILED=1
+              return
+            fi
+
+            local HEADERS STATUS
+            HEADERS=$(mktemp)
+            STATUS=$(curl -s -o /dev/null -D "$HEADERS" -w '%{http_code}' -H "Authorization: Bearer $TOKEN" https://api.github.com/user)
+            if [ "$STATUS" != "200" ]; then
+              echo "::error::$NAME is invalid or expired (HTTP $STATUS)"
+              FAILED=1
+              rm -f "$HEADERS"
+              return
+            fi
+
+            local USERNAME SCOPES EXPIRY
+            USERNAME=$(curl -sf -H "Authorization: Bearer $TOKEN" https://api.github.com/user | jq -r '.login // empty')
+            SCOPES=$(grep -i '^x-oauth-scopes:' "$HEADERS" | cut -d' ' -f2- | tr -d '\r')
+            EXPIRY=$(grep -i '^github-authentication-token-expiration:' "$HEADERS" | cut -d' ' -f2- | tr -d '\r')
+            rm -f "$HEADERS"
+
+            echo "✅ Valid (user: $USERNAME)"
+            if [ -n "$SCOPES" ]; then
+              echo "🔐 Scopes: $SCOPES"
+            fi
+            if ! echo "$SCOPES" | grep -Eq '(^|[ ,])write:packages([ ,]|$)'; then
+              echo "::error::$NAME is missing the write:packages scope"
+              FAILED=1
+            fi
+            if [ -n "$EXPIRY" ]; then
+              print_expiry "$NAME" "$EXPIRY"
+            else
+              echo "::warning::$NAME has no expiration date"
+            fi
+          }
+
+          check_npmjs_token NPM_TOKEN_VONAGE
+          echo ""
+          check_npmjs_token NPM_TOKEN_OPENTOK
+          echo ""
+          check_github_token NPM_TOKEN_VONAGE_GITHUB
+          echo ""
+          check_github_token NPM_TOKEN_OPENTOK_GITHUB
+
+          exit $FAILED
+
   publish-opentok-npm:
     runs-on: ubuntu-latest
     permissions:
@@ -72,6 +178,7 @@ jobs:
           printf "${NPMRC}" > .npmrc
 
       - name: Check if version already published
+        id: published
         run: |
           VERSION="${{ github.ref_name }}"
           PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
@@ -79,11 +186,11 @@ jobs:
           if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
             echo "⚠️  Warning: Version $VERSION is already published on NPM!"
             echo "Skipping opentok-react-native @ npmjs.com"
-            exit 0
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true
+        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - opentok-react-native @ npmjs.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -96,7 +203,7 @@ jobs:
           fi
 
       - name: Publish to NPM
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           TAG="${{ steps.npm-tag.outputs.tag }}"
           if [ -n "$TAG" ]; then
@@ -104,12 +211,6 @@ jobs:
           else
             npm publish
           fi
-
-      - name: Verify publication
-        if: inputs.dry_run == false
-        run: |
-          sleep 10
-          npm view opentok-react-native@${{ github.ref_name }} version
 
   publish-opentok-github:
     runs-on: ubuntu-latest
@@ -173,6 +274,7 @@ jobs:
           printf "${NPMRC}" > .npmrc
 
       - name: Check if version already published
+        id: published
         run: |
           VERSION="${{ github.ref_name }}"
           PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
@@ -180,11 +282,11 @@ jobs:
           if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
             echo "⚠️  Warning: Version $VERSION is already published!"
             echo "Skipping @opentok/opentok-react-native @ github.com"
-            exit 0
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true
+        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @opentok/opentok-react-native @ github.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -197,7 +299,7 @@ jobs:
           fi
 
       - name: Publish to GitHub Package Registry
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           TAG="${{ steps.npm-tag.outputs.tag }}"
           if [ -n "$TAG" ]; then
@@ -207,7 +309,7 @@ jobs:
           fi
 
       - name: Verify publication
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           sleep 10
           npm view @opentok/opentok-react-native@${{ github.ref_name }} version
@@ -266,6 +368,7 @@ jobs:
           printf "${NPMRC}" > .npmrc
 
       - name: Check if version already published
+        id: published
         run: |
           VERSION="${{ github.ref_name }}"
           PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
@@ -273,11 +376,11 @@ jobs:
           if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
             echo "⚠️  Warning: Version $VERSION is already published on NPM!"
             echo "Skipping @vonage/client-sdk-video-react-native @ npmjs.com"
-            exit 0
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true
+        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ npmjs.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -290,7 +393,7 @@ jobs:
           fi
 
       - name: Publish to NPM
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           TAG="${{ steps.npm-tag.outputs.tag }}"
           if [ -n "$TAG" ]; then
@@ -300,18 +403,12 @@ jobs:
           fi
 
       - name: Create tag
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         uses: negz/create-tag@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: v${{github.ref_name }}
           message: New v${{github.ref_name}} tag created!
-
-      - name: Verify publication
-        if: inputs.dry_run == false
-        run: |
-          sleep 10
-          npm view @vonage/client-sdk-video-react-native@${{ github.ref_name }} version
 
   publish-vonage-github:
     runs-on: ubuntu-latest
@@ -367,6 +464,7 @@ jobs:
           printf "${NPMRC}" > .npmrc
 
       - name: Check if version already published
+        id: published
         run: |
           VERSION="${{ github.ref_name }}"
           PUBLISHED_VERSION=$(npm run version:published --silent 2>/dev/null || echo "")
@@ -374,11 +472,11 @@ jobs:
           if [ "$PUBLISHED_VERSION" == "$VERSION" ]; then
             echo "⚠️  Warning: Version $VERSION is already published!"
             echo "Skipping @vonage/client-sdk-video-react-native @ github.com"
-            exit 0
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Dry run - Verify package
-        if: inputs.dry_run == true
+        if: inputs.dry_run == true && steps.published.outputs.skip != 'true'
         run: |
           echo "🔍 DRY RUN MODE - @vonage/client-sdk-video-react-native @ github.com"
           TAG="${{ steps.npm-tag.outputs.tag }}"
@@ -391,7 +489,7 @@ jobs:
           fi
 
       - name: Publish to GitHub Package Registry
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           TAG="${{ steps.npm-tag.outputs.tag }}"
           if [ -n "$TAG" ]; then
@@ -401,7 +499,7 @@ jobs:
           fi
 
       - name: Verify publication
-        if: inputs.dry_run == false
+        if: inputs.dry_run == false && steps.published.outputs.skip != 'true'
         run: |
           sleep 10
           npm view @vonage/client-sdk-video-react-native@${{ github.ref_name }} version
