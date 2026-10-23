@@ -228,10 +228,7 @@ export default class OTSession extends Component {
   }
 
   componentDidUpdate(previousProps) {
-    // Keep the handler references current. The native event callbacks are
-    // registered once (in initComponent) but read `this.eventHandlers` at call
-    // time, so refreshing it here lets a parent that re-renders with new handler
-    // closures (e.g. useCallback deps changed) receive subsequent events.
+    // Native callbacks read this.eventHandlers at call time, so keep it current.
     this.eventHandlers = this.props.eventHandlers;
 
     const shouldUseDefault = (value, defaultValue) =>

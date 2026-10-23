@@ -1,7 +1,4 @@
-// Regression test for the "stale eventHandlers" bug: OTSession captured the
-// eventHandlers prop only in the constructor, so a parent re-render with new
-// handler closures kept dispatching to the mount-time handlers.
-// See old repo opentok/opentok-react-native#536.
+// Regression test for stale eventHandlers (opentok/opentok-react-native#536).
 
 const mockCaptured = {};
 jest.mock('../OT', () => {
@@ -60,19 +57,14 @@ describe('OTSession eventHandlers prop update', () => {
     const props = { ...baseProps(), eventHandlers: { sessionConnected: first } };
     const session = new OTSession(props);
 
-    // React contract: props are replaced, then componentDidUpdate runs.
-    // Reuse the same props object and swap only eventHandlers, so signal/options
-    // keep their identity and componentDidUpdate doesn't exercise unrelated
-    // signal-resend behavior.
+    // Swap only eventHandlers so signal/options keep their identity.
     const previous = props;
     session.props = { ...props, eventHandlers: { sessionConnected: second } };
     session.componentDidUpdate(previous);
 
-    // Native session-connected event fires after the handler prop changed.
     expect(typeof mockCaptured.onSessionConnected).toBe('function');
     mockCaptured.onSessionConnected({ sessionId: 'sid-1', connectionId: 'c1' });
 
-    // The updated handler must run; the stale mount-time one must not.
     expect(second).toHaveBeenCalledTimes(1);
     expect(first).not.toHaveBeenCalled();
   });
