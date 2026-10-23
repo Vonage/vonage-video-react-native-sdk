@@ -1,5 +1,3 @@
-// Regression test for stale eventHandlers (opentok/opentok-react-native#536).
-
 const mockCaptured = {};
 jest.mock('../OT', () => {
   const emitterNames = [
@@ -57,7 +55,6 @@ describe('OTSession eventHandlers prop update', () => {
     const props = { ...baseProps(), eventHandlers: { sessionConnected: first } };
     const session = new OTSession(props);
 
-    // Swap only eventHandlers so signal/options keep their identity.
     const previous = props;
     session.props = { ...props, eventHandlers: { sessionConnected: second } };
     session.componentDidUpdate(previous);

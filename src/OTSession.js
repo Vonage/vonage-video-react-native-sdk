@@ -228,7 +228,6 @@ export default class OTSession extends Component {
   }
 
   componentDidUpdate(previousProps) {
-    // Native callbacks read this.eventHandlers at call time, so keep it current.
     this.eventHandlers = this.props.eventHandlers;
 
     const shouldUseDefault = (value, defaultValue) =>
