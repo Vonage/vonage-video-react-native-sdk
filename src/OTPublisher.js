@@ -43,6 +43,7 @@ const getParsedStatsPayload = (nativeEvent) => {
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
+  published = false;
 
   constructor(props) {
     super(props);
@@ -72,7 +73,7 @@ export default class OTPublisher extends React.Component {
     });
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     const { properties } = this.props;
     const sanitizedProperties = sanitizeProperties(properties);
     if (!isEqual(this.state.publisherProperties, sanitizedProperties)) {
@@ -80,7 +81,29 @@ export default class OTPublisher extends React.Component {
         publisherProperties: sanitizedProperties,
       }));
     }
+    if (prevProps.previewOnly && !this.props.previewOnly) {
+      // The consumer opted to join the session: publish now if the session
+      // is already connected. Otherwise the sessionConnected listener will
+      // publish once the connection is established.
+      if (isConnected(this.context?.sessionId)) {
+        this.publishToSession();
+      }
+    }
   }
+
+  publishToSession = () => {
+    const sessionId = this.context?.sessionId;
+    if (
+      this.props.previewOnly ||
+      !sessionId ||
+      this.published ||
+      !this.state.permissionsGranted
+    ) {
+      return;
+    }
+    this.published = true;
+    OT.publish(sessionId, this.state.publisherId);
+  };
 
   onSessionConnected = () => {
     if (Platform.OS === 'android') {
@@ -89,14 +112,16 @@ export default class OTPublisher extends React.Component {
       const isScreenSharing = videoSource === 'screen';
       checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
         .then(() => {
-          OT.publish(this.context.sessionId, this.state.publisherId);
-          this.setState({
-            permissionsGranted: true,
-          });
+          this.setState(
+            {
+              permissionsGranted: true,
+            },
+            () => this.publishToSession()
+          );
         })
         .catch(this.reportPermissionsError);
     } else {
-      OT.publish(this.context.sessionId, this.state.publisherId);
+      this.publishToSession();
     }
   };
 
@@ -131,15 +156,16 @@ export default class OTPublisher extends React.Component {
       const isScreenSharing = videoSource === 'screen';
       checkAndroidPermissions(audioTrack, videoTrack, isScreenSharing)
         .then(() => {
-          if (this.context && isConnected(this.context.sessionId)) {
-            setTimeout(
-              () => OT.publish(this.context.sessionId, this.state.publisherId),
-              0
-            );
-          }
-          this.setState({
-            permissionsGranted: true,
-          });
+          this.setState(
+            {
+              permissionsGranted: true,
+            },
+            () => {
+              if (this.context && isConnected(this.context.sessionId)) {
+                setTimeout(() => this.publishToSession(), 0);
+              }
+            }
+          );
         })
         .catch(this.reportPermissionsError);
     } else {
@@ -147,7 +173,7 @@ export default class OTPublisher extends React.Component {
       // So we delay the publish call slightly
       setTimeout(() => {
         if (this.context && isConnected(this.context.sessionId)) {
-          OT.publish(this.context.sessionId, this.state.publisherId);
+          this.publishToSession();
         }
       }, 100);
     }
@@ -180,8 +206,13 @@ export default class OTPublisher extends React.Component {
   }
 
   componentWillUnmount() {
-    OT.unpublish(this.context.sessionId, this.state.publisherId);
-    const publisherStreamId = getPublisherStream(this.context.sessionId);
+    // A preview-only publisher was never published, so there is nothing to
+    // unpublish. The native side releases the publisher when the view is
+    // dropped (prepareForRecycle on iOS, onDropViewInstance on Android).
+    if (this.context?.sessionId && this.published) {
+      OT.unpublish(this.context.sessionId, this.state.publisherId);
+    }
+    const publisherStreamId = getPublisherStream(this.context?.sessionId);
     if (publisherStreamId) {
       const event = {
         streamId: publisherStreamId,
@@ -211,8 +242,9 @@ export default class OTPublisher extends React.Component {
   render() {
     return this.state.permissionsGranted && this.state.componentMounted ? (
       <OTRNPublisher
-        sessionId={this.context.sessionId}
+        sessionId={this.context?.sessionId ?? ''}
         publisherId={this.state.publisherId}
+        previewOnly={this.props.previewOnly ?? false}
         emitAudioLevel={!!this.props.eventHandlers?.audioLevel}
         emitAudioNetworkStats={!!this.props.eventHandlers?.audioNetworkStats}
         emitVideoNetworkStats={!!this.props.eventHandlers?.videoNetworkStats}
@@ -285,11 +317,13 @@ export default class OTPublisher extends React.Component {
 OTPublisher.propTypes = {
   eventHandlers: PropTypes.object,
   properties: PropTypes.object,
+  previewOnly: PropTypes.bool,
   style: PropTypes.any,
 };
 
 OTPublisher.defaultProps = {
   eventHandlers: {},
+  previewOnly: false,
   properties: {
     degradationPreference: -1,
     publishAudio: true,
