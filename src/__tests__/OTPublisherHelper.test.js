@@ -18,6 +18,19 @@ describe('sanitizeProperties', () => {
     expect(result.preferredVideoCodecs).toBe('vp8;h264'); //it should clear duplicates and remove invalid values
   });
 
+  // Regression: maxVideoBitrate was sanitized from the wrong field
+  // (videoBitratePreset, a string) so it was always 0 and silently ignored.
+  it('applies maxVideoBitrate instead of always returning 0', () => {
+    expect(sanitizeProperties({ maxVideoBitrate: 2000000 }).maxVideoBitrate).toBe(
+      2000000
+    );
+    // clamps within the valid range and defaults to 0 when unset
+    expect(sanitizeProperties({ maxVideoBitrate: 1000 }).maxVideoBitrate).toBe(
+      5000
+    );
+    expect(sanitizeProperties({}).maxVideoBitrate).toBe(0);
+  });
+
   describe('videoSource', () => {
     it('defaults to camera when not specified', () => {
       const result = sanitizeProperties({});
