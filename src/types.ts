@@ -12,6 +12,7 @@ import type {
   SessionErrorEvent,
   SessionOptions,
   SessionReconnectEvent,
+  Spec,
   SignalEvent,
   Stream,
   StreamEvent,
@@ -423,3 +424,18 @@ export type OTSubscriberComponent = React.ComponentClass<OTSubscriberProps> & {
 export type OTSubscriberViewComponent = React.ComponentClass<OTSubscriberViewProps> & {
   prototype: OTSubscriberViewInstance;
 };
+
+/** Audio lifecycle hooks for app-managed CallKit / ConnectionService integration.
+ * Platform-specific hooks resolve without effect on the other platform.
+ */
+export type CallingServicesAPI = Pick<
+  Spec,
+  | 'isCallingServicesModeAvailable'
+  | 'enableCallingServicesMode'
+  | 'preconfigureAudioSessionForCall'
+  | 'notifyAudioSessionActivated'
+  | 'notifyAudioSessionDeactivated'
+  | 'setRequestAudioFocus'
+  | 'notifyAudioFocusActivated'
+  | 'notifyAudioFocusDeactivated'
+>;
