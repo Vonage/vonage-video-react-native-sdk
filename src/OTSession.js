@@ -228,6 +228,8 @@ export default class OTSession extends Component {
   }
 
   componentDidUpdate(previousProps) {
+    this.eventHandlers = this.props.eventHandlers;
+
     const shouldUseDefault = (value, defaultValue) =>
       value === undefined ? defaultValue : value;
 
