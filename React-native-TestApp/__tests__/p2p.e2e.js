@@ -77,6 +77,7 @@ describe('P2P (Relayed) Session', () => {
 
     // Unpublish
     await element(by.id('tabSession')).tap();
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Unpublished.');
 

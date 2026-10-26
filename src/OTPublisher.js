@@ -119,12 +119,16 @@ export default class OTPublisher extends React.Component {
             () => this.publishToSession()
           );
         })
-        .catch(() => {
-          // Android permission denial is not surfaced to eventHandlers.error.
-        });
+        .catch(this.reportPermissionsError);
     } else {
       this.publishToSession();
     }
+  };
+
+  reportPermissionsError = (error) => {
+    if (this.permissionsErrorReported) return;
+    this.permissionsErrorReported = true;
+    this.props.eventHandlers?.error?.(error);
   };
 
   initComponent = () => {
@@ -163,9 +167,7 @@ export default class OTPublisher extends React.Component {
             }
           );
         })
-        .catch(() => {
-          // Android permission denial is not surfaced to eventHandlers.error.
-        });
+        .catch(this.reportPermissionsError);
     } else {
       // Context and publisherId might not be available immediately
       // So we delay the publish call slightly
