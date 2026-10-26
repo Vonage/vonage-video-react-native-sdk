@@ -255,6 +255,9 @@ export default class OTSession extends Component {
 
   componentWillUnmount() {
     this.disconnectSession(this.props.sessionId);
+    // The sessionDisconnected listener is removed below, so clear the flag here
+    // or a remount on the same sessionId would see a stale connected state.
+    setIsConnected(this.props.sessionId, false);
     this._eventSubscriptions.forEach((sub) => {
       if (sub && typeof sub.remove === 'function') {
         sub.remove();

@@ -183,6 +183,17 @@ describe('OTSession native event dispatch', () => {
     expect(setIsConnected).toHaveBeenCalledWith(SESSION_ID, false);
   });
 
+  it('marks the session disconnected on unmount', () => {
+    // The sessionDisconnected subscription is removed during unmount, so the
+    // native event can no longer clear the flag for a later remount.
+    const session = createSession();
+    setIsConnected.mockClear();
+
+    session.componentWillUnmount();
+
+    expect(setIsConnected).toHaveBeenCalledWith(SESSION_ID, false);
+  });
+
   it('ignores events whose sessionId belongs to a different session', () => {
     const eventHandlers = {
       error: jest.fn(),
