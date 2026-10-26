@@ -235,6 +235,8 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         if (mSession != null) {
             mSession.disconnect();
             promise.resolve(null);
+        } else {
+            promise.reject("ERROR", "Error disconnecting from session. Could not find native session instance");
         }
     }
 
@@ -536,6 +538,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     @Override
     public void onError(Session session, OpentokError opentokError) {
         WritableMap payload = EventUtils.prepareJSErrorMap(opentokError);
+        payload.putString("sessionId", session.getSessionId());
         emitOnSessionError(payload);
     }
 
@@ -590,17 +593,18 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public void onMuteForced(Session session, MuteForcedInfo muteForcedInfo) {
         WritableMap info = Arguments.createMap();
         info.putBoolean("active", muteForcedInfo.getActive());
+        info.putString("sessionId", session.getSessionId());
         emitOnMuteForced(info);
     }
 
     @Override
     public void onReconnecting(Session session) {
-        emitOnSessionReconnecting(null);
+        emitOnSessionReconnecting(EventUtils.prepareJSSessionMap(session));
     }
 
     @Override
     public void onReconnected(Session session) {
-        emitOnSessionReconnected(null);
+        emitOnSessionReconnected(EventUtils.prepareJSSessionMap(session));
     }
 
     @Override

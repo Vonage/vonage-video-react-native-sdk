@@ -29,14 +29,16 @@ module.exports = {
       binaryPath: `${androidAppRoot}/app/build/outputs/apk/debug/app-debug.apk`,
       testBinaryPath: `${androidAppRoot}/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk`,
       build: `cd ${androidAppRoot} && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug`,
+      // Re-applied on every install, so Metro stays reachable if adb drops mid-run
+      reversePorts: [8081],
     },
   },
   devices: {
     simulator: {
       type: 'ios.simulator',
-      device: {
-        type: process.env.DETOX_DEVICE_NAME || 'iPhone 15',
-      },
+      device: process.env.DETOX_DEVICE_ID
+        ? { id: process.env.DETOX_DEVICE_ID }
+        : { type: process.env.DETOX_DEVICE_NAME || 'iPhone 15' },
     },
     emulator: {
       type: 'android.emulator',
