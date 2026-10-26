@@ -37,12 +37,7 @@ const getParsedStatsPayload = (nativeEvent) => {
     return parsedJsonStats;
   }
 
-  const parsedLegacyStats = parseStatsString(nativeEvent.stats);
-  if (parsedLegacyStats !== undefined) {
-    return parsedLegacyStats;
-  }
-
-  return nativeEvent.stats ?? nativeEvent.jsonStats ?? nativeEvent;
+  return nativeEvent.jsonStats ?? nativeEvent;
 };
 
 export default class OTPublisher extends React.Component {
@@ -99,12 +94,16 @@ export default class OTPublisher extends React.Component {
             permissionsGranted: true,
           });
         })
-        .catch((error) => {
-          // this.otrnEventHandler(error);
-        });
+        .catch(this.reportPermissionsError);
     } else {
       OT.publish(this.context.sessionId, this.state.publisherId);
     }
+  };
+
+  reportPermissionsError = (error) => {
+    if (this.permissionsErrorReported) return;
+    this.permissionsErrorReported = true;
+    this.props.eventHandlers?.error?.(error);
   };
 
   initComponent = () => {
@@ -142,9 +141,7 @@ export default class OTPublisher extends React.Component {
             permissionsGranted: true,
           });
         })
-        .catch((error) => {
-          // this.otrnEventHandler(error);
-        });
+        .catch(this.reportPermissionsError);
     } else {
       // Context and publisherId might not be available immediately
       // So we delay the publish call slightly

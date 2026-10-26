@@ -31,7 +31,9 @@ module.exports = {
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug'
+      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+      // Re-applied on every install, so Metro stays reachable if adb drops mid-run
+      reversePorts: [8081]
     },
     'android.release': {
       type: 'android.apk',
@@ -43,7 +45,9 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: process.env.DETOX_DEVICE_NAME || 'iPhone SE (3rd generation)'
+        ...(process.env.DETOX_DEVICE_ID
+          ? { id: process.env.DETOX_DEVICE_ID }
+          : { type: process.env.DETOX_DEVICE_NAME || 'iPhone SE (3rd generation)' })
       }
     },
     attached: {
