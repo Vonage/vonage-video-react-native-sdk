@@ -1,0 +1,18 @@
+React-native-TestApp/__tests__/helpers/eventCapture.js
+  h_25a96a0890a0d0 40-41,45
+React-native-TestApp/__tests__/moderation.e2e.js
+  h_25a96a0890a0d0 62-70
+docs/Testing.md
+  h_25a96a0890a0d0 245,268
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "41a6887f6becc2c08431aea1bd8a3a322e92aa02",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
