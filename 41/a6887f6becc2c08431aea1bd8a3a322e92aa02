@@ -1,18 +1,38 @@
 React-native-TestApp/__tests__/helpers/eventCapture.js
-  h_25a96a0890a0d0 40-41,45
+  d06dbbdc01aa0ab6 40-41,45
 React-native-TestApp/__tests__/moderation.e2e.js
-  h_25a96a0890a0d0 62-70
+  d06dbbdc01aa0ab6 62-70
 docs/Testing.md
-  h_25a96a0890a0d0 245,268
+  d06dbbdc01aa0ab6 245,268
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "41a6887f6becc2c08431aea1bd8a3a322e92aa02",
-  "prompts": {},
-  "humans": {
-    "h_25a96a0890a0d0": {
-      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+  "prompts": {
+    "d06dbbdc01aa0ab6": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "cf868068-66cb-4a5d-9a58-89b200a85530",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-27T14:14:28.076Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-27T14:14:28.076Z"
+        }
+      ],
+      "total_additions": 14,
+      "total_deletions": 25,
+      "accepted_lines": 14,
+      "overriden_lines": 0
     }
   }
 }
