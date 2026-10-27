@@ -24,6 +24,10 @@ describe('Encryption', () => {
     await device.terminateApp();
   });
 
+  afterEach(async () => {
+    if (session) await session.cleanup();
+  });
+
   it('session connects with encryption secret set', async () => {
     await session.connectApp();
     console.log('[encryption] App connected with encryption secret.');
@@ -36,6 +40,7 @@ describe('Encryption', () => {
   });
 
   it('publish and subscribe work after encryption is configured', async () => {
+    await session.connectApp();
     const bot = await session.addBot();
     console.log('[encryption] Bot connected and publishing.');
 
@@ -50,6 +55,7 @@ describe('Encryption', () => {
   });
 
   it('disconnect and reconnect works after encryption was set', async () => {
+    await session.connectApp();
     await session.disconnectApp();
     console.log('[encryption] Disconnected.');
 

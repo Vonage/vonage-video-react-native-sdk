@@ -9,8 +9,6 @@ const { TestSession } = require('./helpers/testSession');
  */
 describe('AMR Transitions', () => {
   let session;
-  let bot1;
-  let bot2;
 
   beforeAll(async () => {
     await launchAndWaitForApp({
@@ -26,19 +24,29 @@ describe('AMR Transitions', () => {
     await device.terminateApp();
   });
 
-  it('relayed → routed: app + bot1 (P2P), then bot2 joins (routed)', async () => {
+  afterEach(async () => {
+    if (session) await session.cleanup();
+  });
+
+  async function joinRelayed() {
     await session.connectApp();
-    console.log('[amr] App connected.');
-
-    bot1 = await session.addBot();
+    const bot1 = await session.addBot();
     console.log('[amr] 2 participants — relayed mode. Subscriber visible.');
+    return bot1;
+  }
 
+  async function joinRouted() {
+    const bot1 = await joinRelayed();
     // Don't wait for a new subscriber view — it already exists from bot1
-    console.log('[amr] Bot2 joining (3 participants → routed transition)...');
-    bot2 = await session.addBot({ waitForSubscriber: false });
-
+    const bot2 = await session.addBot({ waitForSubscriber: false });
     // AMR transition has no observable event — short wait for ICE renegotiation
     await new Promise((resolve) => setTimeout(resolve, 5000));
+    return { bot1, bot2 };
+  }
+
+  it('relayed → routed: app + bot1 (P2P), then bot2 joins (routed)', async () => {
+    console.log('[amr] Bot2 joining (3 participants → routed transition)...');
+    const { bot1, bot2 } = await joinRouted();
 
     await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     console.log('[amr] Routed mode — subscriber still visible. Transition OK!');
@@ -50,7 +58,7 @@ describe('AMR Transitions', () => {
   });
 
   it('routed → relayed: bot2 leaves (back to 2 participants)', async () => {
-    if (!bot2) return;
+    const { bot1, bot2 } = await joinRouted();
 
     console.log('[amr] Bot2 disconnecting (3→2 participants → relayed transition)...');
     await bot2.disconnect();
@@ -65,7 +73,9 @@ describe('AMR Transitions', () => {
   });
 
   it('app remains stable through multiple transitions', async () => {
-    if (!bot2) return;
+    const { bot2 } = await joinRouted();
+    await bot2.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     console.log('[amr] Bot2 rejoining (2→3 participants again)...');
     await session.joinBot(bot2);

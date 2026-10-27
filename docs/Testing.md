@@ -234,7 +234,7 @@ expect(event.streamId).toBeTruthy();
 1. Create `React-native-TestApp/__tests__/<name>.e2e.js` from the skeleton above. The default Jest config picks up `*.e2e.js`.
 2. Pick the session factory (`create`, `createRelayed` or `createModeration`).
 3. Do not add retries to the spec. The suite allows one retry per test, configured once in `setupRetries.js`: a test that needs more is broken, not flaky.
-4. Make the spec self-contained: its own `connectApp()` and its own bots per test. Do not depend on state left by another test or spec.
+4. Make the spec self-contained: its own `connectApp()` and its own bots per test. Do not depend on state left by another test or spec. Call `session.cleanup()` in `afterEach` so a retry starts without the bots of the failed attempt.
 5. Add the spec to the table in this file.
 
 ### Choosing how to wait
@@ -242,7 +242,7 @@ expect(event.streamId).toBeTruthy();
 | You are waiting for | Use |
 |---------------------|-----|
 | A UI element in the app | `waitFor(element(by.id('x'))).toBeVisible().withTimeout(ms)` |
-| An event delivered to the app | `setCaptureFilter([...])` before the action, then `waitForEvent(type)` |
+| An event delivered to the app | `setCaptureFilter([...])` before the action, then `waitForEvent(type)`; pass a predicate as third argument (`waitForEvent(type, timeout, (e) => e.active === true)`) when an earlier event of the same type can still be the last one captured |
 | The bot to see a stream | `bot.waitForStream()` or `bot.waitForStream({ streamId })` |
 | A **new** stream after an action (toggle, remount, republish) | `const n = await bot.getStreamCount()`, do the action, `await bot.waitForNewStream(n)`. `subscriberCount` alone cannot tell the old stream from the new one |
 | The bot's own stream to change (mute) | `bot.waitForPublisherAudio(false)` |
@@ -265,7 +265,7 @@ Use `itIf(condition, reason)` from `helpers/itIf.js`:
 const { itIf } = require('./helpers/itIf');
 const isAndroid = device.getPlatform() === 'android';
 
-itIf(isAndroid, 'iOS does not deliver session muteForced to JS (issue #306)')('name', async () => { ... });
+itIf(isAndroid, 'feature X is not available on iOS (issue #NNN)')('name', async () => { ... });
 ```
 
 The test is reported as skipped with the reason in its title, and the CI summary lists it. Always include an issue or ticket reference in the reason.

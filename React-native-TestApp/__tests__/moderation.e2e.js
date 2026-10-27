@@ -4,7 +4,6 @@ const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
 const { forceDisconnect, forceMuteStream } = require('./helpers/openTokRest');
 const { openModerationTab, resetMuteState } = require('./helpers/moderation');
-const { itIf } = require('./helpers/itIf');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -14,7 +13,6 @@ const { expect: jestExpect } = require('expect');
  */
 describe('Moderation', () => {
   let session;
-  const isAndroid = device.getPlatform() === 'android';
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
@@ -61,24 +59,15 @@ describe('Moderation', () => {
     await bot.waitForPublisherAudio(false);
   });
 
-  itIf(isAndroid, 'iOS does not deliver session muteForced to JS (issue #306)')(
-    'moderator app receives muteForced after forceMuteAll',
-    async () => {
-      await session.connectApp();
-      await setCaptureFilter(['muteForced']);
-      await session.addBot();
-
-      await openModerationTab();
-      await element(by.id('muteAll')).tap();
-
-      await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(10000);
-      const muteEvent = await waitForEvent('muteForced', 10000);
-      if (muteEvent.active !== undefined) {
-        jestExpect(muteEvent.active).toBe(true);
-      }
-    }
-  );
-
+  it('moderator app receives muteForced after forceMuteAll', async () => {
+    await session.connectApp();
+    await setCaptureFilter(['muteForced']);
+    await session.addBot();
+    await openModerationTab();
+    await element(by.id('muteAll')).tap();
+    await waitFor(element(by.id('session-forceMute'))).not.toHaveText('0').withTimeout(10000);
+    await waitForEvent('muteForced', 10000, (event) => event.active === true);
+  });
   it('force-disconnect bot via REST API', async () => {
     await session.connectApp();
     await setCaptureFilter(['connectionDestroyed']);
