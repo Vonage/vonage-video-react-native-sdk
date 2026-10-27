@@ -234,7 +234,7 @@ expect(event.streamId).toBeTruthy();
 1. Create `React-native-TestApp/__tests__/<name>.e2e.js` from the skeleton above. The default Jest config picks up `*.e2e.js`.
 2. Pick the session factory (`create`, `createRelayed` or `createModeration`).
 3. Do not add retries to the spec. The suite allows one retry per test, configured once in `setupRetries.js`: a test that needs more is broken, not flaky.
-4. Make the spec self-contained: its own `connectApp()` and its own bots per test. Do not depend on state left by another test or spec.
+4. Make the spec self-contained: its own `connectApp()` and its own bots per test. Do not depend on state left by another test or spec. Call `session.cleanup()` in `afterEach` so a retry starts without the bots of the failed attempt.
 5. Add the spec to the table in this file.
 
 ### Choosing how to wait
