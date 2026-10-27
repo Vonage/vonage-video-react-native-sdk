@@ -1,0 +1,18 @@
+React-native-TestApp/__tests__/amrTransition.e2e.js
+  h_25a96a0890a0d0 27-29,31-33,35-36,38-39,41,44-49,61,76-78
+React-native-TestApp/__tests__/encryption.e2e.js
+  h_25a96a0890a0d0 27-30,43,58
+docs/Testing.md
+  h_25a96a0890a0d0 237
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e96b278a80c08c71c71b15d02e390f1a28bc601a",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
