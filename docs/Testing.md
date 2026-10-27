@@ -242,7 +242,7 @@ expect(event.streamId).toBeTruthy();
 | You are waiting for | Use |
 |---------------------|-----|
 | A UI element in the app | `waitFor(element(by.id('x'))).toBeVisible().withTimeout(ms)` |
-| An event delivered to the app | `setCaptureFilter([...])` before the action, then `waitForEvent(type)` |
+| An event delivered to the app | `setCaptureFilter([...])` before the action, then `waitForEvent(type)`; pass a predicate as third argument (`waitForEvent(type, timeout, (e) => e.active === true)`) when an earlier event of the same type can still be the last one captured |
 | The bot to see a stream | `bot.waitForStream()` or `bot.waitForStream({ streamId })` |
 | A **new** stream after an action (toggle, remount, republish) | `const n = await bot.getStreamCount()`, do the action, `await bot.waitForNewStream(n)`. `subscriberCount` alone cannot tell the old stream from the new one |
 | The bot's own stream to change (mute) | `bot.waitForPublisherAudio(false)` |
@@ -265,7 +265,7 @@ Use `itIf(condition, reason)` from `helpers/itIf.js`:
 const { itIf } = require('./helpers/itIf');
 const isAndroid = device.getPlatform() === 'android';
 
-itIf(isAndroid, 'iOS does not deliver session muteForced to JS (issue #306)')('name', async () => { ... });
+itIf(isAndroid, 'feature X is not available on iOS (issue #NNN)')('name', async () => { ... });
 ```
 
 The test is reported as skipped with the reason in its title, and the CI summary lists it. Always include an issue or ticket reference in the reason.

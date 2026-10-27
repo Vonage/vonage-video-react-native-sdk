@@ -37,12 +37,12 @@ async function getLastEvent(eventType) {
   }
 }
 
-/** Polls until a payload is captured for the event type, or throws after `timeout` ms. */
-async function waitForEvent(eventType, timeout = 30000) {
+/** Polls until a payload (matching `predicate`, if given) is captured for the event type, or throws after `timeout` ms. */
+async function waitForEvent(eventType, timeout = 30000, predicate = () => true) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     const payload = await getLastEvent(eventType);
-    if (payload) return payload;
+    if (payload && predicate(payload)) return payload;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
   throw new Error(`Timed out waiting for event: ${eventType}`);
