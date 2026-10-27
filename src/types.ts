@@ -254,10 +254,16 @@ export type OTPublisherProperties = {
   videoTrack?: boolean;
 };
 
+/** Sent to the publisher `error` handler when Android camera or microphone permissions are denied. */
+export type PublisherPermissionsErrorEvent = {
+  type: 'Permissions error';
+  permissionsDenied: string[];
+};
+
 export type OTPublisherEventHandlers = {
   audioLevel?: CallbackWithParam<{ audioLevel: number }>;
   audioNetworkStats?: CallbackWithParam<PublisherAudioNetworkStats[] | unknown>;
-  error?: CallbackWithParam<ErrorEvent | unknown>;
+  error?: CallbackWithParam<ErrorEvent | PublisherPermissionsErrorEvent | unknown>;
   muteForced?: Callback;
   /** @deprecated Never emitted by the SDK; listen to `error` instead. */
   otrnError?: CallbackWithParam<unknown>;

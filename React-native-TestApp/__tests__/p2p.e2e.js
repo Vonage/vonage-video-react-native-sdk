@@ -67,6 +67,7 @@ describe('P2P (Relayed) Session', () => {
     await session.addBot({ subscriberTimeout: 30000 });
 
     await element(by.id('tabSession')).tap();
+    await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Unpublished.');
 
