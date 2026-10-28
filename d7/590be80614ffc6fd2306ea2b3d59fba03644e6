@@ -1,34 +1,14 @@
 React-native-TestApp/__tests__/helpers/waitForApp.js
-  46fef15876c20288 22-24,29,31-35,37,41
+  h_25a96a0890a0d0 22-24,29,31-35,37,41
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "vonage-override-1.0.0",
+  "git_ai_version": "1.7.5",
   "base_commit_sha": "d7590be80614ffc6fd2306ea2b3d59fba03644e6",
-  "prompts": {
-    "46fef15876c20288": {
-      "agent_id": {
-        "tool": "github-copilot",
-        "id": "127a2350-abad-4908-9d05-8e220459a7a8",
-        "model": "gpt-4o"
-      },
-      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
-      "messages": [
-        {
-          "type": "user",
-          "text": "[vg-ai attribution override: 100% AI]",
-          "timestamp": "2026-10-28T10:57:19.701Z"
-        },
-        {
-          "type": "assistant",
-          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
-          "timestamp": "2026-10-28T10:57:19.701Z"
-        }
-      ],
-      "total_additions": 11,
-      "total_deletions": 7,
-      "accepted_lines": 11,
-      "overriden_lines": 0
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
     }
   }
 }
