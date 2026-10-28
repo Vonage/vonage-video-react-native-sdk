@@ -1,0 +1,36 @@
+.github/workflows/ci-pr-tests.yml
+  6cd778574c9211e6 185-187,295-297
+docs/Testing.md
+  6cd778574c9211e6 173,183,297
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "6192b0e36e624574cf33cfe3f27a10cc35ada44e",
+  "prompts": {
+    "6cd778574c9211e6": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "fd174c7c-1c64-4504-9116-43357f835ce9",
+        "model": "gpt-4o"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-10-28T10:57:20.966Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (github-copilot/gpt-4o).",
+          "timestamp": "2026-10-28T10:57:20.966Z"
+        }
+      ],
+      "total_additions": 9,
+      "total_deletions": 3,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
