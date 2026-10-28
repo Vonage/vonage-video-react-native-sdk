@@ -216,7 +216,7 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   captureEvent = (eventType: string, payload: any) => {
-    if (this.state.captureFilter.includes(eventType)) {
+    if (eventType === 'sessionError' || this.state.captureFilter.includes(eventType)) {
       this.setState((prev) => ({
         capturedEvents: {
           ...prev.capturedEvents,
