@@ -170,7 +170,7 @@ The `if (session)` guards matter: if `beforeAll` fails before the session exists
 |--------|-------------|
 | `TestSession.create()` / `createRelayed()` / `createModeration()` | Session with routed, relayed or moderation credentials |
 | `session.credentials` | `apiKey`, `apiSecret`, `apiUrl`, `sessionId`, tokens. Use it for REST calls instead of reading env vars |
-| `session.connectApp()` | Connects the app with the right credentials and waits for `sessionConnected` |
+| `session.connectApp()` | Connects the app with the right credentials and waits for `sessionConnected`. Fails fast with the OpenTok error code and message if the session errors |
 | `session.addBot(options?)` | Creates a bot, joins it, and waits for the app's subscriber view. `{ waitForSubscriber: false }` skips the wait, `{ token }` overrides the token |
 | `session.addBots(count)` | Adds several bots (only the first waits for the subscriber view) |
 | `session.cleanup()` | Closes bots, disconnects the app, clears events. Every step is time-bounded |
@@ -180,7 +180,7 @@ The `if (session)` guards matter: if `beforeAll` fails before the session exists
 
 | Helper | Description |
 |--------|-------------|
-| `launchAndWaitForApp(params)` | Launches the app (one retry after terminating it), disables Detox synchronization and waits for the UI. Use it in `beforeAll` or `beforeEach` |
+| `launchAndWaitForApp(params)` | Launches the app (relaunches once after terminating it if the launch fails or the UI does not appear), disables Detox synchronization and waits for the UI. Use it in `beforeAll` or `beforeEach` |
 | `waitForAppReady(timeout?)` | Polls until the connection form is visible. Called by the helper above |
 
 ### jsSDKTesterBot
@@ -294,7 +294,7 @@ Tests run on every PR via GitHub Actions (`ci-pr-tests.yml`). The `globalSetup` 
 
 - **iOS** runs as a matrix of two legs, `ios26` (`macos-26-xlarge`, Xcode 26.6) and `ios27` (`xcode-27-xlarge`). Each leg selects a simulator of its iOS major with `scripts/ci-select-ios-simulator.sh <major>` and passes its UUID to Detox through `DETOX_DEVICE_ID`. A leg marked `experimental: true` does not fail the run. To roll the matrix forward, edit only the two `include` entries.
 - **Android** runs on an emulator through `scripts/run-android-e2e-in-emulator.sh`.
-- Both start Metro with `scripts/ci-start-metro.sh React-native-TestApp`.
+- Both start Metro with `scripts/ci-start-metro.sh React-native-TestApp`, then prefetch the dev bundle in a `Warm up Metro bundle` step so the first compile is not inside the timed test.
 - CI uses `npm run test:e2e:ios:ci` (headless). To reproduce a leg locally: `DETOX_DEVICE_ID=<udid> npm run test:e2e:ios:ci`.
 - Jest writes `artifacts/jest-results-<platform>.json`. The job summary (`scripts/e2e-results-summary.jq`) lists passed, failed, skipped, **passed after retry** and suites that did not run. A test that passes after a retry is not hidden: it is listed, so repeated entries are the signal to fix that test.
 

@@ -182,6 +182,9 @@ jobs:
       - name: Start Metro bundler
         run: bash scripts/ci-start-metro.sh React-native-TestApp
 
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false'
+
       - name: Run iOS Detox tests
         env:
           DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
@@ -288,6 +291,9 @@ jobs:
 
       - name: Start Metro bundler
         run: bash scripts/ci-start-metro.sh React-native-TestApp
+
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=android&dev=true&minify=false'
 
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
