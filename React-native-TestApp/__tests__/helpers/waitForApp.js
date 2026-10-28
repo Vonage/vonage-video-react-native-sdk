@@ -19,23 +19,27 @@ async function waitForAppReady(timeout = 90000) {
 }
 
 /**
- * Launches the app (one retry after terminating it if the first launch fails), disables Detox
- * synchronization and waits for the UI to be ready. Use it in `beforeAll` or `beforeEach`.
+ * Launches the app, disables Detox synchronization and waits for the UI to be ready. A failed
+ * attempt (launch error or UI not ready) is retried once after terminating the app; the first
+ * attempt waits less so a stuck cold start is cut short. Use it in `beforeAll` or `beforeEach`.
  *
  * @param {object} params - Passed to device.launchApp()
  */
 async function launchAndWaitForApp(params) {
-  try {
+  const attempt = async (readyTimeout) => {
     await device.launchApp(params);
+    await device.disableSynchronization();
+    await waitForAppReady(readyTimeout);
+  };
+  try {
+    await attempt(60000);
   } catch (e) {
-    console.warn(`[launchApp] First launch failed (${e.message}). Retrying once.`);
+    console.warn(`[launchApp] First attempt failed (${e.message}). Relaunching once.`);
     try {
       await device.terminateApp();
     } catch (_) {}
-    await device.launchApp(params);
+    await attempt(90000);
   }
-  await device.disableSynchronization();
-  await waitForAppReady();
 }
 
 module.exports = { waitForAppReady, launchAndWaitForApp };

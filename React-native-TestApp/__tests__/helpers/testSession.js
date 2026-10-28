@@ -1,7 +1,7 @@
 'use strict';
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
-const { clearCapturedEvents } = require('./eventCapture');
+const { clearCapturedEvents, getLastEvent } = require('./eventCapture');
 const { withTimeout } = require('./timeout');
 const { getCredentials } = require('./credentials');
 
@@ -131,7 +131,39 @@ class TestSession {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
     await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    await this.waitForSessionConnected(30000);
+  }
+
+  /**
+   * The disconnect button is shown even when the session fails, so poll the app's event counters
+   * (flushed about once per second) and fail with the session error. A late error from the previous
+   * session can arrive after the counters reset, so an error only fails once the session has had
+   * `errorGraceMs` to connect.
+   */
+  async waitForSessionConnected(timeout, errorGraceMs = 5000) {
+    const counter = async (id) => {
+      try {
+        const attrs = await element(by.id(id)).getAttributes();
+        return Number(attrs.text || attrs.label || 0);
+      } catch (_) {
+        return 0;
+      }
+    };
+    const start = Date.now();
+    let errorSeenAt = null;
+    while (Date.now() - start < timeout) {
+      if ((await counter('session-sessionConnected')) > 0) return;
+      if ((await counter('session-error')) > 0) {
+        errorSeenAt = errorSeenAt || Date.now();
+        if (Date.now() - errorSeenAt >= errorGraceMs) {
+          const err = await getLastEvent('sessionError');
+          const detail = err ? ` (code ${err.code}: ${err.message})` : '';
+          throw new Error(`The app failed to connect to the session${detail}`);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error(`The app did not connect to the session within ${timeout}ms`);
   }
 
   async disconnectApp() {
