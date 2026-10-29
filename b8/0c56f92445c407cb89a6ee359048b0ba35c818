@@ -1,0 +1,38 @@
+React-native-TestApp/__tests__/screenShare.e2e.js
+  s_0e8e00f76795e3::t_7d05dbc21ab97f 89
+  s_0e8e00f76795e3::t_3ab77a6cf68275 192
+  s_0e8e00f76795e3::t_eb621ed6e544d3 73-88,90-91,180-191,193-194
+  s_0e8e00f76795e3::t_8f7e6b912f794c 98-109
+  s_0e8e00f76795e3::t_e3e4731fd93ec8 92-97,110-179
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  s_0e8e00f76795e3::t_ed37ecf376cdf7 365,367-368,370-374
+  s_0e8e00f76795e3::t_ea3d83aff1962a 802-807,811
+  s_0e8e00f76795e3::t_6f6361d45f58e2 755-757,759-771
+  s_0e8e00f76795e3::t_2c6359926d9c10 758
+  s_0e8e00f76795e3::t_3a3dc54ab4ee2c 808-810
+  s_0e8e00f76795e3::t_7b3840c5c9dd23 334-364,366,369,375-390
+  s_0e8e00f76795e3::t_dc3be77bdfd884 570-576,579
+  s_0e8e00f76795e3::t_7fe38a6782c9f9 44
+  s_0e8e00f76795e3::t_d3ef11e8fbd9f2 43,45
+  s_0e8e00f76795e3::t_4f2469cfb5b67e 740
+React-native-TestApp/src/types/index.ts
+  s_0e8e00f76795e3::t_66e3c12c90b9b1 144
+  s_0e8e00f76795e3::t_ab3ce837a2f6c0 143
+  s_0e8e00f76795e3::t_506c41ae594f25 145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b80c56f92445c407cb89a6ee359048b0ba35c818",
+  "prompts": {},
+  "sessions": {
+    "s_0e8e00f76795e3": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_61664259-f42a-4973-90f2-06e686e98115",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
