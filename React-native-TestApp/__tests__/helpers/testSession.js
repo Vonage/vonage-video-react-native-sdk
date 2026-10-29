@@ -1,60 +1,43 @@
 'use strict';
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
-const { clearCapturedEvents } = require('./eventCapture');
+const { clearCapturedEvents, getLastEvent } = require('./eventCapture');
+const { withTimeout } = require('./timeout');
+const { getCredentials } = require('./credentials');
 
 /**
- * TestSession - Encapsulates session lifecycle for isolated E2E tests.
- *
- * Credentials are fetched internally — tests don't deal with apiKey/tokens.
- * Bots are created fresh for each test and closed during cleanup.
- * No pooling — each bot gets a clean browser to avoid state leaks.
- *
- * Usage:
- *   const session = await TestSession.create();          // routed
- *   const session = await TestSession.createRelayed();   // P2P
- *
- *   beforeAll: session = await TestSession.create();
- *   in test:   const bot = await session.addBot();   // fresh browser, waits for subscriber
- *   afterEach: await session.cleanup();              // closes all bot browsers
- *   afterAll:  await session.teardown();
+ * Session lifecycle for a spec: credentials, bots and app connection. Each bot gets its own
+ * browser and is closed on cleanup. Factories: create (routed), createRelayed, createModeration.
  */
 class TestSession {
   /**
    * @param {object} params
-   * @param {object} params.credentials - Result of getCredentials() or getRelayedCredentials()
+   * @param {object} params.credentials - Result of getCredentials(name)
    * @param {object} [params.botOptions={}] - Options passed to jsSDKTesterBot constructor
    */
   constructor({ credentials, botOptions = {} }) {
     this.credentials = credentials;
     this.botOptions = { timeout: 30000, ...botOptions };
-    /** @type {jsSDKTesterBot[]} Bots active in the current test */
     this.activeBots = [];
-    /** @type {string[]} Publisher tokens; each bot takes the next one by index. */
     this.botTokens = (credentials.botTokens || []).filter(Boolean);
   }
 
-  // --- Factory methods ---
-
   static async create(botOptions = {}) {
-    const { getCredentials } = require('./credentials');
-    const credentials = await getCredentials();
-    return new TestSession({ credentials, botOptions });
+    return new TestSession({ credentials: await getCredentials('routed'), botOptions });
   }
 
   static async createRelayed(botOptions = {}) {
-    const { getRelayedCredentials } = require('./credentials');
-    const credentials = await getRelayedCredentials();
-    return new TestSession({ credentials, botOptions });
+    return new TestSession({ credentials: await getCredentials('relayed'), botOptions });
   }
 
-  // --- Bot management ---
+  static async createModeration(botOptions = {}) {
+    return new TestSession({ credentials: await getCredentials('moderation'), botOptions });
+  }
 
   /**
-   * Joins a bot to the session. Token is auto-assigned by the bot's position
-   * in activeBots, indexing into the botTokens pool.
+   * Joins a bot to the session. Its token comes from the pool by the bot's position in activeBots.
    *
-   * @param {jsSDKTesterBot} bot - Bot instance
+   * @param {jsSDKTesterBot} bot
    * @param {object} [options]
    * @param {string} [options.token] - Override token
    * @param {string} [options.sessionId] - Override session ID
@@ -83,11 +66,8 @@ class TestSession {
   }
 
   /**
-   * Creates a fresh bot, joins it to the session, and optionally waits
-   * for the subscriber view to appear.
-   *
-   * Each call launches a new browser instance (no pooling).
-   * Token is auto-assigned by join order from the botTokens pool.
+   * Creates a fresh bot, joins it to the session and, by default, waits for the app to show the
+   * subscriber view (which proves media is flowing).
    *
    * @param {object} [options]
    * @param {string} [options.token] - Override token
@@ -118,8 +98,7 @@ class TestSession {
   }
 
   /**
-   * Adds `count` bots. Only the first waits for the subscriber view (the rest
-   * share the same auto-subscribe view), keeping it fast.
+   * Adds `count` bots; only the first waits for the subscriber view.
    *
    * @param {number} count
    * @param {object} [options] - Passed through to addBot (except waitForSubscriber)
@@ -134,36 +113,6 @@ class TestSession {
     return bots;
   }
 
-  /**
-   * Churns the camera on every active bot in parallel.
-   * @param {number} iterations - off→on cycles per bot
-   * @param {number} [intervalMs=100]
-   */
-  async churnAllBotsVideo(iterations, intervalMs = 100) {
-    await Promise.all(
-      this.activeBots.map((bot) => bot.churnVideo(iterations, intervalMs))
-    );
-  }
-
-  /**
-   * Disconnects the oldest `count` bots and adds `count` fresh ones, so streams
-   * are torn down and rebuilt while other peers keep publishing. Used to make
-   * lifecycle/stats callbacks (onDisconnected/onError/onAudioStats/onVideoStats)
-   * race stream teardown.
-   *
-   * @param {number} count - Number of bots to turn over
-   */
-  async replaceBots(count) {
-    const leaving = this.activeBots.slice(0, count);
-    await Promise.all(leaving.map((bot) => bot.close().catch(() => {})));
-    this.activeBots = this.activeBots.filter((bot) => !leaving.includes(bot));
-    for (let i = 0; i < count; i++) {
-      await this.addBot({ waitForSubscriber: false });
-    }
-  }
-
-  // --- App connection ---
-
   async connectApp() {
     try {
       await element(by.id('disconnectSession')).tap();
@@ -176,26 +125,45 @@ class TestSession {
     if (this.credentials.apiUrl) {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
-    // Dismiss keyboard by tapping outside inputs — avoids side effects of
-    // tapReturnKey (autocomplete popups on Android, form submit on iOS).
+    // Tap outside the inputs to dismiss the keyboard; tapReturnKey has side effects
+    // (autocomplete popups on Android, form submit on iOS).
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
     await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+    await this.waitForSessionConnected(30000);
   }
 
-  async connectAppWithCredentials(apiKey, sessionId, token) {
-    try {
-      await element(by.id('disconnectSession')).tap();
-      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
-    } catch (_) {}
-
-    await element(by.id('apiKeyInput')).replaceText(apiKey);
-    await element(by.id('sessionIdInput')).replaceText(sessionId);
-    await element(by.id('tokenInput')).replaceText(token);
-    await element(by.id('submitButton')).tap();
-    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(30000);
+  /**
+   * The disconnect button is shown even when the session fails, so poll the app's event counters
+   * (flushed about once per second) and fail with the session error. A late error from the previous
+   * session can arrive after the counters reset, so an error only fails once the session has had
+   * `errorGraceMs` to connect.
+   */
+  async waitForSessionConnected(timeout, errorGraceMs = 5000) {
+    const counter = async (id) => {
+      try {
+        const attrs = await element(by.id(id)).getAttributes();
+        return Number(attrs.text || attrs.label || 0);
+      } catch (_) {
+        return 0;
+      }
+    };
+    const start = Date.now();
+    let errorSeenAt = null;
+    while (Date.now() - start < timeout) {
+      if ((await counter('session-sessionConnected')) > 0) return;
+      if ((await counter('session-error')) > 0) {
+        errorSeenAt = errorSeenAt || Date.now();
+        if (Date.now() - errorSeenAt >= errorGraceMs) {
+          const err = await getLastEvent('sessionError');
+          const detail = err ? ` (code ${err.code}: ${err.message})` : '';
+          throw new Error(`The app failed to connect to the session${detail}`);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error(`The app did not connect to the session within ${timeout}ms`);
   }
 
   async disconnectApp() {
@@ -205,38 +173,20 @@ class TestSession {
     } catch (_) {}
   }
 
-  // --- Cleanup ---
-
-  /**
-   * Per-test cleanup: close all bot browsers, disconnect app, clear events.
-   * Bots are fully destroyed (browser closed) — no reuse.
-   */
+  /** Closes bots, disconnects the app and clears captured events. Every step is time-bounded. */
   async cleanup() {
-    for (const bot of this.activeBots) {
-      try {
-        await bot.close();
-      } catch (_) {}
-    }
-    this.activeBots = [];
-
-    await this.disconnectApp();
-
-    try {
-      await clearCapturedEvents();
-    } catch (_) {}
+    await this.teardown();
+    await withTimeout(this.disconnectApp(), 15000, 'disconnectApp()');
+    await withTimeout(clearCapturedEvents().catch(() => {}), 5000, 'clearCapturedEvents()');
   }
 
-  /**
-   * Final teardown: close any remaining bot browsers.
-   * Safety net — call in afterAll.
-   */
+  /** Closes all bot browsers, each close time-bounded. Call in afterAll as a safety net. */
   async teardown() {
-    for (const bot of this.activeBots) {
-      try {
-        await bot.close();
-      } catch (_) {}
-    }
+    const bots = this.activeBots;
     this.activeBots = [];
+    for (const bot of bots) {
+      await withTimeout(bot.close().catch(() => {}), 30000, 'bot.close()');
+    }
   }
 }
 

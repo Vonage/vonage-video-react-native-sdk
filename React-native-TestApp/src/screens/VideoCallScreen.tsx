@@ -216,7 +216,7 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   captureEvent = (eventType: string, payload: any) => {
-    if (this.state.captureFilter.includes(eventType)) {
+    if (eventType === 'sessionError' || this.state.captureFilter.includes(eventType)) {
       this.setState((prev) => ({
         capturedEvents: {
           ...prev.capturedEvents,
@@ -471,16 +471,12 @@ class VideoCallScreen extends Component<{}, State> {
   sessionMethodForceMuteAll = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.forceMuteAll([]);
-      this.updateEvent('sessionEvents', 'forceMute', true);
-      this.updateEvent('publisherEvents', 'forceMute', true);
     }
   };
 
   sessionMethodDisableForceMute = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.disableForceMute();
-      this.updateEvent('sessionEvents', 'forceMute', 0);
-      this.updateEvent('publisherEvents', 'forceMute', 0);
     }
   };
 
@@ -824,6 +820,11 @@ class VideoCallScreen extends Component<{}, State> {
           testID="muteAll"
           handleSubmit={this.sessionMethodForceMuteAll}
           label="Mute All"
+        />
+        <ButtonComponent
+          testID="disableForceMute"
+          handleSubmit={this.sessionMethodDisableForceMute}
+          label="Disable Force Mute"
         />
       </View>
     );
