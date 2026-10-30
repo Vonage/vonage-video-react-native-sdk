@@ -1,6 +1,9 @@
 const {
   TestSession,
 } = require('../../React-native-TestApp/__tests__/helpers/testSession');
+const {
+  getLastEvent,
+} = require('../../React-native-TestApp/__tests__/helpers/eventCapture');
 
 jest.mock(
   '../../React-native-TestApp/__tests__/helpers/jsSDKTesterBot',
@@ -10,27 +13,29 @@ jest.mock(
 );
 jest.mock('../../React-native-TestApp/__tests__/helpers/eventCapture', () => ({
   clearCapturedEvents: jest.fn(),
+  getLastEvent: jest.fn(),
 }));
+
+const credentials = {
+  apiKey: 'test-key',
+  sessionId: 'test-session',
+  tokenApp: 'test-token',
+};
 
 describe('E2E connection readiness', () => {
   let submitted;
-  let connected;
-  let confirmConnection;
-  let failConnection;
-  let connectionWait;
+  let counters;
   let disconnectError;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     submitted = false;
-    connected = false;
     disconnectError = null;
-    connectionWait = new Promise((resolve, reject) => {
-      confirmConnection = () => {
-        connected = true;
-        resolve();
-      };
-      failConnection = reject;
-    });
+    counters = {
+      'session-sessionConnected': '0',
+      'session-error': '0',
+    };
+    getLastEvent.mockReset();
     global.by = { id: (id) => id };
     global.element = (id) => ({
       id,
@@ -42,94 +47,74 @@ describe('E2E connection readiness', () => {
         if (id === 'submitButton') submitted = true;
       },
       replaceText: async () => {},
+      getAttributes: async () => ({ text: counters[id] || '0' }),
     });
-    global.waitFor = ({ id }) => {
-      const matcher = {
-        toBeVisible: () => ({
-          withTimeout: async () => {
-            if (id === 'disconnectSession' && !submitted)
-              throw new Error('Not mounted');
-          },
-        }),
-        not: {
-          toHaveText: () => ({ withTimeout: () => connectionWait }),
+    global.waitFor = ({ id }) => ({
+      toBeVisible: () => ({
+        withTimeout: async () => {
+          if (id === 'disconnectSession' && !submitted)
+            throw new Error('Not mounted');
         },
-      };
-      return matcher;
-    };
+      }),
+    });
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     delete global.by;
     delete global.element;
     delete global.waitFor;
   });
 
-  it.each(['connectApp', 'connectAppWithCredentials'])(
-    '%s waits for SDK connection confirmation despite an optimistic Disconnect button',
-    async (method) => {
-      const session = new TestSession({
-        credentials: {
-          apiKey: 'test-key',
-          sessionId: 'test-session',
-          tokenApp: 'test-token',
-        },
-      });
-      let completed = false;
-      const connection = session[method](
-        'test-key',
-        'test-session',
-        'test-token'
-      ).then(() => {
+  function session() {
+    return new TestSession({ credentials });
+  }
+
+  it('connectApp waits until the SDK reports the session as connected', async () => {
+    let completed = false;
+    const connection = session()
+      .connectApp()
+      .then(() => {
         completed = true;
       });
 
-      await new Promise(setImmediate);
-      expect(submitted).toBe(true);
-      expect(connected).toBe(false);
-      expect(completed).toBe(false);
+    await jest.advanceTimersByTimeAsync(0);
+    expect(submitted).toBe(true);
+    expect(completed).toBe(false);
 
-      confirmConnection();
-      await connection;
-      expect(completed).toBe(true);
-    }
-  );
+    counters['session-sessionConnected'] = '1';
+    await jest.advanceTimersByTimeAsync(500);
+    await connection;
+    expect(completed).toBe(true);
+  });
 
-  it.each(['connectApp', 'connectAppWithCredentials'])(
-    '%s rejects when the SDK does not confirm the connection',
-    async (method) => {
-      const session = new TestSession({
-        credentials: {
-          apiKey: 'test-key',
-          sessionId: 'test-session',
-          tokenApp: 'test-token',
-        },
-      });
-      const connection = session[method](
-        'test-key',
-        'test-session',
-        'test-token'
-      );
+  it('connectApp rejects when the session reports an error', async () => {
+    counters['session-error'] = '1';
+    getLastEvent.mockResolvedValue({
+      code: 1006,
+      message: 'authentication failed',
+    });
 
-      await new Promise(setImmediate);
-      expect(submitted).toBe(true);
-      expect(connected).toBe(false);
+    const connection = session().connectApp();
+    const assertion = expect(connection).rejects.toThrow(
+      'The app failed to connect to the session (code 1006: authentication failed)'
+    );
+    await jest.advanceTimersByTimeAsync(5000);
+    await assertion;
+    expect(getLastEvent).toHaveBeenCalledWith('sessionError');
+  });
 
-      failConnection(new Error('session not connected'));
-      await expect(connection).rejects.toThrow('session not connected');
-    }
-  );
+  it('connectApp rejects when the session never connects', async () => {
+    const connection = session().connectApp();
+    const assertion = expect(connection).rejects.toThrow(
+      'The app did not connect to the session within 30000ms'
+    );
+    await jest.advanceTimersByTimeAsync(30000);
+    await assertion;
+  });
 
   it('disconnectApp finishes when the disconnect control cannot be used', async () => {
     disconnectError = new Error('disconnect failed');
-    const session = new TestSession({
-      credentials: {
-        apiKey: 'test-key',
-        sessionId: 'test-session',
-        tokenApp: 'test-token',
-      },
-    });
-
-    await expect(session.disconnectApp()).resolves.toBeUndefined();
+    await expect(session().disconnectApp()).resolves.toBeUndefined();
   });
 });

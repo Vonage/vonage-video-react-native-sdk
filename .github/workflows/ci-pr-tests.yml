@@ -103,20 +103,38 @@ jobs:
             }
 
   e2e-ios-tests:
+    name: e2e-ios-tests (${{ matrix.leg }})
     needs: unit-tests
     if: github.event.pull_request.head.repo.full_name == github.repository
     environment: prod
-    runs-on: macos-15-xlarge
-    timeout-minutes: 60
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - leg: ios26
+            runner: macos-26-xlarge
+            xcode: '26.6'
+            ios: '26'
+            experimental: false
+          - leg: ios27
+            runner: xcode-27-xlarge
+            xcode: ''
+            ios: '27'
+            experimental: false
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        if: matrix.xcode != ''
+        uses: maxim-lobanov/setup-xcode@v1.7.0
         with:
-          xcode-version: latest-stable
+          xcode-version: ${{ matrix.xcode }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -140,9 +158,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: React-native-TestApp/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
+          key: ${{ runner.os }}-${{ matrix.leg }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
           restore-keys: |
-            ${{ runner.os }}-pods-
+            ${{ runner.os }}-${{ matrix.leg }}-pods-
 
       - name: Install React-native-TestApp dependencies
         working-directory: React-native-TestApp
@@ -152,67 +170,44 @@ jobs:
         working-directory: React-native-TestApp/ios
         run: pod install
 
-      - name: Detect available iOS simulator
-        id: detect-simulator
-        run: |
-          echo "Available simulators:"
-          applesimutils --list
-          
-          # Extract first available iPhone device name
-          DEVICE_NAME=$(applesimutils --list | grep -o '"iPhone [^"]*"' | head -1 | tr -d '"')
-          
-          if [ -z "$DEVICE_NAME" ]; then
-            echo "No iPhone simulators found, using default"
-            DEVICE_NAME="iPhone 15"
-          fi
-          
-          echo "Selected simulator: $DEVICE_NAME"
-          echo "device_name=$DEVICE_NAME" >> $GITHUB_OUTPUT
+      - name: Select iOS simulator
+        id: select-simulator
+        run: bash scripts/ci-select-ios-simulator.sh ${{ matrix.ios }}
 
       - name: Build iOS Detox app
         env:
-          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+          DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
         run: npm run test:e2e:ios:build
 
       - name: Start Metro bundler
-        working-directory: React-native-TestApp
-        run: |
-          nohup npm start > metro.log 2>&1 &
-          METRO_PID=$!
-          echo "Metro PID: $METRO_PID"
-          
-          for i in {1..120}; do
-            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
-              echo "Metro is running on attempt $i"
-              exit 0
-            fi
-            if ! ps -p $METRO_PID > /dev/null 2>&1; then
-              echo "Metro process died"
-              tail -n 100 metro.log || true
-              exit 1
-            fi
-            sleep 3
-          done
-          
-          echo "Metro failed to start after 120 retries"
-          echo "=== Metro log output ==="
-          tail -n 150 metro.log || true
-          kill $METRO_PID 2>/dev/null || true
-          exit 1
+        run: bash scripts/ci-start-metro.sh React-native-TestApp
+
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false'
 
       - name: Run iOS Detox tests
         env:
-          DETOX_DEVICE_NAME: ${{ steps.detect-simulator.outputs.device_name }}
+          DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
           VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
           VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
           API_URL: ${{ secrets.API_URL }}
-        run: npm run test:e2e:ios
+        run: npm run test:e2e:ios:ci
+
+      - name: E2E results summary
+        if: always()
+        run: |
+          RESULTS=artifacts/jest-results-ios.json
+          if [ ! -f "$RESULTS" ]; then
+            echo "No Jest results file found at $RESULTS" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r --arg title "iOS E2E results (${{ matrix.leg }})" -f scripts/e2e-results-summary.jq "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload iOS E2E diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-e2e-diagnostics
+          name: ios-e2e-diagnostics-${{ matrix.leg }}
           path: |
             artifacts/
             React-native-TestApp/metro.log
@@ -295,30 +290,10 @@ jobs:
           avdmanager list device | head -n 120 || true
 
       - name: Start Metro bundler
-        working-directory: React-native-TestApp
-        run: |
-          nohup npm start > metro.log 2>&1 &
-          METRO_PID=$!
-          echo "Metro PID: $METRO_PID"
+        run: bash scripts/ci-start-metro.sh React-native-TestApp
 
-          for i in {1..120}; do
-            if curl -fsS "http://127.0.0.1:8081/status" 2>/dev/null | grep -q "packager-status:running"; then
-              echo "Metro is running on attempt $i"
-              exit 0
-            fi
-            if ! ps -p $METRO_PID > /dev/null 2>&1; then
-              echo "Metro process died"
-              tail -n 100 metro.log || true
-              exit 1
-            fi
-            sleep 3
-          done
-
-          echo "Metro failed to start after 120 retries"
-          echo "=== Metro log output ==="
-          tail -n 150 metro.log || true
-          kill $METRO_PID 2>/dev/null || true
-          exit 1
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=android&dev=true&minify=false'
 
       - name: Start Android emulator and run tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -334,13 +309,23 @@ jobs:
           disable-animations: true
           script: sh ./scripts/run-android-e2e-in-emulator.sh
 
+      - name: E2E results summary
+        if: always()
+        run: |
+          RESULTS=artifacts/jest-results-android.json
+          if [ ! -f "$RESULTS" ]; then
+            echo "No Jest results file found at $RESULTS" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r --arg title "Android E2E results" -f scripts/e2e-results-summary.jq "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload Android E2E diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-e2e-diagnostics
           path: |
-            metro.log
+            React-native-TestApp/metro.log
             metro-android.log
             android-logcat.txt
             android-dumpsys-activities.txt

@@ -117,7 +117,8 @@ cd ios && pod install && cd ..
 ### E2E tests
 - Framework: Detox (iOS and Android)
 - Bot: Playwright (Chromium) for simulating a remote participant
-- Location: `React-native-TestApp/e2e/`
+- Location: `React-native-TestApp/__tests__/*.e2e.js`, helpers in `React-native-TestApp/__tests__/helpers/`
+- **Adding or extending E2E tests:** read `docs/Testing.md` first.
 
 **iOS:**
 ```bash
@@ -172,7 +173,7 @@ This repository uses `vg-ai` for tracking AI adoption in commits. All commits mu
 
 - **After each commit**, verify the AI attribution report is correct by checking git notes on the commit
 - If the reported percentage seems inaccurate, **inform the user** and let them decide whether to run `vg-ai attribution override <pct> [--commit <sha>]` to correct it — do not override automatically
-- Thresholds for PR labels: >90% → `ai-generated`, 20-90% → `ai-assisted`, <20% → `no-ai`
+- Thresholds for PR labels: >80% → `ai-generated`, 20-80% → `ai-assisted`, ≤20% → `ai-touched` (there is no separate "no AI" label; `ai-touched` is the lowest of the three allowed labels)
 - Install hooks for automatic tracking: `vg-ai attribution hooks install [kiro-cli|kiro-ide|all]`
 - Push `refs/notes/ai` so PRs get labelled: `vg-ai attribution setup-notes`
 - The attribution is stored as git notes (`refs/notes/ai`) following Git AI Standard v3.0.0
