@@ -54,7 +54,31 @@ const clearPublisherStream = (sessionId) => {
 
 const getStreams = (sessionId) => streams[sessionId] || [];
 
-const getPublisherStream = (sessionId) => publisherStreams[sessionId];
+const getPublisherStreams = (sessionId) => [
+  ...(publisherStreams[sessionId] || []),
+];
+
+const getPublisherStream = (sessionId) => {
+  const localStreams = publisherStreams[sessionId];
+  return localStreams ? localStreams[localStreams.length - 1] : undefined;
+};
+
+const addPublisherStream = (sessionId, streamId) => {
+  if (!streamId) return;
+  const localStreams = publisherStreams[sessionId] || [];
+  if (!localStreams.includes(streamId)) {
+    publisherStreams[sessionId] = [...localStreams, streamId];
+  }
+};
+
+const removePublisherStream = (sessionId, streamId) => {
+  const localStreams = publisherStreams[sessionId];
+  if (!localStreams) return;
+  publisherStreams[sessionId] = localStreams.filter((id) => id !== streamId);
+};
+
+const getEventStreamId = (event) =>
+  event && (event.streamId ?? (event.nativeEvent && event.nativeEvent.streamId));
 
 const isConnected = (sessionId) => connected[sessionId];
 
@@ -69,10 +93,10 @@ const dispatchEvent = (sessionId, type, event) => {
     });
   }
   if (type === 'publisherStreamCreated') {
-    publisherStreams[sessionId] = event.streamId;
+    addPublisherStream(sessionId, getEventStreamId(event));
   }
   if (type === 'publisherStreamDestroyed') {
-    delete publisherStreams[sessionId];
+    removePublisherStream(sessionId, getEventStreamId(event));
   }
 };
 
@@ -229,6 +253,7 @@ export {
   clearStreams,
   getStreams,
   getPublisherStream,
+  getPublisherStreams,
   isConnected,
   setIsConnected,
   dispatchEvent,

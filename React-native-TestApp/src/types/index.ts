@@ -140,6 +140,9 @@ export interface State {
   publisherProperties: PublisherProperties;
   subscriberProperties: SubscriberProperties;
   isScreenSharing: boolean;
+  simultaneousScreenShare: boolean;
+  screenPublisherAudio: boolean;
+  localStreamIds: { camera: string; screen: string };
   isLoadingMeetCredentials: boolean;
   streams: Stream[];
   publisherVideoStats: VideoStats | null;

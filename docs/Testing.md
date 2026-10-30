@@ -110,7 +110,7 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | P2P | `p2p.e2e.js` | Publish/subscribe in relayed sessions, unpublish/republish, audio/video toggles |
 | DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
 | Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
-| Screen Sharing | `screenShare.e2e.js` | Toggle screen share on and off, the bot receives each new stream |
+| Screen Sharing | `screenShare.e2e.js` | Swap mode (one publisher switches between camera and screen) and simultaneous mode (a camera publisher and a screen publisher at the same time). The bot checks the streams it receives, their audio and video state, and that a stopped source leaves no stream behind |
 
 ## Architecture
 
@@ -199,6 +199,9 @@ Inside its page it keeps `window.botSession`, `window.botPublisher` and `window.
 | `disconnect()` / `close()` | Leave the session / also close the browser |
 | `waitForStream({ streamId?, timeout? })` | Wait for a specific remote stream, or for any subscribed stream |
 | `getStreamCount()` + `waitForNewStream(previousCount, timeout?)` | Wait for a stream created *after* an action (see below) |
+| `getRemoteStreams()` | `{ streamId, hasAudio, hasVideo, videoType }` of every stream in the session except the bot's own |
+| `waitForRemoteStream({ videoType?, hasAudio?, hasVideo? }, timeout?)` | Wait for a remote stream that matches the given fields (fields left out are ignored) |
+| `waitForNoRemoteStream(videoType, timeout?)` | Wait until no remote stream of that `videoType` is left (for example `screen` after stopping a screen share) |
 | `waitForPublisherAudio(expected, timeout?)` | Wait for the bot's published stream to have or lose audio (after a mute) |
 | `waitForDisconnected(timeout?)` | Wait for the bot to leave the session (after a force disconnect) |
 | `waitForCondition(predicate, arg, label, timeout?)` | Low-level primitive behind the waits above |
