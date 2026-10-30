@@ -65,6 +65,11 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         view.setPublisherId(publisherId)
     }
 
+    @ReactProp(name = "previewOnly")
+    override public fun setPreviewOnly(view: OTRNPublisher, value: Boolean) {
+        view.setPreviewOnly(value)
+    }
+
     @ReactProp(name = "publishAudio")
     override public fun setPublishAudio(view: OTRNPublisher, value: Boolean) {
         view.setPublishAudio(value)
