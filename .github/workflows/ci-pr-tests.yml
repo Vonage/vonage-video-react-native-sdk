@@ -185,6 +185,13 @@ jobs:
       - name: Warm up Metro bundle
         run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false'
 
+      - name: Warm iOS Metro bundle
+        run: |
+          # /status only checks the server; compile the cold bundle before launch.
+          curl --fail --silent --show-error --max-time 240 \
+            'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false' \
+            --output /dev/null
+
       - name: Run iOS Detox tests
         env:
           DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
