@@ -16,23 +16,29 @@ describe('E2E connection readiness', () => {
   let submitted;
   let connected;
   let confirmConnection;
-  let sdkConfirmation;
+  let failConnection;
+  let connectionWait;
+  let disconnectError;
 
   beforeEach(() => {
     submitted = false;
     connected = false;
-    sdkConfirmation = new Promise((resolve) => {
+    disconnectError = null;
+    connectionWait = new Promise((resolve, reject) => {
       confirmConnection = () => {
         connected = true;
         resolve();
       };
+      failConnection = reject;
     });
     global.by = { id: (id) => id };
     global.element = (id) => ({
       id,
       tap: async () => {
-        if (id === 'disconnectSession' && !submitted)
-          throw new Error('Not mounted');
+        if (id === 'disconnectSession') {
+          if (disconnectError) throw disconnectError;
+          if (!submitted) throw new Error('Not mounted');
+        }
         if (id === 'submitButton') submitted = true;
       },
       replaceText: async () => {},
@@ -46,7 +52,7 @@ describe('E2E connection readiness', () => {
           },
         }),
         not: {
-          toHaveText: () => ({ withTimeout: () => sdkConfirmation }),
+          toHaveText: () => ({ withTimeout: () => connectionWait }),
         },
       };
       return matcher;
@@ -88,4 +94,42 @@ describe('E2E connection readiness', () => {
       expect(completed).toBe(true);
     }
   );
+
+  it.each(['connectApp', 'connectAppWithCredentials'])(
+    '%s rejects when the SDK does not confirm the connection',
+    async (method) => {
+      const session = new TestSession({
+        credentials: {
+          apiKey: 'test-key',
+          sessionId: 'test-session',
+          tokenApp: 'test-token',
+        },
+      });
+      const connection = session[method](
+        'test-key',
+        'test-session',
+        'test-token'
+      );
+
+      await new Promise(setImmediate);
+      expect(submitted).toBe(true);
+      expect(connected).toBe(false);
+
+      failConnection(new Error('session not connected'));
+      await expect(connection).rejects.toThrow('session not connected');
+    }
+  );
+
+  it('disconnectApp finishes when the disconnect control cannot be used', async () => {
+    disconnectError = new Error('disconnect failed');
+    const session = new TestSession({
+      credentials: {
+        apiKey: 'test-key',
+        sessionId: 'test-session',
+        tokenApp: 'test-token',
+      },
+    });
+
+    await expect(session.disconnectApp()).resolves.toBeUndefined();
+  });
 });
