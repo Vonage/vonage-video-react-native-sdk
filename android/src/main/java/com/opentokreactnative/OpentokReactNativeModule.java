@@ -121,7 +121,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
 
         session.setArchiveListener(this);
         session.setConnectionListener(this);
-        session.setMuteListener(this);
+        session.setReconnectionListener(this);
         session.setMuteListener(this);
         session.setSessionListener(this);
         session.setSignalListener(this);
