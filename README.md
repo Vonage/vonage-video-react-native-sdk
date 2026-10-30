@@ -4,6 +4,8 @@
 
 React Native library for [Vonage Video API](https://developer.vonage.com/en/video/overview) / [OpenTok](https://tokbox.com/developer/). This library is officially supported by Vonage.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/vonage/vonage-video-react-native-sdk)
+
 ---
 
 ## 📦 Unified Monorepo - Two Packages
