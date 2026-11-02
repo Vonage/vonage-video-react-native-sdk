@@ -60,6 +60,7 @@ describe('Actual React rendering after late subscriber mount', () => {
       sessionId,
       token: 'dummy',
     });
+    session.componentDidMount();
     emitCreated = OT.onStreamCreated.mock.calls.at(-1)[0];
     await act(async () => {
       tree = TestRenderer.create(
