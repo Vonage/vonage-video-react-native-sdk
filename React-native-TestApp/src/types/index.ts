@@ -141,7 +141,6 @@ export interface State {
   subscriberProperties: SubscriberProperties;
   isScreenSharing: boolean;
   simultaneousScreenShare: boolean;
-  screenPublisherAudio: boolean;
   localStreamIds: { camera: string; screen: string };
   isLoadingMeetCredentials: boolean;
   streams: Stream[];

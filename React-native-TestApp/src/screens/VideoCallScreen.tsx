@@ -41,7 +41,6 @@ class VideoCallScreen extends Component<{}, State> {
     connectionSettingsExpanded: false,
     isScreenSharing: false,
     simultaneousScreenShare: false,
-    screenPublisherAudio: false,
     localStreamIds: { camera: '', screen: '' },
     showRecIndicator: false,
     forceDisconnect: false,
@@ -362,16 +361,11 @@ class VideoCallScreen extends Component<{}, State> {
     },
   };
 
-  getScreenPublisherProperties = () => ({
+  screenPublisherProperties = {
     videoSource: 'screen' as const,
-    publishAudio: this.state.screenPublisherAudio,
-    audioTrack: this.state.screenPublisherAudio,
+    publishAudio: false,
+    audioTrack: false,
     scaleBehavior: 'fit' as const,
-  });
-
-  toggleScreenPublisherAudio = () => {
-    if (this.state.simultaneousScreenShare) return;
-    this.setState((prev) => ({ screenPublisherAudio: !prev.screenPublisherAudio }));
   };
 
   screenPublisherEventHandlers = {
@@ -755,7 +749,7 @@ class VideoCallScreen extends Component<{}, State> {
             {this.state.simultaneousScreenShare && (
               <View testID="screenPublisher" style={styles.video}>
                 <OTPublisher
-                  properties={this.getScreenPublisherProperties()}
+                  properties={this.screenPublisherProperties}
                   style={{ flex: 1 }}
                   eventHandlers={this.screenPublisherEventHandlers}
                 />
@@ -803,11 +797,6 @@ class VideoCallScreen extends Component<{}, State> {
           testID="toggleSimultaneousScreenShare"
           handleSubmit={this.toggleSimultaneousScreenShare}
           label={this.state.simultaneousScreenShare ? 'Stop Screen+' : 'Screen +Cam'}
-        />
-        <ButtonComponent
-          testID="toggleScreenPublisherAudio"
-          handleSubmit={this.toggleScreenPublisherAudio}
-          label={this.state.screenPublisherAudio ? 'Scr Audio On' : 'Scr Audio Off'}
         />
         <ButtonComponent
           testID="logNextSubscriberVideoStats"
