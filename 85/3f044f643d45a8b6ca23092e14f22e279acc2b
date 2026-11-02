@@ -1,0 +1,14 @@
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  h_25a96a0890a0d0 364,366-367,752
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "853f044f643d45a8b6ca23092e14f22e279acc2b",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
