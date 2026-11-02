@@ -552,11 +552,9 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 pub.setRtcStatsReportListener(null)
             }
             runCatching { removeAllViews() }
-            val stream = pub.stream
-            if (stream != null) {
-                runCatching { sharedState.getSessions().get(sessionId)?.unpublish(pub) }
-                sharedState.getPublisherStreams().remove(stream.streamId)
-            }
+            registeredPublisherId?.let { sharedState.getPublishers().remove(it, pub) }
+            pub.session?.let { session -> runCatching { session.unpublish(pub) } }
+            pub.stream?.let { sharedState.getPublisherStreams().remove(it.streamId) }
             runCatching { pub.destroy() }
         }
 
