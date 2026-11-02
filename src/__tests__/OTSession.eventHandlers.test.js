@@ -54,6 +54,7 @@ describe('OTSession eventHandlers prop update', () => {
 
     const props = { ...baseProps(), eventHandlers: { sessionConnected: first } };
     const session = new OTSession(props);
+    session.componentDidMount();
 
     const previous = props;
     session.props = { ...props, eventHandlers: { sessionConnected: second } };
@@ -70,6 +71,7 @@ describe('OTSession eventHandlers prop update', () => {
     const only = jest.fn();
     const props = { ...baseProps(), eventHandlers: { sessionConnected: only } };
     const session = new OTSession(props);
+    session.componentDidMount();
 
     mockCaptured.onSessionConnected({ sessionId: 'sid-1', connectionId: 'c1' });
 
