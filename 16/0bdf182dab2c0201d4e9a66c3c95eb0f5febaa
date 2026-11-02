@@ -1,19 +1,44 @@
+src/OTPublisher.js
+  ac7becc2890300df 45,184,207,224
+src/OTSubscriber.js
+  ac7becc2890300df 10,26-31,114-115
 src/__tests__/OTPublisher.multiple.test.js
-  s_0e8e00f76795e3::t_dc8ed0297d69c1 1-188
+  ac7becc2890300df 1-188
+src/__tests__/OTPublisher.preservation.test.js
+  ac7becc2890300df 345
+src/__tests__/OTSessionHelper.test.js
+  ac7becc2890300df 70,217-237
+src/helpers/OTSessionHelper.js
+  ac7becc2890300df 57-81,96,99,256
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "160bdf182dab2c0201d4e9a66c3c95eb0f5febaa",
-  "prompts": {},
-  "sessions": {
-    "s_0e8e00f76795e3": {
+  "prompts": {
+    "ac7becc2890300df": {
       "agent_id": {
         "tool": "kiro",
-        "id": "sess_61664259-f42a-4973-90f2-06e686e98115",
+        "id": "90a3c226-0b16-48d6-a8fb-0b62e290d8db",
         "model": "auto"
       },
-      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-11-02T15:10:41.047Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (kiro/auto).",
+          "timestamp": "2026-11-02T15:10:41.047Z"
+        }
+      ],
+      "total_additions": 252,
+      "total_deletions": 11,
+      "accepted_lines": 252,
+      "overriden_lines": 0
     }
   }
 }
