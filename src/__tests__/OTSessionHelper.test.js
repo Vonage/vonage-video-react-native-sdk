@@ -225,6 +225,27 @@ describe('OTSessionHelper registry (stream + event + connection state)', () => {
       expect(getPublisherStreams('reg-pub')).toEqual(['cam-1']);
       expect(readPublisherStream('reg-pub')).toBe('cam-1');
     });
+    it('keeps one current stream per publisher id and replaces it when the publisher publishes again', () => {
+      addListener('reg-pub', 'publisherStreamCreated', jest.fn());
+      addListener('reg-pub', 'publisherStreamDestroyed', jest.fn());
+      dispatch('reg-pub', 'publisherStreamCreated', { streamId: 'cam-1' }, 'camera');
+      dispatch('reg-pub', 'publisherStreamCreated', { streamId: 'screen-1' }, 'screen');
+      expect(getPublisherStreams('reg-pub')).toEqual(['cam-1', 'screen-1']);
+      expect(readPublisherStream('reg-pub', 'camera')).toBe('cam-1');
+      dispatch('reg-pub', 'publisherStreamDestroyed', { streamId: 'cam-1' }, 'camera');
+      dispatch('reg-pub', 'publisherStreamCreated', { streamId: 'cam-2' }, 'camera');
+      expect(readPublisherStream('reg-pub', 'camera')).toBe('cam-2');
+      expect(getPublisherStreams('reg-pub').sort()).toEqual(['cam-2', 'screen-1']);
+    });
+    it('ignores a late destroyed event of an old stream of the same publisher', () => {
+      addListener('reg-pub', 'publisherStreamCreated', jest.fn());
+      addListener('reg-pub', 'publisherStreamDestroyed', jest.fn());
+      dispatch('reg-pub', 'publisherStreamCreated', { streamId: 'cam-1' }, 'camera');
+      dispatch('reg-pub', 'publisherStreamCreated', { streamId: 'cam-2' }, 'camera');
+      dispatch('reg-pub', 'publisherStreamDestroyed', { streamId: 'cam-1' }, 'camera');
+      expect(readPublisherStream('reg-pub', 'camera')).toBe('cam-2');
+      expect(getPublisherStreams('reg-pub')).toEqual(['cam-2']);
+    });
     it('reads the stream id from a native event wrapper on destroy', () => {
       addListener('reg-pub', 'publisherStreamCreated', jest.fn());
       addListener('reg-pub', 'publisherStreamDestroyed', jest.fn());

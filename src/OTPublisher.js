@@ -10,6 +10,7 @@ import {
   removeEventListener,
   dispatchEvent,
   isConnected,
+  getPublisherStream,
 } from './helpers/OTSessionHelper';
 import { sanitizeProperties } from './helpers/OTPublisherHelper';
 import OTContext from './contexts/OTContext';
@@ -42,7 +43,6 @@ const getParsedStatsPayload = (nativeEvent) => {
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
-  localStreamId = null;
 
   constructor(props) {
     super(props);
@@ -181,7 +181,10 @@ export default class OTPublisher extends React.Component {
 
   componentWillUnmount() {
     OT.unpublish(this.context.sessionId, this.state.publisherId);
-    const publisherStreamId = this.localStreamId;
+    const publisherStreamId = getPublisherStream(
+      this.context.sessionId,
+      this.state.publisherId
+    );
     if (publisherStreamId) {
       const event = {
         streamId: publisherStreamId,
@@ -204,8 +207,12 @@ export default class OTPublisher extends React.Component {
   });
 
   onStreamDestroyed = (event) => {
-    this.localStreamId = null;
-    dispatchEvent(this.context.sessionId, 'publisherStreamDestroyed', event);
+    dispatchEvent(
+      this.context.sessionId,
+      'publisherStreamDestroyed',
+      event,
+      this.state.publisherId
+    );
     this.props.eventHandlers?.streamDestroyed?.(event.nativeEvent);
   };
 
@@ -221,11 +228,11 @@ export default class OTPublisher extends React.Component {
           this.props.eventHandlers?.error?.(event.nativeEvent);
         }}
         onStreamCreated={(event) => {
-          this.localStreamId = event.nativeEvent?.streamId ?? null;
           dispatchEvent(
             this.context.sessionId,
             'publisherStreamCreated',
-            event.nativeEvent
+            event.nativeEvent,
+            this.state.publisherId
           );
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}

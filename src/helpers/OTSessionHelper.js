@@ -54,27 +54,42 @@ const clearPublisherStream = (sessionId) => {
 
 const getStreams = (sessionId) => streams[sessionId] || [];
 
-const getPublisherStreams = (sessionId) => [
-  ...(publisherStreams[sessionId] || []),
-];
+const getPublisherStreams = (sessionId) =>
+  Object.values(publisherStreams[sessionId] || {});
 
-const getPublisherStream = (sessionId) => {
-  const localStreams = publisherStreams[sessionId];
-  return localStreams ? localStreams[localStreams.length - 1] : undefined;
-};
-
-const addPublisherStream = (sessionId, streamId) => {
-  if (!streamId) return;
-  const localStreams = publisherStreams[sessionId] || [];
-  if (!localStreams.includes(streamId)) {
-    publisherStreams[sessionId] = [...localStreams, streamId];
+const getPublisherStream = (sessionId, publisherId) => {
+  const localStreams = publisherStreams[sessionId] || {};
+  if (publisherId !== undefined) {
+    return localStreams[publisherId];
   }
+  const streamIds = Object.values(localStreams);
+  return streamIds[streamIds.length - 1];
 };
 
-const removePublisherStream = (sessionId, streamId) => {
+// A publisher keeps its id for its whole life but gets a new stream id every
+// time it publishes, so the current stream is stored under the publisher id.
+// Callers that do not know the publisher id fall back to the stream id as key.
+const setPublisherStream = (sessionId, publisherId, streamId) => {
+  if (!streamId) return;
+  publisherStreams[sessionId] = {
+    ...(publisherStreams[sessionId] || {}),
+    [publisherId ?? streamId]: streamId,
+  };
+};
+
+// Only clears the entry if it still holds the destroyed stream, so a late
+// destroyed event of an old stream cannot drop the stream published after it.
+const removePublisherStream = (sessionId, publisherId, streamId) => {
   const localStreams = publisherStreams[sessionId];
-  if (!localStreams) return;
-  publisherStreams[sessionId] = localStreams.filter((id) => id !== streamId);
+  if (!localStreams || !streamId) return;
+  const key =
+    publisherId !== undefined
+      ? publisherId
+      : Object.keys(localStreams).find((id) => localStreams[id] === streamId);
+  if (key === undefined || localStreams[key] !== streamId) return;
+  const remaining = { ...localStreams };
+  delete remaining[key];
+  publisherStreams[sessionId] = remaining;
 };
 
 const getEventStreamId = (event) =>
@@ -82,7 +97,7 @@ const getEventStreamId = (event) =>
 
 const isConnected = (sessionId) => connected[sessionId];
 
-const dispatchEvent = (sessionId, type, event) => {
+const dispatchEvent = (sessionId, type, event, publisherId) => {
   if (!eventHandlers[sessionId]) {
     return;
   }
@@ -93,10 +108,10 @@ const dispatchEvent = (sessionId, type, event) => {
     });
   }
   if (type === 'publisherStreamCreated') {
-    addPublisherStream(sessionId, getEventStreamId(event));
+    setPublisherStream(sessionId, publisherId, getEventStreamId(event));
   }
   if (type === 'publisherStreamDestroyed') {
-    removePublisherStream(sessionId, getEventStreamId(event));
+    removePublisherStream(sessionId, publisherId, getEventStreamId(event));
   }
 };
 

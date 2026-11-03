@@ -127,6 +127,46 @@ describe('Several OTPublisher components in one session', () => {
     expect(getPublisherStreams(SESSION)).toEqual(['camera-stream']);
   });
 
+  it('reports the new stream on unmount after a stream was destroyed and another created', () => {
+    const handler = jest.fn();
+    const publisher = makePublisher({ streamDestroyed: handler });
+    mount(publisher);
+    createStream(publisher, 'stream-a');
+    publisher.render().props.onStreamDestroyed({ nativeEvent: { streamId: 'stream-a' } });
+    createStream(publisher, 'stream-b');
+
+    publisher.componentWillUnmount();
+
+    expect(handler).toHaveBeenLastCalledWith({ streamId: 'stream-b' });
+    expect(getPublisherStreams(SESSION)).toEqual([]);
+  });
+
+  it('keeps the new stream when the destroyed event of the old one arrives late', () => {
+    const handler = jest.fn();
+    const publisher = makePublisher({ streamDestroyed: handler });
+    mount(publisher);
+    createStream(publisher, 'stream-a');
+    createStream(publisher, 'stream-b');
+    publisher.render().props.onStreamDestroyed({ nativeEvent: { streamId: 'stream-a' } });
+    expect(getPublisherStreams(SESSION)).toEqual(['stream-b']);
+
+    publisher.componentWillUnmount();
+
+    expect(handler).toHaveBeenLastCalledWith({ streamId: 'stream-b' });
+    expect(getPublisherStreams(SESSION)).toEqual([]);
+  });
+
+  it('replaces the previous stream of the same publisher when it publishes again', () => {
+    const publisher = makePublisher();
+    mount(publisher);
+    createStream(publisher, 'stream-a');
+    createStream(publisher, 'stream-b');
+
+    publisher.componentWillUnmount();
+
+    expect(getPublisherStreams(SESSION)).toEqual([]);
+  });
+
   it('does not emit a second destroyed event on unmount after the native one', () => {
     const handler = jest.fn();
     const camera = makePublisher({ streamDestroyed: handler });

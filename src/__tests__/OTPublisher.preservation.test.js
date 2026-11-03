@@ -342,7 +342,7 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         ...publisherInstance.state,
         publisherId: mockPublisherId,
       };
-      publisherInstance.localStreamId = mockStreamId;
+      getPublisherStream.mockReturnValue(mockStreamId);
 
       publisherInstance.componentWillUnmount();
 
@@ -356,7 +356,12 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         {
           streamId: mockStreamId,
           nativeEvent: { streamId: mockStreamId },
-        }
+        },
+        mockPublisherId
+      );
+      expect(getPublisherStream).toHaveBeenCalledWith(
+        mockSessionId,
+        mockPublisherId
       );
       expect(streamDestroyedHandler).toHaveBeenCalledWith({ streamId: mockStreamId });
     });
