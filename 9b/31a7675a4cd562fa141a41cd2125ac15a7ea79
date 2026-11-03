@@ -1,0 +1,42 @@
+src/OTPublisher.js
+  86a09eba9429befd 13,184-187,210-215,234-235
+src/__tests__/OTPublisher.multiple.test.js
+  86a09eba9429befd 130-169
+src/__tests__/OTPublisher.preservation.test.js
+  86a09eba9429befd 345,359-364
+src/__tests__/OTSessionHelper.test.js
+  86a09eba9429befd 228-248
+src/helpers/OTSessionHelper.js
+  86a09eba9429befd 57-58,60-66,69-72,74-77,80-82,84-92,100,111,114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "9b31a7675a4cd562fa141a41cd2125ac15a7ea79",
+  "prompts": {
+    "86a09eba9429befd": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "cb1edd41-90ee-474d-97b9-dd27073c13ae",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-11-03T09:46:57.828Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (kiro/auto).",
+          "timestamp": "2026-11-03T09:46:57.828Z"
+        }
+      ],
+      "total_additions": 113,
+      "total_deletions": 25,
+      "accepted_lines": 113,
+      "overriden_lines": 0
+    }
+  }
+}
