@@ -375,7 +375,7 @@ export type OTSessionInstance = React.Component<OTSessionProps> & {
  * image file path — a remote URL is not fetched by the native media library.
  */
 export type VideoFilter =
-  | { type: 'backgroundBlur'; blurStrength?: 'low' | 'high' }
+  | { type: 'backgroundBlur'; blurStrength?: 'Low' | 'High' }
   | { type: 'backgroundReplacement'; backgroundImgUrl: string };
 
 export type OTPublisherInstance = React.Component<OTPublisherProps> & {

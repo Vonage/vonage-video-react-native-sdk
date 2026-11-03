@@ -64,12 +64,11 @@ describe('OTPublisher video filters', () => {
     publisher.state = { ...publisher.state, publisherId: 'pub-1' };
   });
 
-  // The media library's radius values are capitalised ("Low"/"High") on both
-  // platforms, while the Web SDK's blurStrength is lowercase.
-  it('maps blurStrength "low" to the native radius "Low"', async () => {
+  // blurStrength uses the media library's radius values and is sent unchanged.
+  it('sends blurStrength "Low" as the native radius', async () => {
     await publisher.applyVideoFilter({
       type: 'backgroundBlur',
-      blurStrength: 'low',
+      blurStrength: 'Low',
     });
 
     expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', [
@@ -77,10 +76,10 @@ describe('OTPublisher video filters', () => {
     ]);
   });
 
-  it('maps blurStrength "high" to the native radius "High"', async () => {
+  it('sends blurStrength "High" as the native radius', async () => {
     await publisher.applyVideoFilter({
       type: 'backgroundBlur',
-      blurStrength: 'high',
+      blurStrength: 'High',
     });
 
     expect(OT.setVideoTransformers).toHaveBeenCalledWith('sid-1', 'pub-1', [
@@ -132,18 +131,18 @@ describe('OTPublisher video filters', () => {
     expect(OT.setVideoTransformers).not.toHaveBeenCalled();
   });
 
-  it('rejects on an invalid blurStrength', async () => {
-    await expect(
-      publisher.applyVideoFilter({
-        type: 'backgroundBlur',
-        blurStrength: 'medium',
-      })
-    ).rejects.toThrow(/blurStrength must be/);
-    expect(OT.setVideoTransformers).not.toHaveBeenCalled();
-  });
+  it.each(['medium', 'low', 'high'])(
+    'rejects on an invalid blurStrength (%s)',
+    async (blurStrength) => {
+      await expect(
+        publisher.applyVideoFilter({ type: 'backgroundBlur', blurStrength })
+      ).rejects.toThrow(/blurStrength must be/);
+      expect(OT.setVideoTransformers).not.toHaveBeenCalled();
+    }
+  );
 
   // Only an omitted blurStrength defaults; falsy values are bad input and must
-  // throw rather than silently applying high blur.
+  // throw rather than silently applying High blur.
   it.each([
     ['empty string', ''],
     ['null', null],
@@ -367,18 +366,18 @@ describe('OTPublisher video filters', () => {
       await publisher.applyVideoFilter({ type: 'backgroundBlur' });
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
     });
 
-    it('reports low blur and replacement image settings', async () => {
+    it('reports Low blur and replacement image settings', async () => {
       await publisher.applyVideoFilter({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       const filter = {
         type: 'backgroundReplacement',
@@ -401,7 +400,7 @@ describe('OTPublisher video filters', () => {
     });
 
     it('preserves the previous filter when a replacement fails', async () => {
-      const previous = { type: 'backgroundBlur', blurStrength: 'low' };
+      const previous = { type: 'backgroundBlur', blurStrength: 'Low' };
       await publisher.applyVideoFilter(previous);
       OT.setVideoTransformers.mockRejectedValueOnce(new Error('Invalid image'));
       await expect(
@@ -423,7 +422,7 @@ describe('OTPublisher video filters', () => {
       );
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
     });
 
@@ -437,7 +436,7 @@ describe('OTPublisher video filters', () => {
       ).rejects.toThrow('Could not create');
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
       await publisher.clearVideoFilter();
       expect(publisher.getVideoFilter()).toBeNull();
@@ -458,14 +457,14 @@ describe('OTPublisher video filters', () => {
       await pending;
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
     });
 
     it('reports the old filter while a replacement is pending', async () => {
       await publisher.applyVideoFilter({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       let complete;
       OT.setVideoTransformers.mockImplementationOnce(
@@ -476,19 +475,19 @@ describe('OTPublisher video filters', () => {
       );
       const pending = publisher.applyVideoFilter({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
       await Promise.resolve();
       await Promise.resolve();
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       complete();
       await pending;
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
     });
 
@@ -506,7 +505,7 @@ describe('OTPublisher video filters', () => {
       await Promise.resolve();
       expect(publisher.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'high',
+        blurStrength: 'High',
       });
       complete();
       await pending;
@@ -542,7 +541,7 @@ describe('OTPublisher video filters', () => {
       );
       const pending = publisher.applyVideoFilter({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       const rejected = expect(pending).rejects.toMatchObject({
         code: 'OT_INVALID_STATE',
@@ -564,12 +563,12 @@ describe('OTPublisher video filters', () => {
       expect(other.getVideoFilter()).toBeNull();
       await other.applyVideoFilter({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
       await publisher.clearVideoFilter();
       expect(other.getVideoFilter()).toEqual({
         type: 'backgroundBlur',
-        blurStrength: 'low',
+        blurStrength: 'Low',
       });
     });
   });

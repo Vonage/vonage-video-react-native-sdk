@@ -9,7 +9,7 @@ the promise. A failed transformer creation leaves the previous pipeline intact.
 try {
   await publisherRef.current.applyVideoFilter({
     type: 'backgroundBlur',
-    blurStrength: 'high',
+    blurStrength: 'High',
   });
   await publisherRef.current.clearVideoFilter();
 } catch (error) {
@@ -48,7 +48,7 @@ state and do not block subsequent calls. Calls after unmount reject with
 
 `publisher.getVideoFilter()` synchronously returns a copy of the last successfully
 applied built-in filter, or `null` when none is active. Blur results include the
-resolved `blurStrength` (`'high'` when omitted). Replacement results include the
+resolved `blurStrength` (`'High'` when omitted). Replacement results include the
 local `backgroundImgUrl` path.
 
 While an update is pending, the getter continues to report the previous filter.
@@ -59,5 +59,5 @@ publisher unmount resets it to `null`.
 ```js
 await publisher.applyVideoFilter({ type: 'backgroundBlur' });
 const filter = publisher.getVideoFilter();
-// { type: 'backgroundBlur', blurStrength: 'high' }
+// { type: 'backgroundBlur', blurStrength: 'High' }
 ```
