@@ -219,22 +219,13 @@ import React
     }
 
     @objc public func publish(_ sessionId: String, publisherId: String) {
-        var error: OTError?
-
-        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
-            return
-        }
-
-        guard let session = OTRN.sharedState.sessions[sessionId] else {
-            return
-        }
-
-        session.publish(publisher, error: &error)
-        // Handle error if needed
+        OTRN.sharedState.requestPublish(sessionId: sessionId, publisherId: publisherId)
     }
 
     @objc public func unpublish(_ sessionId: String, publisherId: String) {
         var error: OTError?
+
+        OTRN.sharedState.cancelPendingPublish(publisherId: publisherId)
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             return
@@ -550,7 +541,7 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
         signalData["sessionId"] = session.sessionId;
         impl?.ot?.emit(onSignalReceived:  signalData)
     }
-    public func session(_ session: OTSession, info muteForced: OTMuteForcedInfo)
+    public func session(_ session: OTSession, muteForced: OTMuteForcedInfo)
     {
         var muteForcedInfo: [String: Any] = [:]
         muteForcedInfo["active"] = muteForced.active

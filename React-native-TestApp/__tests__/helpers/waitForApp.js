@@ -1,13 +1,6 @@
 'use strict';
 
-/**
- * Waits for the test app to fully load (bundle loaded, UI rendered).
- * Polls for the submitButton to appear, with a generous timeout for CI.
- *
- * Call this after device.launchApp() + device.disableSynchronization().
- *
- * @param {number} [timeout=90000] - Max wait time in ms
- */
+/** Polls until the connection form is visible (bundle loaded, UI rendered). */
 async function waitForAppReady(timeout = 90000) {
   const pollInterval = 2000;
   const maxAttempts = Math.ceil(timeout / pollInterval);
@@ -25,4 +18,28 @@ async function waitForAppReady(timeout = 90000) {
   }
 }
 
-module.exports = { waitForAppReady };
+/**
+ * Launches the app, disables Detox synchronization and waits for the UI to be ready. A failed
+ * attempt (launch error or UI not ready) is retried once after terminating the app; the first
+ * attempt waits less so a stuck cold start is cut short. Use it in `beforeAll` or `beforeEach`.
+ *
+ * @param {object} params - Passed to device.launchApp()
+ */
+async function launchAndWaitForApp(params) {
+  const attempt = async (readyTimeout) => {
+    await device.launchApp(params);
+    await device.disableSynchronization();
+    await waitForAppReady(readyTimeout);
+  };
+  try {
+    await attempt(60000);
+  } catch (e) {
+    console.warn(`[launchApp] First attempt failed (${e.message}). Relaunching once.`);
+    try {
+      await device.terminateApp();
+    } catch (_) {}
+    await attempt(90000);
+  }
+}
+
+module.exports = { waitForAppReady, launchAndWaitForApp };
