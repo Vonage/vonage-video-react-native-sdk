@@ -2,14 +2,7 @@
 
 const { TestSession } = require('./helpers/testSession');
 
-/**
- * Calling-services bridge Tests
- *
- * Drives the "Calling" tab through the CallKit / ConnectionService audio
- * lifecycle and checks every bridge method resolves on both platforms.
- * This proves the JS -> native wiring; audio on a real answered call still
- * needs a physical device and a VoIP push.
- */
+// Checks every calling-services bridge method resolves on both platforms.
 describe('Calling services', () => {
   let session;
 
@@ -30,7 +23,7 @@ describe('Calling services', () => {
 
   afterAll(async () => {
     await session.teardown();
-    // Calling-services mode is process-wide on iOS; don't leak it to other suites.
+    // Mode is process-wide on iOS; reset it for other suites.
     await device.terminateApp();
   });
 

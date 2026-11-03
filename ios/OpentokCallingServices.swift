@@ -3,16 +3,8 @@ import Foundation
 import OpenTok
 import React
 
-/// Calling-services (CallKit) support.
-///
-/// The Vonage iOS SDK exposes `OTAudioSessionManager` from 2.31.0 onward. It is vended by
-/// `OTAudioDeviceManager.currentAudioSessionManager()`, which returns the current audio device
-/// **only if that device conforms to the protocol**. Per the SDK headers, "currently only the
-/// default audio device supports this protocol" — so installing a custom audio device (which this
-/// module does when `enableStereoOutput` is set) makes calling-services mode unavailable.
-///
-/// This module deliberately does not own a `CXProvider`. The application drives CallKit (directly
-/// or via react-native-callkeep) and forwards the audio-session lifecycle here.
+/// CallKit audio-session hooks. The app owns the `CXProvider` and forwards its lifecycle here.
+/// Unavailable while a custom audio device is installed (e.g. `enableStereoOutput`).
 extension OpentokReactNativeImpl {
 
     private static let unavailableMessage =
@@ -31,11 +23,7 @@ extension OpentokReactNativeImpl {
         body(manager)
     }
 
-    /// Maps a JS mode string onto an `AVAudioSession.Mode`.
-    ///
-    /// Defaults to `videoChat`, matching the VERA CallKit plugin's production usage for
-    /// Vonage video calls. (The SDK header cites `voiceChat` as the generic VoIP default;
-    /// it stays selectable.)
+    /// Maps a JS mode string onto an `AVAudioSession.Mode`; defaults to `videoChat`.
     private static func audioSessionMode(from raw: String?) -> AVAudioSession.Mode {
         switch raw {
         case "voiceChat": return .voiceChat
@@ -76,10 +64,7 @@ extension OpentokReactNativeImpl {
         }
     }
 
-    /// Forward from `provider(_:didActivate:)`.
-    ///
-    /// The protocol takes an `AVAudioSession`, which cannot cross the bridge. CallKit always hands
-    /// back the shared instance, so that is what is passed through.
+    /// Forward from `provider(_:didActivate:)`. CallKit always passes the shared session.
     @objc public func notifyAudioSessionActivated(
         _ resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
@@ -102,9 +87,6 @@ extension OpentokReactNativeImpl {
     }
 
     // MARK: - Android-only methods (no-ops on iOS)
-    //
-    // Kept in the shared spec so app code can call them unconditionally; audio focus is an
-    // Android Telecom concept with no iOS counterpart.
 
     @objc public func setRequestAudioFocus(
         _ requestFocus: Bool,

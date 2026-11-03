@@ -14,11 +14,8 @@ import ButtonComponent from '../../components/ButtonComponent';
 import TextComponent from '../../components/TextComponent';
 import { styles } from '../styles/styles';
 
-// Exercises the calling-services bridge. In a real app these calls are driven
-// by CXProviderDelegate (iOS) / ConnectionService (Android), typically via
-// react-native-callkeep. Note: on iOS, enabling calling-services mode stops
-// the SDK activating the audio session itself, so sessions in this app run
-// silent until "Activated" is pressed or the app is relaunched.
+// Exercises the calling-services bridge. On iOS, enabling it leaves audio
+// silent until "Activated" is pressed.
 type Step = { label: string; testID: string; run: () => Promise<unknown> };
 
 const STEPS: Step[] = [
