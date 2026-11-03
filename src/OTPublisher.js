@@ -43,6 +43,7 @@ const getParsedStatsPayload = (nativeEvent) => {
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
+  unmounted = false;
 
   constructor(props) {
     super(props);
@@ -194,6 +195,7 @@ export default class OTPublisher extends React.Component {
       };
       this.onStreamDestroyed(event);
     }
+    this.unmounted = true;
     removeEventListener(
       this.context.sessionId,
       'sessionConnected',
@@ -207,6 +209,7 @@ export default class OTPublisher extends React.Component {
   });
 
   onStreamDestroyed = (event) => {
+    if (this.unmounted) return;
     dispatchEvent(
       this.context.sessionId,
       'publisherStreamDestroyed',

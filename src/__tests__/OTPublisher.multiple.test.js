@@ -167,6 +167,19 @@ describe('Several OTPublisher components in one session', () => {
     expect(getPublisherStreams(SESSION)).toEqual([]);
   });
 
+  it('does not call the destroyed handler again when the native event arrives after unmount', () => {
+    const handler = jest.fn();
+    const publisher = makePublisher({ streamDestroyed: handler });
+    mount(publisher);
+    createStream(publisher, 'camera-stream');
+    const element = publisher.render();
+
+    publisher.componentWillUnmount();
+    element.props.onStreamDestroyed({ nativeEvent: { streamId: 'camera-stream' } });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
   it('does not emit a second destroyed event on unmount after the native one', () => {
     const handler = jest.fn();
     const camera = makePublisher({ streamDestroyed: handler });
@@ -206,8 +219,8 @@ describe('OTSubscriber subscribeToSelf with several local streams', () => {
 
   it('lists every local stream at construction', () => {
     addEventListener(SESSION, 'publisherStreamCreated', jest.fn());
-    dispatchEvent(SESSION, 'publisherStreamCreated', { streamId: 'camera-stream' });
-    dispatchEvent(SESSION, 'publisherStreamCreated', { streamId: 'screen-stream' });
+    dispatchEvent(SESSION, 'publisherStreamCreated', { streamId: 'camera-stream' }, 'camera');
+    dispatchEvent(SESSION, 'publisherStreamCreated', { streamId: 'screen-stream' }, 'screen');
 
     expect(makeSubscriber().state.streams).toEqual([
       'camera-stream',

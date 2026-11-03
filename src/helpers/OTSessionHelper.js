@@ -57,39 +57,28 @@ const getStreams = (sessionId) => streams[sessionId] || [];
 const getPublisherStreams = (sessionId) =>
   Object.values(publisherStreams[sessionId] || {});
 
-const getPublisherStream = (sessionId, publisherId) => {
-  const localStreams = publisherStreams[sessionId] || {};
-  if (publisherId !== undefined) {
-    return localStreams[publisherId];
-  }
-  const streamIds = Object.values(localStreams);
-  return streamIds[streamIds.length - 1];
-};
+const getPublisherStream = (sessionId, publisherId) =>
+  publisherStreams[sessionId]?.[publisherId];
 
 // A publisher keeps its id for its whole life but gets a new stream id every
 // time it publishes, so the current stream is stored under the publisher id.
-// Callers that do not know the publisher id fall back to the stream id as key.
 const setPublisherStream = (sessionId, publisherId, streamId) => {
-  if (!streamId) return;
+  if (!publisherId || !streamId) return;
   publisherStreams[sessionId] = {
-    ...(publisherStreams[sessionId] || {}),
-    [publisherId ?? streamId]: streamId,
+    ...publisherStreams[sessionId],
+    [publisherId]: streamId,
   };
 };
 
 // Only clears the entry if it still holds the destroyed stream, so a late
 // destroyed event of an old stream cannot drop the stream published after it.
 const removePublisherStream = (sessionId, publisherId, streamId) => {
-  const localStreams = publisherStreams[sessionId];
-  if (!localStreams || !streamId) return;
-  const key =
-    publisherId !== undefined
-      ? publisherId
-      : Object.keys(localStreams).find((id) => localStreams[id] === streamId);
-  if (key === undefined || localStreams[key] !== streamId) return;
-  const remaining = { ...localStreams };
-  delete remaining[key];
-  publisherStreams[sessionId] = remaining;
+  if (!streamId || getPublisherStream(sessionId, publisherId) !== streamId) {
+    return;
+  }
+  const current = { ...publisherStreams[sessionId] };
+  delete current[publisherId];
+  publisherStreams[sessionId] = current;
 };
 
 const getEventStreamId = (event) =>
