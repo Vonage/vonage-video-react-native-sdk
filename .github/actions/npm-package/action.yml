@@ -1,0 +1,105 @@
+name: npm package
+description: Build the SDK as one npm package and dry-run or publish it to one registry.
+
+inputs:
+  mode:
+    description: "'verify' runs a dry run, 'publish' publishes"
+    required: true
+  package-name:
+    description: Package name to publish (package.json is renamed if it differs)
+    required: true
+  registry-url:
+    description: Registry URL, e.g. https://registry.npmjs.org/
+    required: true
+  scope:
+    description: Package scope that maps to the registry (needed for GitHub Packages)
+    required: false
+    default: ''
+  version:
+    description: Release version (the release branch name)
+    required: true
+  token:
+    description: Registry token. Optional in verify mode, required in publish mode
+    required: false
+    default: ''
+  verify-publication:
+    description: "'true' to read the version back from the registry after publishing"
+    required: false
+    default: 'false'
+
+outputs:
+  skip:
+    description: "'true' when the version is already published on the registry"
+    value: ${{ steps.published.outputs.skip }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate version
+      id: version
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: bash "$GITHUB_ACTION_PATH/validate-version.sh"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+      with:
+        node-version: '22'
+        registry-url: ${{ inputs.registry-url }}
+        scope: ${{ inputs.scope }}
+
+    - name: Install dependencies and build
+      shell: bash
+      env:
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        VERSION: ${{ inputs.version }}
+      run: bash "$GITHUB_ACTION_PATH/prepare.sh"
+
+    - name: Check if version already published
+      id: published
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        VERSION: ${{ inputs.version }}
+        REGISTRY_TOKEN: ${{ inputs.token }}
+      run: bash "$GITHUB_ACTION_PATH/check-published.sh"
+
+    - name: Check publish token
+      if: inputs.mode == 'publish' && steps.published.outputs.skip != 'true'
+      shell: bash
+      env:
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+      run: bash "$GITHUB_ACTION_PATH/check-token.sh"
+
+    - name: Pack
+      id: pack
+      if: steps.published.outputs.skip != 'true'
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/pack.sh"
+
+    - name: Publish
+      if: steps.published.outputs.skip != 'true'
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        VERSION: ${{ inputs.version }}
+        NPM_TAG: ${{ steps.version.outputs.tag }}
+        TARBALL: ${{ steps.pack.outputs.tarball }}
+        PUBLISH_TOKEN: ${{ inputs.mode == 'publish' && inputs.token || '' }}
+      run: bash "$GITHUB_ACTION_PATH/publish.sh"
+
+    - name: Verify publication
+      if: inputs.mode == 'publish' && inputs.verify-publication == 'true' && steps.published.outputs.skip != 'true'
+      shell: bash
+      env:
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        VERSION: ${{ inputs.version }}
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+      run: bash "$GITHUB_ACTION_PATH/verify-publication.sh"
