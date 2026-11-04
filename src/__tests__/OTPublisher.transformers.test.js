@@ -109,14 +109,14 @@ describe('Bug Condition: Transformer Methods Missing on OTPublisher Ref', () => 
       expect(typeof instance.setVideoTransformers).toBe('function');
     });
 
-    it('should delegate to OT.setVideoTransformers with sessionId, publisherId, and transformers', () => {
+    it('should delegate to OT.setVideoTransformers with sessionId, publisherId, and transformers', async () => {
       // This test will FAIL on unfixed code with:
       // TypeError: instance.setVideoTransformers is not a function
       const transformers = [
         { name: 'BackgroundBlur', properties: '{ "radius": "High" }' },
       ];
 
-      instance.setVideoTransformers(transformers);
+      await instance.setVideoTransformers(transformers);
 
       expect(OT.setVideoTransformers).toHaveBeenCalledWith(
         mockSessionId,

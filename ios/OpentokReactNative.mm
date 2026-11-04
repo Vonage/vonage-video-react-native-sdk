@@ -203,8 +203,18 @@ RCT_EXPORT_MODULE()
 }
 
 // sessionId required for multi-session
-- (void)setVideoTransformers:(nonnull NSString *)sessionId publisherId:(nonnull NSString *)publisherId transformers:(nonnull NSArray *)transformers { 
-    [impl setVideoTransformers:sessionId publisherId:publisherId transformers:transformers];
+- (void)setVideoTransformers:(nonnull NSString *)sessionId
+                 publisherId:(nonnull NSString *)publisherId
+                transformers:(nonnull NSArray *)transformers
+                     resolve:(nonnull RCTPromiseResolveBlock)resolve
+                      reject:(nonnull RCTPromiseRejectBlock)reject {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            [impl setVideoTransformers:sessionId publisherId:publisherId transformers:transformers resolve:resolve reject:reject];
+        } @catch (NSException *exception) {
+            reject(@"OT_VIDEO_FILTER_ERROR", exception.reason ?: @"Could not update video transformers.", nil);
+        }
+    });
 }
 
 
