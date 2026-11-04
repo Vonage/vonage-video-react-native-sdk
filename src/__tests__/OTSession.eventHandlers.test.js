@@ -48,12 +48,17 @@ const baseProps = () => ({
 });
 
 describe('OTSession eventHandlers prop update', () => {
+  beforeEach(() => {
+    Object.keys(mockCaptured).forEach((key) => delete mockCaptured[key]);
+  });
+
   it('dispatches to the handlers from the latest props after a re-render', () => {
     const first = jest.fn();
     const second = jest.fn();
 
     const props = { ...baseProps(), eventHandlers: { sessionConnected: first } };
     const session = new OTSession(props);
+    session.componentDidMount();
 
     const previous = props;
     session.props = { ...props, eventHandlers: { sessionConnected: second } };
@@ -70,6 +75,7 @@ describe('OTSession eventHandlers prop update', () => {
     const only = jest.fn();
     const props = { ...baseProps(), eventHandlers: { sessionConnected: only } };
     const session = new OTSession(props);
+    session.componentDidMount();
 
     mockCaptured.onSessionConnected({ sessionId: 'sid-1', connectionId: 'c1' });
 
