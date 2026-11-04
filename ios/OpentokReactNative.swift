@@ -468,9 +468,12 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     }
 
     public func sessionDidConnect(_ session: OTSession) {
-        guard let connection = session.connection else { return }
-        OTRN.sharedState.connections.updateValue(
-            connection, forKey: connection.connectionId)
+        // session.connection can be nil here (observed intermittently on connect);
+        // force-unwrapping it crashed the app. Guard instead.
+        if let connection = session.connection {
+            OTRN.sharedState.connections.updateValue(
+                connection, forKey: connection.connectionId)
+        }
         // Multi-session: resolve promise callback if present
         if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
             callback(nil)
