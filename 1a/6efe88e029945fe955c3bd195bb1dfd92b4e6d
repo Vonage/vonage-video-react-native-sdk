@@ -1,0 +1,32 @@
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  h_25a96a0890a0d0 433-457
+android/src/main/java/com/opentokreactnative/utils/Utils.java
+  h_25a96a0890a0d0 164-165
+docs/video-filters.md
+  h_25a96a0890a0d0 1-63
+ios/OpentokReactNative.mm
+  h_25a96a0890a0d0 206-217
+ios/OpentokReactNative.swift
+  h_25a96a0890a0d0 408-414,416,421-424,427,432,437-438,440,442
+src/NativeOpentok.ts
+  h_25a96a0890a0d0 162
+src/OTPublisher.js
+  h_25a96a0890a0d0 47-50,169-187,190-200,212-306,308-310
+src/__tests__/OTPublisher.transformers.test.js
+  h_25a96a0890a0d0 112,119
+src/__tests__/OTPublisher.videoFilters.test.js
+  h_25a96a0890a0d0 1-575
+src/types.ts
+  h_25a96a0890a0d0 397-405,408-417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1a6efe88e029945fe955c3bd195bb1dfd92b4e6d",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
