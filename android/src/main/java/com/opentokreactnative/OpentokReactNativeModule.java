@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -59,6 +61,7 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         // Revisit this
         Application.ActivityLifecycleCallbacks {
     public static final String NAME = "OpentokReactNative";
+    private static final long RELEASE_TIMEOUT_MS = 2000;
 
     private ReactApplicationContext context = null;
     private OTRN sharedState = OTRN.getSharedState();
@@ -71,6 +74,88 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     public OpentokReactNativeModule(ReactApplicationContext reactContext) {
         super(reactContext);
         context = reactContext;
+    }
+
+    @Override
+    public void invalidate() {
+        // Release publishers and subscribers before invalidating. Teardown is
+        // serialized with publish/unpublish and Fabric view cleanup on the UI thread.
+        if (UiThreadUtil.isOnUiThread()) {
+            releaseAll();
+        } else {
+            final CountDownLatch released = new CountDownLatch(1);
+            UiThreadUtil.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        releaseAll();
+                    } finally {
+                        released.countDown();
+                    }
+                }
+            });
+            try {
+                released.await(RELEASE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        super.invalidate();
+    }
+
+    private void releaseAll() {
+        // Stop callbacks into the old React instance before releasing media.
+        for (Session session : sharedState.getSessions().values()) {
+            session.setSessionListener(null);
+            session.setConnectionListener(null);
+            session.setSignalListener(null);
+            session.setArchiveListener(null);
+            session.setReconnectionListener(null);
+            session.setMuteListener(null);
+            session.setStreamPropertiesListener(null);
+            session.setStreamCaptionsPropertiesListener(null);
+        }
+        for (Publisher publisher : sharedState.getPublishers().values()) {
+            publisher.setPublisherListener(null);
+            publisher.setAudioLevelListener(null);
+            publisher.setAudioStatsListener(null);
+            publisher.setMuteListener(null);
+            publisher.setVideoListener(null);
+            publisher.setVideoStatsListener(null);
+            publisher.setRtcStatsReportListener(null);
+            Session session = publisher.getSession();
+            if (session != null) {
+                session.unpublish(publisher);
+            }
+            publisher.destroy();
+        }
+        for (Subscriber subscriber : sharedState.getSubscribers().values()) {
+            subscriber.setSubscriberListener(null);
+            subscriber.setRtcStatsReportListener(null);
+            subscriber.setCaptionsListener(null);
+            subscriber.setAudioStatsListener(null);
+            subscriber.setVideoStatsListener(null);
+            subscriber.setVideoListener(null);
+            subscriber.setStreamListener(null);
+            subscriber.setAudioLevelListener(null);
+            Session session = subscriber.getSession();
+            if (session != null) {
+                session.unsubscribe(subscriber);
+            }
+            subscriber.destroy();
+        }
+        for (Session session : sharedState.getSessions().values()) {
+            session.disconnect();
+        }
+        sharedState.getSessions().clear();
+        sharedState.getPublishers().clear();
+        sharedState.getPendingPublishers().clear();
+        sharedState.getSubscribers().clear();
+        sharedState.getConnections().clear();
+        sharedState.getSubscriberStreams().clear();
+        sharedState.getPublisherStreams().clear();
+        sharedState.getAndroidOnTopMap().clear();
+        sharedState.getAndroidZOrderMap().clear();
     }
 
     @Override
@@ -345,14 +430,31 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
         }
     }
 
-    //@Override Move this to publisher code
-    public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers) {
-        ConcurrentHashMap<String, Publisher> publishers = sharedState.getPublishers();
-        Publisher publisher = publishers.get(publisherId);
-        if (publisher != null) {
-            ArrayList<PublisherKit.VideoTransformer> nativeVideoTransformers = Utils.sanitizeVideoTransformerList(publisher, videoTransformers);
-            publisher.setVideoTransformers(nativeVideoTransformers);
-        }
+    @Override
+    public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers, Promise promise) {
+        UiThreadUtil.runOnUiThread(() -> {
+            Publisher publisher = sharedState.getPublishers().get(publisherId);
+            if (publisher == null) {
+                promise.reject("OT_INVALID_STATE", "Publisher not found.");
+                return;
+            }
+            try {
+                // Construct every transformer before replacing the current list.
+                ArrayList<PublisherKit.VideoTransformer> nativeVideoTransformers = Utils.sanitizeVideoTransformerList(publisher, videoTransformers);
+                publisher.setVideoTransformers(nativeVideoTransformers);
+                // Publishers are created on the UI thread. The SDK posts its setter
+                // to that same looper, so acknowledge after the queued setter runs.
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    if (sharedState.getPublishers().get(publisherId) != publisher) {
+                        promise.reject("OT_INVALID_STATE", "Publisher was removed during the video transformer update.");
+                    } else {
+                        promise.resolve(null);
+                    }
+                });
+            } catch (Exception error) {
+                promise.reject("OT_VIDEO_FILTER_ERROR", error.getMessage(), error);
+            }
+        });
     }
 
     @Override

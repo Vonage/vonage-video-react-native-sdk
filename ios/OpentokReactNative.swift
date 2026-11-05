@@ -219,22 +219,13 @@ import React
     }
 
     @objc public func publish(_ sessionId: String, publisherId: String) {
-        var error: OTError?
-
-        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
-            return
-        }
-
-        guard let session = OTRN.sharedState.sessions[sessionId] else {
-            return
-        }
-
-        session.publish(publisher, error: &error)
-        // Handle error if needed
+        OTRN.sharedState.requestPublish(sessionId: sessionId, publisherId: publisherId)
     }
 
     @objc public func unpublish(_ sessionId: String, publisherId: String) {
         var error: OTError?
+
+        OTRN.sharedState.cancelPendingPublish(publisherId: publisherId)
 
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
             return
@@ -414,35 +405,41 @@ import React
         publisher.audioTransformers = nativeTransformers
     }
 
-    @objc public func setVideoTransformers(_ sessionId: String, publisherId: String, transformers: NSArray) -> Void {
+    @objc public func setVideoTransformers(
+        _ sessionId: String,
+        publisherId: String,
+        transformers: NSArray,
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) -> Void {
         guard let publisher = OTRN.sharedState.publishers[publisherId] else {
-            print("ERROR: Could not find publisher with ID \(publisherId)")
+            reject("OT_INVALID_STATE", "Publisher not found.", nil)
             return
         }
-        // Optionally use sessionId for session-specific logic
         var nativeTransformers: [OTVideoTransformer] = []
 
-        for case let transformer as [String: Any] in transformers {
-            guard let transformerName = transformer["name"] as? String else {
-                print("ERROR: Invalid transformer format. Each transformer must have a 'name' key")
+        for item in transformers {
+            guard let transformer = item as? [String: Any],
+                  let transformerName = transformer["name"] as? String else {
+                reject("OT_VIDEO_FILTER_ERROR", "Each video transformer must have a name.", nil)
                 return
             }
-            
-            let transformerProperties = transformer["properties"] as? String ?? ""
-            
+            let transformerProperties = transformer["properties"] as? String ?? "{}"
             guard let nativeTransformer = OTVideoTransformer(
                 name: transformerName,
                 properties: transformerProperties
             ) else {
-                print("ERROR: Failed to create video transformer with name: \(transformerName)")
+                reject("OT_VIDEO_FILTER_ERROR", "Failed to create video transformer: \(transformerName)", nil)
                 return
             }
-            
             nativeTransformers.append(nativeTransformer)
         }
-        
+
+        // Keep the existing pipeline when any transformer could not be created.
         publisher.videoTransformers = nativeTransformers
+        resolve(nil)
     }
+
 }
 
 class DebugAlertHelper {
@@ -471,9 +468,12 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
     }
 
     public func sessionDidConnect(_ session: OTSession) {
-        guard let connection = session.connection else { return }
-        OTRN.sharedState.connections.updateValue(
-            connection, forKey: connection.connectionId)
+        // session.connection can be nil here (observed intermittently on connect);
+        // force-unwrapping it crashed the app. Guard instead.
+        if let connection = session.connection {
+            OTRN.sharedState.connections.updateValue(
+                connection, forKey: connection.connectionId)
+        }
         // Multi-session: resolve promise callback if present
         if let callback = OTRN.sharedState.sessionConnectCallbacks[session.sessionId] {
             callback(nil)
@@ -550,7 +550,7 @@ private class SessionDelegateHandler: NSObject, OTSessionDelegate {
         signalData["sessionId"] = session.sessionId;
         impl?.ot?.emit(onSignalReceived:  signalData)
     }
-    public func session(_ session: OTSession, info muteForced: OTMuteForcedInfo)
+    public func session(_ session: OTSession, muteForced: OTMuteForcedInfo)
     {
         var muteForcedInfo: [String: Any] = [:]
         muteForcedInfo["active"] = muteForced.active

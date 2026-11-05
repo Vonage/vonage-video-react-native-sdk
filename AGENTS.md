@@ -117,7 +117,8 @@ cd ios && pod install && cd ..
 ### E2E tests
 - Framework: Detox (iOS and Android)
 - Bot: Playwright (Chromium) for simulating a remote participant
-- Location: `React-native-TestApp/e2e/`
+- Location: `React-native-TestApp/__tests__/*.e2e.js`, helpers in `React-native-TestApp/__tests__/helpers/`
+- **Adding or extending E2E tests:** read `docs/Testing.md` first.
 
 **iOS:**
 ```bash
