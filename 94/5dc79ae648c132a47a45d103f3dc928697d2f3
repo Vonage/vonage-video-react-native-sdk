@@ -1,0 +1,18 @@
+src/OTPublisher.js
+  h_25a96a0890a0d0 45,184-185,190-191,205-208,225-227
+src/__tests__/OTPublisher.multiple.test.js
+  h_25a96a0890a0d0 130-169
+src/__tests__/OTPublisher.preservation.test.js
+  h_25a96a0890a0d0 345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "945dc79ae648c132a47a45d103f3dc928697d2f3",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
