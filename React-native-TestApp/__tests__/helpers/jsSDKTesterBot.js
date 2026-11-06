@@ -266,6 +266,66 @@ class jsSDKTesterBot {
     );
   }
 
+  /** `{ streamId, hasAudio, hasVideo, videoType }` of every stream in the session except the bot's own. */
+  async getRemoteStreams() {
+    return this.page.evaluate(() => {
+      const ownConnectionId = window.botSession.connection && window.botSession.connection.connectionId;
+      const result = [];
+      window.botSession.streams.forEach((stream) => {
+        if (stream.connection && stream.connection.connectionId === ownConnectionId) return;
+        result.push({
+          streamId: stream.streamId,
+          hasAudio: stream.hasAudio,
+          hasVideo: stream.hasVideo,
+          videoType: stream.videoType,
+        });
+      });
+      return result;
+    });
+  }
+
+  /**
+   * Waits until the session holds a remote stream matching `{ videoType, hasAudio, hasVideo }`
+   * (any field left undefined is ignored) and returns it.
+   */
+  async waitForRemoteStream(match, timeout = 30000) {
+    await this.waitForCondition(
+      (m) => {
+        const own = window.botSession.connection && window.botSession.connection.connectionId;
+        let found = false;
+        window.botSession.streams.forEach((s) => {
+          if (s.connection && s.connection.connectionId === own) return;
+          if (m.videoType !== undefined && s.videoType !== m.videoType) return;
+          if (m.hasAudio !== undefined && s.hasAudio !== m.hasAudio) return;
+          if (m.hasVideo !== undefined && s.hasVideo !== m.hasVideo) return;
+          found = true;
+        });
+        return found;
+      },
+      match,
+      `a remote stream matching ${JSON.stringify(match)}`,
+      timeout
+    );
+  }
+
+  /** Waits until the session holds no remote stream of the given `videoType`. */
+  async waitForNoRemoteStream(videoType, timeout = 15000) {
+    await this.waitForCondition(
+      (type) => {
+        const own = window.botSession.connection && window.botSession.connection.connectionId;
+        let found = false;
+        window.botSession.streams.forEach((s) => {
+          if (s.connection && s.connection.connectionId === own) return;
+          if (s.videoType === type) found = true;
+        });
+        return !found;
+      },
+      videoType,
+      `no remote ${videoType} stream`,
+      timeout
+    );
+  }
+
   /** Waits for the bot's own stream to have (or lose) audio, e.g. after a force mute. */
   async waitForPublisherAudio(expected, timeout = 15000) {
     await this.waitForCondition(

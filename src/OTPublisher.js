@@ -43,6 +43,7 @@ const getParsedStatsPayload = (nativeEvent) => {
 export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
+  unmounted = false;
   videoTransformerQueue = Promise.resolve();
   videoTransformers = [];
   videoFilter = null;
@@ -308,7 +309,10 @@ export default class OTPublisher extends React.Component {
     this.videoTransformers = [];
     this.videoFilter = null;
     OT.unpublish(this.context.sessionId, this.state.publisherId);
-    const publisherStreamId = getPublisherStream(this.context.sessionId);
+    const publisherStreamId = getPublisherStream(
+      this.context.sessionId,
+      this.state.publisherId
+    );
     if (publisherStreamId) {
       const event = {
         streamId: publisherStreamId,
@@ -318,6 +322,7 @@ export default class OTPublisher extends React.Component {
       };
       this.onStreamDestroyed(event);
     }
+    this.unmounted = true;
     removeEventListener(
       this.context.sessionId,
       'sessionConnected',
@@ -331,7 +336,13 @@ export default class OTPublisher extends React.Component {
   });
 
   onStreamDestroyed = (event) => {
-    dispatchEvent(this.context.sessionId, 'publisherStreamDestroyed', event);
+    if (this.unmounted) return;
+    dispatchEvent(
+      this.context.sessionId,
+      'publisherStreamDestroyed',
+      event,
+      this.state.publisherId
+    );
     this.props.eventHandlers?.streamDestroyed?.(event.nativeEvent);
   };
 
@@ -350,7 +361,8 @@ export default class OTPublisher extends React.Component {
           dispatchEvent(
             this.context.sessionId,
             'publisherStreamCreated',
-            event.nativeEvent
+            event.nativeEvent,
+            this.state.publisherId
           );
           this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
         }}
