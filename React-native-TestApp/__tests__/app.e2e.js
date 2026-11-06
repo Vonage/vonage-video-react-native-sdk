@@ -13,7 +13,8 @@ describe('App Launch Test', () => {
   });
 
   afterAll(async () => {
-    await device.enableSynchronization();
+    // Stop instrumentation before Detox tears down its client and ADB forwarding.
+    await device.terminateApp();
   });
 
   it('should launch the app successfully', async () => {
