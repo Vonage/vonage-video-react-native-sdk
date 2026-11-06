@@ -22,6 +22,10 @@ inputs:
     description: Registry token. Optional in verify mode, required in publish mode
     required: false
     default: ''
+  publish-token:
+    description: Publish token to validate in verify mode, so a bad token fails before any target is published
+    required: false
+    default: ''
   verify-publication:
     description: "'true' to read the version back from the registry after publishing"
     required: false
@@ -68,11 +72,11 @@ runs:
       run: bash "$GITHUB_ACTION_PATH/check-published.sh"
 
     - name: Check publish token
-      if: inputs.mode == 'publish' && steps.published.outputs.skip != 'true'
+      if: (inputs.mode == 'publish' || inputs.publish-token != '') && steps.published.outputs.skip != 'true'
       shell: bash
       env:
         REGISTRY_URL: ${{ inputs.registry-url }}
-        NODE_AUTH_TOKEN: ${{ inputs.token }}
+        NODE_AUTH_TOKEN: ${{ inputs.mode == 'publish' && inputs.token || inputs.publish-token }}
       run: bash "$GITHUB_ACTION_PATH/check-token.sh"
 
     - name: Pack
