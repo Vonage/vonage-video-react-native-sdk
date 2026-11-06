@@ -9,6 +9,7 @@ permissions:
 jobs:
   verify-opentok-npm:
     runs-on: ubuntu-latest
+    environment: release
     outputs:
       skip: ${{ steps.package.outputs.skip }}
     steps:
@@ -26,9 +27,11 @@ jobs:
           package-name: opentok-react-native
           registry-url: https://registry.npmjs.org/
           version: ${{ github.ref_name }}
+          publish-token: ${{ secrets.NPM_TOKEN_OPENTOK }}
 
   verify-opentok-github:
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
       packages: read
@@ -50,10 +53,12 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           scope: '@opentok'
           version: ${{ github.ref_name }}
+          publish-token: ${{ secrets.NPM_TOKEN_OPENTOK_GITHUB }}
           token: ${{ github.token }}
 
   verify-vonage-npm:
     runs-on: ubuntu-latest
+    environment: release
     outputs:
       skip: ${{ steps.package.outputs.skip }}
     steps:
@@ -71,9 +76,11 @@ jobs:
           package-name: '@vonage/client-sdk-video-react-native'
           registry-url: https://registry.npmjs.org/
           version: ${{ github.ref_name }}
+          publish-token: ${{ secrets.NPM_TOKEN_VONAGE }}
 
   verify-vonage-github:
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
       packages: read
@@ -95,6 +102,7 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           scope: '@vonage'
           version: ${{ github.ref_name }}
+          publish-token: ${{ secrets.NPM_TOKEN_VONAGE_GITHUB }}
           token: ${{ github.token }}
 
   publish-opentok-npm:
