@@ -13,6 +13,7 @@ const TABS: { key: TabName; label: string; testID: string }[] = [
   { key: 'subscriber', label: 'Subscriber', testID: 'tabSubscriber' },
   { key: 'moderation', label: 'Moderation', testID: 'tabModeration' },
   { key: 'settings', label: 'Settings', testID: 'tabSettings' },
+  { key: 'calling', label: 'Calling', testID: 'tabCalling' },
 ];
 
 const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabPress }) => {
@@ -28,6 +29,9 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabPress }) => {
             onPress={() => onTabPress(tab.key)}
           >
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
               style={[
                 tabBarStyles.tabLabel,
                 isActive && tabBarStyles.tabLabelActive,

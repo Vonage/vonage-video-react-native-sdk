@@ -63,3 +63,19 @@ const checkAndroidPermissions = (audioTrack, videoTrack, isScreenSharing) =>
   });
 
 export { OT, nativeEvents, checkAndroidPermissions };
+
+// Keep calls on the native module so its receiver and Promise behavior are preserved.
+export const isCallingServicesModeAvailable = () =>
+  OT.isCallingServicesModeAvailable();
+export const enableCallingServicesMode = () => OT.enableCallingServicesMode();
+export const preconfigureAudioSessionForCall = (mode = 'videoChat') =>
+  OT.preconfigureAudioSessionForCall(mode);
+export const notifyAudioSessionActivated = () =>
+  OT.notifyAudioSessionActivated();
+export const notifyAudioSessionDeactivated = () =>
+  OT.notifyAudioSessionDeactivated();
+export const setRequestAudioFocus = (requestFocus) =>
+  OT.setRequestAudioFocus(requestFocus);
+export const notifyAudioFocusActivated = () => OT.notifyAudioFocusActivated();
+export const notifyAudioFocusDeactivated = () =>
+  OT.notifyAudioFocusDeactivated();
