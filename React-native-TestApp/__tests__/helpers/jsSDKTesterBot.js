@@ -79,7 +79,12 @@ class jsSDKTesterBot {
 
     await this.page.goto('https://localhost/bot');
 
-    const { apiUrl, jsSdkUrl, publisherOptions = {} } = options;
+    const { apiUrl, jsSdkUrl, publisherOptions = {}, encryptionSecret, canvasVideo } = options;
+    const sessionOptions = JSON.stringify({
+      ...(apiUrl && { apiUrl }),
+      ...(encryptionSecret && { encryptionSecret }),
+    });
+    const canvas = JSON.stringify(canvasVideo || null);
 
     const pubOpts = JSON.stringify({
       videoSource: true,
@@ -109,19 +114,60 @@ class jsSDKTesterBot {
             subscriberCount: 0,
             error: null,
             streamCreatedCount: 0,
+            signals: [],
+            destroyedConnectionIds: [],
+            destroyedStreamIds: [],
+            encryption: {},
           };
+          window.botSubscribers = {};
 
-          const session = OT.initSession('${apiKey}', '${sessionId}'${apiUrl ? `, { apiUrl: '${apiUrl}' }` : ''});
+          const canvasVideo = ${canvas};
+          if (canvasVideo) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasVideo.width;
+            canvas.height = canvasVideo.height;
+            const ctx = canvas.getContext('2d');
+            let frame = 0;
+            setInterval(() => {
+              ctx.fillStyle = 'hsl(' + ((frame++ * 7) % 360) + ', 80%, 50%)';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }, 66);
+            window.botCanvas = canvas;
+            window.botCanvasTrack = canvas.captureStream(15).getVideoTracks()[0];
+          }
+
+          const session = OT.initSession('${apiKey}', '${sessionId}', ${sessionOptions});
 
           session.on('streamCreated', (event) => {
             if (!window.botState.connected) return;
-            session.subscribe(event.stream, 'videos', { insertMode: 'append' });
+            const streamId = event.stream.streamId;
+            const subscriber = session.subscribe(event.stream, 'videos', { insertMode: 'append' });
+            window.botSubscribers[streamId] = subscriber;
+            subscriber.on('encryptionSecretMismatch', () => { window.botState.encryption[streamId] = 'mismatch'; });
+            subscriber.on('encryptionSecretMatch', () => { window.botState.encryption[streamId] = 'match'; });
             window.botState.subscriberCount++;
             window.botState.streamCreatedCount++;
           });
 
-          session.on('streamDestroyed', () => {
+          session.on('streamDestroyed', (event) => {
             window.botState.subscriberCount = Math.max(0, window.botState.subscriberCount - 1);
+            window.botState.destroyedStreamIds.push(event.stream.streamId);
+            delete window.botSubscribers[event.stream.streamId];
+          });
+
+          session.on('connectionDestroyed', (event) => {
+            window.botState.destroyedConnectionIds.push(event.connection.connectionId);
+          });
+
+          session.on('signal', (event) => {
+            window.botState.signals.push({
+              // The JS SDK reports typed signals as "signal:<type>".
+              type: typeof event.type === 'string' && event.type.indexOf('signal:') === 0
+                ? event.type.slice('signal:'.length)
+                : event.type,
+              data: event.data,
+              from: event.from ? event.from.connectionId : null,
+            });
           });
 
           session.on('sessionDisconnected', () => {
@@ -136,7 +182,13 @@ class jsSDKTesterBot {
             }
             window.botState.connected = true;
 
-            const publisher = OT.initPublisher('videos', ${pubOpts});
+            const publisherOptions = ${pubOpts};
+            if (window.botCanvasTrack) {
+              publisherOptions.videoSource = window.botCanvasTrack;
+              delete publisherOptions.width;
+              delete publisherOptions.height;
+            }
+            const publisher = OT.initPublisher('videos', publisherOptions);
             window.botPublisher = publisher;
 
             publisher.on('streamCreated', () => {
@@ -266,7 +318,10 @@ class jsSDKTesterBot {
     );
   }
 
-  /** `{ streamId, hasAudio, hasVideo, videoType }` of every stream in the session except the bot's own. */
+  /**
+   * `{ streamId, connectionId, name, hasAudio, hasVideo, videoType }` of every stream in the
+   * session except the bot's own.
+   */
   async getRemoteStreams() {
     return this.page.evaluate(() => {
       const ownConnectionId = window.botSession.connection && window.botSession.connection.connectionId;
@@ -275,6 +330,8 @@ class jsSDKTesterBot {
         if (stream.connection && stream.connection.connectionId === ownConnectionId) return;
         result.push({
           streamId: stream.streamId,
+          connectionId: stream.connection ? stream.connection.connectionId : null,
+          name: stream.name,
           hasAudio: stream.hasAudio,
           hasVideo: stream.hasVideo,
           videoType: stream.videoType,
@@ -346,6 +403,139 @@ class jsSDKTesterBot {
       undefined,
       'the bot to be disconnected',
       timeout
+    );
+  }
+
+  /** Waits until the stream with the given id has been destroyed. */
+  async waitForStreamDestroyed(streamId, timeout = 15000) {
+    await this.waitForCondition(
+      (id) => window.botState.destroyedStreamIds.includes(id),
+      streamId,
+      `stream ${streamId} to be destroyed`,
+      timeout
+    );
+  }
+
+  /** Waits until the bot sees the connection with the given id leave the session. */
+  async waitForConnectionDestroyed(connectionId, timeout = 15000) {
+    await this.waitForCondition(
+      (id) => window.botState.destroyedConnectionIds.includes(id),
+      connectionId,
+      `connection ${connectionId} to be destroyed`,
+      timeout
+    );
+  }
+
+  /** Sends a signal. `to` is a connectionId; without it the signal is broadcast. */
+  async sendSignal({ type, data, to } = {}) {
+    await this.page.evaluate(
+      (signal) =>
+        new Promise((resolve, reject) => {
+          const options = { type: signal.type, data: signal.data };
+          if (signal.to) {
+            const connection = window.botSession.connections.get(signal.to);
+            if (!connection) {
+              reject(new Error(`Connection ${signal.to} not found in bot session`));
+              return;
+            }
+            options.to = connection;
+          }
+          window.botSession.signal(options, (err) => (err ? reject(err) : resolve()));
+        }),
+      { type, data, to }
+    );
+  }
+
+  /** Signals received so far: `[{ type, data, from }]` (`from` is the sender's connectionId). */
+  async getSignals() {
+    return this.page.evaluate(() => window.botState.signals);
+  }
+
+  /** Waits for a received signal matching `{ type, data, from }` (fields left out are ignored) and returns it. */
+  async waitForSignal(match, timeout = 15000) {
+    await this.waitForCondition(
+      (m) =>
+        window.botState.signals.some(
+          (s) =>
+            (m.type === undefined || s.type === m.type) &&
+            (m.data === undefined || s.data === m.data) &&
+            (m.from === undefined || s.from === m.from)
+        ),
+      match,
+      `a signal matching ${JSON.stringify(match)}`,
+      timeout
+    );
+    const signals = await this.getSignals();
+    return signals.find(
+      (s) =>
+        (match.type === undefined || s.type === match.type) &&
+        (match.data === undefined || s.data === match.data) &&
+        (match.from === undefined || s.from === match.from)
+    );
+  }
+
+  /** Force-mutes another participant's stream (needs a moderator token). */
+  async forceMuteStream(streamId) {
+    await this.page.evaluate(
+      (id) => {
+        const stream = window.botSession.streams.get(id);
+        if (!stream) throw new Error(`Stream ${id} not found in bot session`);
+        return window.botSession.forceMuteStream(stream);
+      },
+      streamId
+    );
+  }
+
+  /** Sets the end-to-end encryption secret of the bot's session. */
+  async setEncryptionSecret(secret) {
+    await this.page.evaluate((value) => window.botSession.setEncryptionSecret(value), secret);
+  }
+
+  /**
+   * Waits for the bot's subscriber to the given stream to report `encryptionSecretMatch`
+   * ('match') or `encryptionSecretMismatch` ('mismatch').
+   */
+  async waitForEncryptionState(streamId, expected, timeout = 30000) {
+    await this.waitForCondition(
+      ({ id, state }) => window.botState.encryption[id] === state,
+      { id: streamId, state: expected },
+      `encryption state "${expected}" for stream ${streamId}`,
+      timeout
+    );
+  }
+
+  /**
+   * Inbound RTP totals of the bot's subscriber to the given stream:
+   * `{ audioPacketsReceived, audioBytesReceived, videoFramesDecoded }`.
+   */
+  async getInboundStats(streamId) {
+    return this.page.evaluate(async (id) => {
+      const subscriber = window.botSubscribers[id];
+      if (!subscriber) return null;
+      const report = await subscriber.getRtcStatsReport();
+      const totals = { audioPacketsReceived: 0, audioBytesReceived: 0, videoFramesDecoded: 0 };
+      report.forEach((s) => {
+        if (s.type !== 'inbound-rtp') return;
+        if (s.kind === 'audio') {
+          totals.audioPacketsReceived += s.packetsReceived || 0;
+          totals.audioBytesReceived += s.bytesReceived || 0;
+        } else if (s.kind === 'video') {
+          totals.videoFramesDecoded += s.framesDecoded || 0;
+        }
+      });
+      return totals;
+    }, streamId);
+  }
+
+  /** Resizes the canvas published with `canvasVideo`, which changes the stream's videoDimensions. */
+  async resizeCanvasVideo(width, height) {
+    await this.page.evaluate(
+      ({ w, h }) => {
+        if (!window.botCanvas) throw new Error('The bot does not publish a canvas (canvasVideo)');
+        window.botCanvas.width = w;
+        window.botCanvas.height = h;
+      },
+      { w: width, h: height }
     );
   }
 

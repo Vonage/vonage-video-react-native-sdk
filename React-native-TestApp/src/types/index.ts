@@ -152,4 +152,8 @@ export interface State {
   captureFilter: string[];
   capturedEvents: Record<string, string>;
   captureFilterInput: string;
+  // JSON command run by the E2E tests against the session/publisher/subscriber refs
+  commandInput: string;
+  subscriberMode: 'default' | 'views';
+  subscriberConnectedStreamIds: string[];
 }

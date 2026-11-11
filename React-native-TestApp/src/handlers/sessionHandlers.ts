@@ -43,10 +43,16 @@ export const createSessionHandlers = (
     const stream = event.stream || event;
     captureEvent('streamCreated', {
       streamId: stream?.streamId,
+      connectionId: stream?.connectionId ?? stream?.connection?.connectionId,
       name: stream?.name,
       hasAudio: stream?.hasAudio,
       hasVideo: stream?.hasVideo,
+      hasCaptions: stream?.hasCaptions,
       videoType: stream?.videoType,
+      width: stream?.width,
+      height: stream?.height,
+      creationTime: stream?.creationTime,
+      sessionId: stream?.sessionId,
     });
   },
   streamDestroyed: (event: any) => {
@@ -83,7 +89,8 @@ export const createSessionHandlers = (
       changedProperty: event?.changedProperty,
       oldValue: event?.oldValue,
       newValue: event?.newValue,
-      stream: event?.stream,
+      streamId: event?.stream?.streamId,
+      sessionId: event?.sessionId,
     });
   },
   signal: (event: any) => {

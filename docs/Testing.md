@@ -69,7 +69,7 @@ npm run test:e2e:ios
 ```sh
 # iOS
 E2E_API_KEY=xxx E2E_API_SECRET=xxx npx detox test -c ios.sim.debug -- --testPathPattern "publisher"
-E2E_API_KEY=xxx E2E_API_SECRET=xxx npx detox test -c ios.sim.debug -- --testPathPattern "amrTransition"
+E2E_API_KEY=xxx E2E_API_SECRET=xxx npx detox test -c ios.sim.debug -- --testPathPattern "signaling"
 
 # Android
 E2E_API_KEY=xxx E2E_API_SECRET=xxx DETOX_AVD_NAME=Pixel_9_API_36 npx detox test -c android.emu.debug -- --testPathPattern "subscriber"
@@ -98,18 +98,20 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 
 | Suite | File | Description |
 |-------|------|-------------|
-| App Launch | `app.e2e.js` | Basic app launch and session connect/disconnect |
+| App Launch | `app.e2e.js` | App launch, JS reload while connected |
 | Publish & Subscribe | `publisher.e2e.js` | App publishes → bot receives, bot publishes → app subscribes |
 | Subscriber | `subscriber.e2e.js` | Subscriber appears/disappears with bot lifecycle |
-| Publisher Options | `publisherOptions.e2e.js` | Mute, camera off, unpublish/republish, audio/video-only |
-| Subscriber Options | `subscriberOptions.e2e.js` | Multiple bots, bot disconnect, subscribe audio/video toggles |
-| Session Lifecycle | `session.e2e.js` | Connect/disconnect cycles, disconnect while publishing/subscribing, signals |
-| Moderation | `moderation.e2e.js` | forceMuteAll, force-disconnect, forceMuteStream via REST, forceUnpublish via a moderator bot |
-| Moderation Advanced | `moderationAdvanced.e2e.js` | disableForceMute, connection events, streamCreated payloads |
-| AMR Transitions | `amrTransition.e2e.js` | Relayed ↔ routed transitions (2→3→2 participants) |
-| P2P | `p2p.e2e.js` | Publish/subscribe in relayed sessions, unpublish/republish, audio/video toggles |
-| DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
-| Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
+| Publisher Options | `publisherOptions.e2e.js` | Mute, camera off, unpublish/republish, checked from a bot |
+| Publisher Properties | `publisherProperties.e2e.js` | Publish before the native publisher exists, init and runtime properties, mistyped properties, publisher stats events |
+| Subscriber Options | `subscriberOptions.e2e.js` | Subscribe audio/video toggles, preferences, video events, stats, multiple bots |
+| Session Lifecycle | `session.e2e.js` | Connect/disconnect cycles, disconnect while publishing/subscribing |
+| Session Events | `sessionEvents.e2e.js` | Connect errors, getCapabilities per role, archive events, streamPropertyChanged |
+| Signaling | `signaling.e2e.js` | Broadcast and targeted signals, Unicode/JSON data |
+| Moderation | `moderation.e2e.js` | forceMuteAll (with exclusions), forceMuteStream and forceDisconnect from the app, muteForced on the app publisher, calls without moderator rights |
+| Moderation Advanced | `moderationAdvanced.e2e.js` | disableForceMute, connectionDestroyed, streamCreated payload |
+| P2P | `p2p.e2e.js` | App publishes in a relayed session |
+| Encryption | `encryption.e2e.js` | E2EE publish/subscribe, reconnect, secret change during a call, secret errors. Skipped when globalSetup cannot create an E2EE session |
+| Video Filters | `videoFilters.e2e.js` | applyVideoFilter / clearVideoFilter / getVideoFilter / setVideoTransformers promises |
 | Screen Sharing | `screenShare.e2e.js` | Swap mode (one publisher switches between camera and screen) and simultaneous mode (a camera publisher and a screen publisher at the same time). The bot checks the streams it receives, their audio and video state, and that a stopped source leaves no stream behind |
 
 ## Architecture
@@ -122,7 +124,10 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 |---------|---------|---------|
 | `routed` | `TestSession.create()` | Most specs |
 | `relayed` | `TestSession.createRelayed()` | P2P and other relayed scenarios |
-| `moderation` | `TestSession.createModeration()` | `moderation*.e2e.js` only. Includes a moderator token for a bot (`moderatorBotToken`) |
+| `moderation` | `TestSession.createModeration()` | `moderation*.e2e.js` only. Includes a moderator token for a bot (`moderatorBotToken`) and a publisher token for the app (`publisherTokenApp`) |
+| `e2ee` | `TestSession.createE2ee()` | `encryption.e2e.js`. Created with `e2ee: true`; missing when the project does not support E2EE (`hasCredentials('e2ee')` is then false) |
+
+The `routed` session also has `publisherTokenApp` and `subscriberTokenApp` for tests that connect the app with another role (`session.connectApp({ token })`).
 
 Force mute is **sticky per session**: after `forceMuteAll`, every current and future publisher in that session is muted. That is why moderation specs have their own session and call `resetMuteState(session)` (REST `mute active:false`) in `afterEach`. Never run a spec that mutes a whole session on the shared `routed` session.
 
@@ -170,8 +175,9 @@ The `if (session)` guards matter: if `beforeAll` fails before the session exists
 |--------|-------------|
 | `TestSession.create()` / `createRelayed()` / `createModeration()` | Session with routed, relayed or moderation credentials |
 | `session.credentials` | `apiKey`, `apiSecret`, `apiUrl`, `sessionId`, tokens. Use it for REST calls instead of reading env vars |
-| `session.connectApp()` | Connects the app with the right credentials and waits for `sessionConnected`. Fails fast with the OpenTok error code and message if the session errors |
-| `session.addBot(options?)` | Creates a bot, joins it, and waits for the app's subscriber view. `{ waitForSubscriber: false }` skips the wait, `{ token }` overrides the token |
+| `session.connectApp(options?)` | Connects the app with the right credentials and waits for `sessionConnected`. Fails fast with the OpenTok error code and message if the session errors. `{ token, sessionId, encryptionSecret }` override the form values |
+| `session.connectAppExpectingError(options?)` | Same form, but waits for `eventHandlers.error` and returns the `{ code, message }` payload |
+| `session.addBot(options?)` | Creates a bot, joins it, and waits for the app's subscriber view. `{ waitForSubscriber: false }` skips the wait, `{ token }` overrides the token, `{ publisherOptions }` is passed to `OT.initPublisher`, `{ encryptionSecret }` sets the bot's E2EE secret, `{ canvasVideo: { width, height } }` publishes a resizable canvas |
 | `session.addBots(count)` | Adds several bots (only the first waits for the subscriber view) |
 | `session.cleanup()` | Closes bots, disconnects the app, clears events. Every step is time-bounded |
 | `session.teardown()` | Closes the remaining bots (time-bounded). Call it in `afterAll` |
@@ -199,7 +205,13 @@ Inside its page it keeps `window.botSession`, `window.botPublisher` and `window.
 | `disconnect()` / `close()` | Leave the session / also close the browser |
 | `waitForStream({ streamId?, timeout? })` | Wait for a specific remote stream, or for any subscribed stream |
 | `getStreamCount()` + `waitForNewStream(previousCount, timeout?)` | Wait for a stream created *after* an action (see below) |
-| `getRemoteStreams()` | `{ streamId, hasAudio, hasVideo, videoType }` of every stream in the session except the bot's own |
+| `getRemoteStreams()` | `{ streamId, connectionId, name, hasAudio, hasVideo, videoType }` of every stream in the session except the bot's own |
+| `waitForStreamDestroyed(streamId, timeout?)` / `waitForConnectionDestroyed(connectionId, timeout?)` | Wait for a specific stream or connection to leave |
+| `sendSignal({ type, data, to? })` / `getSignals()` / `waitForSignal({ type?, data?, from? }, timeout?)` | Send signals (broadcast, or to a connectionId) and read the ones received (`from` is the sender's connectionId) |
+| `forceMuteStream(streamId)` | Force-mute another participant's stream. Needs a moderator token |
+| `setEncryptionSecret(secret)` / `waitForEncryptionState(streamId, 'match' \| 'mismatch', timeout?)` | Change the bot's E2EE secret; wait for its subscriber's `encryptionSecretMatch` / `encryptionSecretMismatch` |
+| `getInboundStats(streamId)` | `{ audioPacketsReceived, audioBytesReceived, videoFramesDecoded }` of the bot's subscriber to that stream |
+| `resizeCanvasVideo(width, height)` | Resize the published canvas (`canvasVideo`), which changes the stream's `videoDimensions` |
 | `waitForRemoteStream({ videoType?, hasAudio?, hasVideo? }, timeout?)` | Wait for a remote stream that matches the given fields (fields left out are ignored) |
 | `waitForNoRemoteStream(videoType, timeout?)` | Wait until no remote stream of that `videoType` is left (for example `screen` after stopping a screen share) |
 | `waitForPublisherAudio(expected, timeout?)` | Wait for the bot's published stream to have or lose audio (after a mute) |
@@ -225,9 +237,35 @@ const event = await waitForEvent('streamCreated');
 expect(event.streamId).toBeTruthy();
 ```
 
+`waitForText(testID, text, timeout?)` polls a label's text through `getAttributes` (works for labels drawn over native video views). The app shows `subscriberConnectedCount` (`subscribersConnected:<n>`, one per native subscriber that reported `subscriberConnected`) and the `cameraStreamId` / `screenStreamId` labels.
+
+Captured events are cleared on every connect and stay readable after a disconnect.
+
+### App commands
+
+`helpers/appCommand.js` drives the public SDK API of the app's `OTSession`, `OTPublisher` and `OTSubscriber` refs through the `commandInput` / `runCommand` controls (next to the capture filter). The app reports each outcome as a `commandResult` event:
+
+```javascript
+const { runAppCommand, runAppCommandOk } = require('./helpers/appCommand');
+
+const result = await runAppCommand('forceMuteStream', { streamId }); // { ok, value } or { ok: false, error: { code, message } }
+const capabilities = await runAppCommandOk('getCapabilities');      // throws if the call fails
+```
+
+| Command | What the app does |
+|---------|-------------------|
+| `signal { type, data, to? }`, `getCapabilities`, `forceMuteAll { excludedStreamIds }`, `forceMuteStream { streamId }`, `forceDisconnect { connectionId }`, `disableForceMute`, `setEncryptionSecret { secret }` | Calls the OTSession method |
+| `setPublisherProperties { properties }` / `setSubscriberProperties { properties }` | Merges the values into the `properties` prop (runtime change) |
+| `republish { properties }` | Unmounts OTPublisher, merges the values, mounts a new one (init properties) |
+| `publisherRtcStats`, `subscriberRtcStats`, `subscriberViewRtcStats` | Calls `getRtcStatsReport()` on OTPublisher, OTSubscriber or the first OTSubscriberView |
+| `setSubscriberMode { mode: 'default' \| 'views' }` | Renders OTSubscriber with its default views or with OTSubscriberView children |
+| `applyVideoFilter { filter }`, `clearVideoFilter`, `getVideoFilter`, `setVideoTransformers { transformers }` | Calls the OTPublisher method; returns `getVideoFilter()`. `backgroundImgUrl: '$bundledImage'` uses the app's bundled image |
+| `afterDisconnect { command }` | Disconnects (unmounts OTSession), then runs `command` on the unmounted session instance |
+| `resetProperties` | Restores the initial publisher/subscriber properties. `resetAppProperties()` calls it; use it in `afterEach` before `session.cleanup()` in specs that change properties |
+
 ### REST and moderation helpers
 
-- `helpers/openTokRest.js`: `forceDisconnect`, `forceMuteStream`, `disableMuteAll`. Pass values from `session.credentials`. Requests time out after 30 s.
+- `helpers/openTokRest.js`: `forceDisconnect`, `forceMuteStream`, `disableMuteAll`, `startArchive`, `stopArchive`. Pass values from `session.credentials`. Requests time out after 30 s.
 - `helpers/moderation.js`: `openModerationTab()` and `resetMuteState(session)`.
 
 ## Adding or extending E2E tests
@@ -252,7 +290,7 @@ expect(event.streamId).toBeTruthy();
 | The bot to be disconnected | `bot.waitForDisconnected()` |
 | A new condition on the bot | Add a method to the bot built on `waitForCondition` |
 
-Avoid fixed sleeps. The only accepted ones are the AMR transitions, which have no observable event (5 s max).
+Avoid fixed sleeps. The accepted ones are measurement windows with no observable end event: checking that something does *not* happen (a duplicate stream, a second error report) and sampling stats over a few seconds (5 s max).
 
 ### Writing assertions
 
@@ -271,7 +309,7 @@ const isAndroid = device.getPlatform() === 'android';
 itIf(isAndroid, 'feature X is not available on iOS (issue #NNN)')('name', async () => { ... });
 ```
 
-The test is reported as skipped with the reason in its title, and the CI summary lists it. Always include an issue or ticket reference in the reason.
+The test is reported as skipped under its exact name (the QA regression catalog matches results by Jest full name, so the reason is not appended to it). The reason is printed when the spec loads; keep it next to the test in the source, and the CI summary lists the skipped test. Always include an issue or ticket reference in the reason.
 
 ### Extending the helpers
 

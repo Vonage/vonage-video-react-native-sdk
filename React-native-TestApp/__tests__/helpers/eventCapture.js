@@ -48,4 +48,24 @@ async function waitForEvent(eventType, timeout = 30000, predicate = () => true) 
   throw new Error(`Timed out waiting for event: ${eventType}`);
 }
 
-module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent };
+/**
+ * Polls until the element's text equals `text`. Reads attributes, so it also works for labels
+ * drawn over native video views that Detox may not count as visible on Android.
+ */
+async function waitForText(testID, text, timeout = 10000) {
+  const deadline = Date.now() + timeout;
+  let current = '';
+  while (Date.now() < deadline) {
+    try {
+      const attributes = await element(by.id(testID)).getAttributes();
+      current = attributes.text || attributes.label || '';
+    } catch (_) {
+      current = '';
+    }
+    if (current === text) return;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`Timed out after ${timeout}ms waiting for ${testID} to read "${text}", last value "${current}"`);
+}
+
+module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent, waitForText };

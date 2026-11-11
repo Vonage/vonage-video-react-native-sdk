@@ -1,7 +1,7 @@
 'use strict';
 
 const { jsSDKTesterBot } = require('./jsSDKTesterBot');
-const { clearCapturedEvents, getLastEvent } = require('./eventCapture');
+const { clearCapturedEvents, getLastEvent, waitForEvent } = require('./eventCapture');
 const { withTimeout } = require('./timeout');
 const { getCredentials } = require('./credentials');
 
@@ -34,6 +34,11 @@ class TestSession {
     return new TestSession({ credentials: await getCredentials('moderation'), botOptions });
   }
 
+  /** End-to-end encrypted session. Only available when hasCredentials('e2ee') is true. */
+  static async createE2ee(botOptions = {}) {
+    return new TestSession({ credentials: await getCredentials('e2ee'), botOptions });
+  }
+
   /**
    * Joins a bot to the session. Its token comes from the pool by the bot's position in activeBots.
    *
@@ -61,6 +66,8 @@ class TestSession {
         apiUrl: this.credentials.apiUrl,
         jsSdkUrl: this.credentials.jsSdkUrl,
         ...(options.publisherOptions && { publisherOptions: options.publisherOptions }),
+        ...(options.encryptionSecret && { encryptionSecret: options.encryptionSecret }),
+        ...(options.canvasVideo && { canvasVideo: options.canvasVideo }),
       }
     );
   }
@@ -73,6 +80,8 @@ class TestSession {
    * @param {string} [options.token] - Override token
    * @param {string} [options.sessionId] - Override session ID
    * @param {object} [options.publisherOptions] - Publisher options
+   * @param {string} [options.encryptionSecret] - E2EE secret set on the bot's session
+   * @param {{ width: number, height: number }} [options.canvasVideo] - Publish a resizable canvas
    * @param {boolean} [options.waitForSubscriber=true] - Wait for subscriber view
    * @param {number} [options.subscriberTimeout=20000] - Timeout for subscriber wait (ms)
    * @returns {Promise<jsSDKTesterBot>}
@@ -113,25 +122,48 @@ class TestSession {
     return bots;
   }
 
-  async connectApp() {
+  /**
+   * Fills the connection form and taps Connect, then waits for sessionConnected.
+   *
+   * @param {object} [options]
+   * @param {string} [options.token] - Token to use instead of credentials.tokenApp (moderator)
+   * @param {string} [options.sessionId] - Session ID to use instead of credentials.sessionId
+   * @param {string} [options.encryptionSecret] - E2EE secret passed to OTSession (default: none)
+   */
+  async connectApp(options = {}) {
+    await this.submitConnectForm(options);
+    await this.waitForSessionConnected(30000);
+  }
+
+  /**
+   * Submits the connection form expecting the connect to fail, and returns the session error
+   * payload (`{ code, message }`) reported through OTSession eventHandlers.error.
+   */
+  async connectAppExpectingError(options = {}, timeout = 30000) {
+    await this.submitConnectForm(options);
+    await waitFor(element(by.id('session-error'))).not.toHaveText('0').withTimeout(timeout);
+    return waitForEvent('sessionError', 10000);
+  }
+
+  async submitConnectForm(options = {}) {
     try {
       await element(by.id('disconnectSession')).tap();
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
     } catch (_) {}
 
     await element(by.id('apiKeyInput')).replaceText(this.credentials.apiKey);
-    await element(by.id('sessionIdInput')).replaceText(this.credentials.sessionId);
-    await element(by.id('tokenInput')).replaceText(this.credentials.tokenApp);
+    await element(by.id('sessionIdInput')).replaceText(options.sessionId || this.credentials.sessionId);
+    await element(by.id('tokenInput')).replaceText(options.token || this.credentials.tokenApp);
     if (this.credentials.apiUrl) {
       await element(by.id('apiUrlInput')).replaceText(this.credentials.apiUrl);
     }
+    await element(by.id('encryptionSecretInput')).replaceText(options.encryptionSecret || '');
     // Tap outside the inputs to dismiss the keyboard; tapReturnKey has side effects
     // (autocomplete popups on Android, form submit on iOS).
     try {
       await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
     } catch (_) {}
     await element(by.id('submitButton')).tap();
-    await this.waitForSessionConnected(30000);
   }
 
   /**

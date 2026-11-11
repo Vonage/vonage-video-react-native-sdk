@@ -1,14 +1,17 @@
 import React, { Component } from 'react';
-import { View, Text, ScrollView, ImageBackground, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, ImageBackground, Alert, TextInput, Image } from 'react-native';
 import {
   OTSession,
   OTPublisher,
   OTSubscriber,
+  OTSubscriberView,
   type OTSessionInstance,
   type OTPublisherInstance,
   type OTSubscriberInstance,
+  type OTSubscriberViewInstance,
 } from '@vonage/client-sdk-video-react-native';
-import { State, DegradationPreference, VideoStats, TabName } from '../types';
+import { summarizeRtcReports } from '../utils/statsSummary';
+import { State, DegradationPreference, VideoStats, TabName, PublisherProperties } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
 import { createSessionHandlers } from '../handlers/sessionHandlers';
 import { createPublisherHandlers } from '../handlers/publisherHandlers';
@@ -20,6 +23,16 @@ import TabBar from '../components/TabBar';
 import TextBoxComponent from '../../components/TextBoxComponent';
 import ButtonComponent from '../../components/ButtonComponent';
 import TextComponent from '../../components/TextComponent';
+
+const INITIAL_PUBLISHER_PROPERTIES: PublisherProperties = {
+  cameraTorch: false,
+  scaleBehavior: 'fit',
+  cameraZoomFactor: 1,
+  cameraPosition: 'back',
+  preferredVideoCodecs: ['vp8'], //vp8 is default, can be overridden by codecPreference state
+  publishSenderStats: true,
+  degradationPreference: DegradationPreference.NotSet,
+};
 
 class VideoCallScreen extends Component<{}, State> {
   streamId = '';
@@ -108,22 +121,19 @@ class VideoCallScreen extends Component<{}, State> {
       videoEnabled: 0,
       videoNetworkStats: 0,
     },
-    publisherProperties: {
-      cameraTorch: false,
-      scaleBehavior: 'fit',
-      cameraZoomFactor: 1,
-      cameraPosition: 'back',
-      preferredVideoCodecs: ['vp8'], //vp8 is default, can be overridden by codecPreference state
-      publishSenderStats: true,
-      degradationPreference: DegradationPreference.NotSet,
-    },
+    publisherProperties: { ...INITIAL_PUBLISHER_PROPERTIES },
     subscriberProperties: {},
     streams: [],
     publisherVideoStats: null,
     captureFilter: [],
     capturedEvents: {},
     captureFilterInput: '',
+    commandInput: '',
+    subscriberMode: 'default',
+    subscriberConnectedStreamIds: [],
   };
+
+  subscriberViewRefs: Record<string, OTSubscriberViewInstance | null> = {};
 
   componentDidMount() {
     this.applyCodecPreference();
@@ -218,7 +228,11 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   captureEvent = (eventType: string, payload: any) => {
-    if (eventType === 'sessionError' || this.state.captureFilter.includes(eventType)) {
+    if (
+      eventType === 'sessionError' ||
+      eventType === 'commandResult' ||
+      this.state.captureFilter.includes(eventType)
+    ) {
       this.setState((prev) => ({
         capturedEvents: {
           ...prev.capturedEvents,
@@ -262,7 +276,16 @@ class VideoCallScreen extends Component<{}, State> {
       streams: prevState.streams.filter(s => s.streamId !== streamId),
       subscribedStreams: prevState.subscribedStreams.filter(id => id !== streamId),
       unsubscribedStreams: prevState.unsubscribedStreams.filter(id => id !== streamId),
+      subscriberConnectedStreamIds: prevState.subscriberConnectedStreamIds.filter(id => id !== streamId),
     }));
+  };
+
+  handleSubscriberConnected = (streamId: string) => {
+    this.setState((prevState) =>
+      prevState.subscriberConnectedStreamIds.includes(streamId)
+        ? null
+        : { subscriberConnectedStreamIds: [...prevState.subscriberConnectedStreamIds, streamId] }
+    );
   };
 
   sessionEventHandlers = createSessionHandlers(
@@ -293,6 +316,17 @@ class VideoCallScreen extends Component<{}, State> {
       }
     }
     
+    const entries = Array.isArray(event) ? event : event ? [event] : [];
+    try {
+      this.captureEvent('publisherRtcStatsReport', {
+        entries: entries.length,
+        connectionIds: entries.map((e: any) => e?.connectionId),
+        ...(jsonData ? summarizeRtcReports(jsonData) : {}),
+      });
+    } catch (e: any) {
+      this.captureEvent('publisherRtcStatsReport', { entries: entries.length, parseError: String(e?.message ?? e) });
+    }
+
     if (jsonData) {
       try {
         const reports = JSON.parse(jsonData);
@@ -315,7 +349,6 @@ class VideoCallScreen extends Component<{}, State> {
       
       if (stats && (stats.width > 0 || stats.height > 0 || stats.frameRate > 0)) {
         this.setState({ publisherVideoStats: stats });
-        this.captureEvent('publisherRtcStatsReport', stats);
       }
     }
   };
@@ -421,7 +454,8 @@ class VideoCallScreen extends Component<{}, State> {
     this.updateEvent,
     this.state.subscriberEvents,
     this.logSubscriberVideoStatsOnce,
-    this.captureEvent
+    this.captureEvent,
+    this.handleSubscriberConnected
   );
 
   handleFetchMeetCredentials = async () => {
@@ -469,6 +503,8 @@ class VideoCallScreen extends Component<{}, State> {
           streams: [],
           subscribedStreams: [],
           unsubscribedStreams: [],
+          subscriberConnectedStreamIds: [],
+          capturedEvents: {},
           sessionEvents: {
             archiveStart: 0,
             archiveStop: 0,
@@ -557,7 +593,7 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   toggleVideoSubscription = () => {
-    const current = this.state.subscriberProperties.subscribeToVideo;
+    const current = this.state.subscriberProperties.subscribeToVideo ?? true;
     this.updateEvent('subscriberProperties', 'subscribeToVideo', !current);
   };
 
@@ -609,6 +645,128 @@ class VideoCallScreen extends Component<{}, State> {
   subscriberMethodGetRtcStatsReport = () => {
     if (this.subRef.current) {
       this.subRef.current.getRtcStatsReport();
+    }
+  };
+
+  // --- E2E command runner ---
+  // The tests type a JSON command ({ id, op, ...args }) into commandInput and tap runCommand.
+  // The command calls the public SDK API (instance methods or props) and its outcome is captured
+  // as a `commandResult` event: { id, op, ok, value } or { id, op, ok: false, error }.
+  setStateAsync = (update: any) =>
+    new Promise<void>((resolve) => this.setState(update, () => resolve()));
+
+  delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  requireRef = <T,>(ref: T | null | undefined, name: string): T => {
+    if (!ref) {
+      throw Object.assign(new Error(`${name} is not mounted`), { code: 'E2E_NOT_MOUNTED' });
+    }
+    return ref;
+  };
+
+  executeCommand = async (cmd: any, sessionInstance?: OTSessionInstance | null): Promise<any> => {
+    const session = () => this.requireRef(sessionInstance ?? this.sessionRef.current, 'OTSession');
+    const publisher = () => this.requireRef(this.pubRef.current, 'OTPublisher');
+    switch (cmd.op) {
+      case 'signal':
+        return session().signal({ type: cmd.type, data: cmd.data, to: cmd.to });
+      case 'getCapabilities':
+        return session().getCapabilities();
+      case 'forceMuteAll':
+        return session().forceMuteAll(cmd.excludedStreamIds);
+      case 'forceMuteStream':
+        return session().forceMuteStream(cmd.streamId);
+      case 'forceDisconnect':
+        return session().forceDisconnect(cmd.connectionId);
+      case 'disableForceMute':
+        return session().disableForceMute();
+      case 'setEncryptionSecret':
+        return session().setEncryptionSecret(cmd.secret);
+      case 'setPublisherProperties':
+        await this.setStateAsync((prev: State) => ({
+          publisherProperties: { ...prev.publisherProperties, ...cmd.properties },
+        }));
+        return null;
+      case 'republish':
+        // Unmount the publisher, apply the init properties, then mount a new one.
+        await this.setStateAsync({ forceDisconnect: true });
+        await this.delay(500);
+        await this.setStateAsync((prev: State) => ({
+          publisherProperties: { ...prev.publisherProperties, ...cmd.properties },
+          forceDisconnect: false,
+        }));
+        return null;
+      case 'setSubscriberProperties':
+        await this.setStateAsync((prev: State) => ({
+          subscriberProperties: { ...prev.subscriberProperties, ...cmd.properties },
+        }));
+        return null;
+      case 'setSubscriberMode':
+        await this.setStateAsync({ subscriberMode: cmd.mode });
+        return null;
+      case 'resetProperties':
+        // Undo property changes made by a test so they do not leak into the next connect.
+        await this.setStateAsync({
+          publisherProperties: { ...INITIAL_PUBLISHER_PROPERTIES },
+          subscriberProperties: {},
+          subscriberMode: 'default',
+          codecPreference: 'vp8',
+        });
+        return null;
+      case 'publisherRtcStats':
+        return publisher().getRtcStatsReport();
+      case 'subscriberRtcStats':
+        return this.requireRef(this.subRef.current, 'OTSubscriber').getRtcStatsReport();
+      case 'subscriberViewRtcStats': {
+        const view = Object.values(this.subscriberViewRefs).find(Boolean);
+        return this.requireRef(view, 'OTSubscriberView').getRtcStatsReport();
+      }
+      case 'applyVideoFilter': {
+        const filter = { ...cmd.filter };
+        if (filter.backgroundImgUrl === '$bundledImage') {
+          filter.backgroundImgUrl = Image.resolveAssetSource(require('../../assets/background.jpg')).uri;
+        }
+        await publisher().applyVideoFilter(filter);
+        return publisher().getVideoFilter();
+      }
+      case 'clearVideoFilter':
+        await publisher().clearVideoFilter();
+        return publisher().getVideoFilter();
+      case 'getVideoFilter':
+        return publisher().getVideoFilter();
+      case 'setVideoTransformers':
+        await publisher().setVideoTransformers(cmd.transformers);
+        return publisher().getVideoFilter();
+      case 'afterDisconnect': {
+        // Disconnect (unmount OTSession), then run `cmd.command` on the unmounted session instance.
+        const instance = this.sessionRef.current;
+        await this.setStateAsync({ connectedToSession: false });
+        return this.executeCommand(cmd.command, instance);
+      }
+      default:
+        throw new Error(`Unknown command "${cmd.op}"`);
+    }
+  };
+
+  runCommand = async () => {
+    let cmd: any;
+    try {
+      cmd = JSON.parse(this.state.commandInput);
+    } catch (e: any) {
+      this.captureEvent('commandResult', { id: null, op: null, ok: false, error: { message: String(e?.message ?? e) } });
+      return;
+    }
+    const { id, op } = cmd;
+    try {
+      const value = await this.executeCommand(cmd);
+      this.captureEvent('commandResult', { id, op, ok: true, value: value === undefined ? null : value });
+    } catch (e: any) {
+      this.captureEvent('commandResult', {
+        id,
+        op,
+        ok: false,
+        error: { code: e?.code ?? e?.name, message: String(e?.message ?? e) },
+      });
     }
   };
 
@@ -669,6 +827,12 @@ class VideoCallScreen extends Component<{}, State> {
                     placeholder="API URL (optional)"
                     onChangeText={(text: string) => this.updateEvent('input', 'apiUrl', text)}
                     value={this.state.input.apiUrl}
+                  />
+                  <TextBoxComponent
+                    testID="encryptionSecretInput"
+                    placeholder="Encryption secret (optional)"
+                    onChangeText={(text: string) => this.updateEvent('input', 'encryptionSecret', text)}
+                    value={this.state.input.encryptionSecret}
                   />
                 </>
               ) : (
@@ -762,16 +926,46 @@ class VideoCallScreen extends Component<{}, State> {
               <Text testID="screenStreamId" style={{ fontSize: 8, color: '#fff' }}>
                 {`screen:${this.state.localStreamIds.screen}`}
               </Text>
+              <Text testID="subscriberConnectedCount" style={{ fontSize: 8, color: '#fff' }}>
+                {`subscribersConnected:${
+                  this.state.subscriberConnectedStreamIds.filter((id) =>
+                    this.state.subscribedStreams.includes(id)
+                  ).length
+                }`}
+              </Text>
             </View>
             {/* Try auto-subscribe mode - no streamId specified */}
             {this.state.subscribedStreams.length > 0 && (
             <View testID="subscriber" style={styles.video}>
-              <OTSubscriber
-                properties={this.state.subscriberProperties}
-                containerStyle={{ flex: 1 }}
-                style={{ flex: 1 }}
-                eventHandlers={this.subscriberEventHandlers}
-              />
+              {this.state.subscriberMode === 'views' ? (
+                <OTSubscriber
+                  ref={this.subRef}
+                  properties={this.state.subscriberProperties}
+                  style={{ flex: 1 }}
+                  eventHandlers={this.subscriberEventHandlers}
+                >
+                  {/* OTSubscriberProps intersects ViewProps.children (ReactNode) with the render prop, so cast. */}
+                  {((streamIds: string[]) =>
+                    streamIds.map((streamId) => (
+                      <OTSubscriberView
+                        key={streamId}
+                        streamId={streamId}
+                        style={{ flex: 1 }}
+                        ref={(ref: OTSubscriberViewInstance | null) => {
+                          this.subscriberViewRefs[streamId] = ref;
+                        }}
+                      />
+                    ))) as any}
+                </OTSubscriber>
+              ) : (
+                <OTSubscriber
+                  ref={this.subRef}
+                  properties={this.state.subscriberProperties}
+                  containerStyle={{ flex: 1 }}
+                  style={{ flex: 1 }}
+                  eventHandlers={this.subscriberEventHandlers}
+                />
+              )}
             </View>
             )}
           </View>
@@ -819,7 +1013,7 @@ class VideoCallScreen extends Component<{}, State> {
             this.updateEvent(
               'publisherProperties',
               'publishVideo',
-              !this.state.publisherProperties?.publishVideo
+              !(this.state.publisherProperties?.publishVideo ?? true)
             )
           }
           label={videoLabel}
@@ -830,7 +1024,7 @@ class VideoCallScreen extends Component<{}, State> {
             this.updateEvent(
               'publisherProperties',
               'publishAudio',
-              !this.state.publisherProperties?.publishAudio
+              !(this.state.publisherProperties?.publishAudio ?? true)
             )
           }
           label={audioLabel}
@@ -868,7 +1062,7 @@ class VideoCallScreen extends Component<{}, State> {
             this.updateEvent(
               'subscriberProperties',
               'subscribeToAudio',
-              !this.state.subscriberProperties.subscribeToAudio
+              !(this.state.subscriberProperties.subscribeToAudio ?? true)
             )
           }
           label="Sub Audio Off/On"
@@ -1276,11 +1470,44 @@ class VideoCallScreen extends Component<{}, State> {
     );
   }
 
+  renderCapturedEvents() {
+    return Object.entries(this.state.capturedEvents).map(([type, json]) => (
+      <Text
+        key={type}
+        testID={`lastEvent-${type}`}
+        style={{ fontSize: 9, color: '#333', marginVertical: 1 }}
+      >
+        {`${type}: ${json}`}
+      </Text>
+    ));
+  }
+
   renderCaptureControls() {
-    if (!this.state.connectedToSession) return null;
+    // Results of commands that disconnect the session stay readable after the disconnect.
+    if (!this.state.connectedToSession) {
+      return <View style={{ padding: 4 }}>{this.renderCapturedEvents()}</View>;
+    }
 
     return (
       <View style={{ padding: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+          <TextInput
+            testID="commandInput"
+            style={{ flex: 1, height: 28, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, paddingHorizontal: 4, fontSize: 10 }}
+            value={this.state.commandInput}
+            onChangeText={(text: string) => this.setState({ commandInput: text })}
+            placeholder='{"id":"1","op":"getCapabilities"}'
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text
+            testID="runCommand"
+            onPress={this.runCommand}
+            style={{ marginLeft: 4, fontSize: 10, color: '#007AFF', fontWeight: 'bold' }}
+          >
+            Run
+          </Text>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
           <TextInput
             testID="captureFilterInput"
@@ -1310,15 +1537,7 @@ class VideoCallScreen extends Component<{}, State> {
             Clear
           </Text>
         </View>
-        {Object.entries(this.state.capturedEvents).map(([type, json]) => (
-          <Text
-            key={type}
-            testID={`lastEvent-${type}`}
-            style={{ fontSize: 9, color: '#333', marginVertical: 1 }}
-          >
-            {`${type}: ${json}`}
-          </Text>
-        ))}
+        {this.renderCapturedEvents()}
       </View>
     );
   }

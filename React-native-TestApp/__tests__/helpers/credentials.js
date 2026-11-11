@@ -29,7 +29,9 @@ function readCredentials() {
  * - `relayed`: P2P session
  * - `moderation`: dedicated routed session for moderation specs, with a moderator bot token
  *
- * @param {'routed'|'relayed'|'moderation'} [name='routed']
+ * - `e2ee`: routed session with end-to-end encryption (absent when the project does not support it)
+ *
+ * @param {'routed'|'relayed'|'moderation'|'e2ee'} [name='routed']
  * @returns {Promise<{apiKey: string, apiSecret: string, apiUrl: string, jsSdkUrl: string, sessionId: string, tokenApp: string, botTokens: string[], mediaMode: string, moderatorBotToken?: string}>}
  */
 async function getCredentials(name = 'routed') {
@@ -40,4 +42,16 @@ async function getCredentials(name = 'routed') {
   return creds;
 }
 
-module.exports = { getCredentials };
+/**
+ * Whether globalSetup created the named session. Synchronous so specs can use it with itIf at
+ * module scope (globalSetup runs before any spec is loaded).
+ */
+function hasCredentials(name) {
+  try {
+    return !!readCredentials()[name];
+  } catch (_) {
+    return false;
+  }
+}
+
+module.exports = { getCredentials, hasCredentials };

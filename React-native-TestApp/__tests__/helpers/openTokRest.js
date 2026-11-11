@@ -87,4 +87,34 @@ async function disableMuteAll(apiKey, apiSecret, apiUrl, sessionId) {
   }
 }
 
-module.exports = { forceDisconnect, forceMuteStream, disableMuteAll };
+/** Starts an archive of the session and returns `{ id, name, status }`. */
+async function startArchive(apiKey, apiSecret, apiUrl, sessionId, name) {
+  const jwt = generateJwt(apiKey, apiSecret);
+  const url = `${apiUrl}/v2/project/${apiKey}/archive`;
+  const body = JSON.stringify({ sessionId, name });
+  const res = await httpRequest(
+    'POST',
+    url,
+    { 'X-OPENTOK-AUTH': jwt, 'Content-Type': 'application/json' },
+    body
+  );
+  if (res.status !== 200) {
+    throw new Error(`startArchive failed: HTTP ${res.status} — ${res.body}`);
+  }
+  return JSON.parse(res.body);
+}
+
+async function stopArchive(apiKey, apiSecret, apiUrl, archiveId) {
+  const jwt = generateJwt(apiKey, apiSecret);
+  const url = `${apiUrl}/v2/project/${apiKey}/archive/${archiveId}/stop`;
+  const res = await httpRequest('POST', url, {
+    'X-OPENTOK-AUTH': jwt,
+    'Content-Type': 'application/json',
+  });
+  if (res.status !== 200) {
+    throw new Error(`stopArchive failed: HTTP ${res.status} — ${res.body}`);
+  }
+  return JSON.parse(res.body);
+}
+
+module.exports = { forceDisconnect, forceMuteStream, disableMuteAll, startArchive, stopArchive };

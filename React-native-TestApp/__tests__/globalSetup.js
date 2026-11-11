@@ -67,9 +67,30 @@ module.exports = async function globalSetup() {
   const moderationTokenApp = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=app' });
   const moderatorBotToken = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=moderator-bot' });
 
+  const moderationPublisherTokenApp = generateToken(moderationSessionId, { role: 'publisher', data: 'participant=app' });
+
   const relayedSession = await createSession({ mediaMode: 'relayed' });
   const relayedSessionId = relayedSession.sessionId;
   const relayedTokenApp = generateToken(relayedSessionId, { role: 'moderator', data: 'participant=app' });
+
+  // End-to-end encrypted session. Creating it fails when the project does not have E2EE enabled;
+  // the encryption specs are then skipped (see hasCredentials('e2ee')).
+  let e2ee = null;
+  try {
+    const e2eeSession = await createSession({ mediaMode: 'routed', e2ee: true });
+    e2ee = {
+      apiKey,
+      apiSecret,
+      apiUrl,
+      jsSdkUrl,
+      sessionId: e2eeSession.sessionId,
+      tokenApp: generateToken(e2eeSession.sessionId, { role: 'moderator', data: 'participant=app' }),
+      botTokens: generateBotTokens(e2eeSession.sessionId),
+      mediaMode: 'routed',
+    };
+  } catch (error) {
+    console.warn('[globalSetup] Could not create an E2EE session, encryption specs will be skipped:', error.message);
+  }
 
   const credentials = {
     routed: {
@@ -79,6 +100,8 @@ module.exports = async function globalSetup() {
       jsSdkUrl,
       sessionId: routedSessionId,
       tokenApp,
+      publisherTokenApp: generateToken(routedSessionId, { role: 'publisher', data: 'participant=app' }),
+      subscriberTokenApp: generateToken(routedSessionId, { role: 'subscriber', data: 'participant=app' }),
       botTokens: generateBotTokens(routedSessionId),
       mediaMode: 'routed',
     },
@@ -89,6 +112,7 @@ module.exports = async function globalSetup() {
       jsSdkUrl,
       sessionId: moderationSessionId,
       tokenApp: moderationTokenApp,
+      publisherTokenApp: moderationPublisherTokenApp,
       botTokens: generateBotTokens(moderationSessionId),
       moderatorBotToken,
       mediaMode: 'routed',
@@ -103,6 +127,7 @@ module.exports = async function globalSetup() {
       botTokens: generateBotTokens(relayedSessionId),
       mediaMode: 'relayed',
     },
+    e2ee,
   };
 
   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2));
@@ -110,5 +135,6 @@ module.exports = async function globalSetup() {
   console.log('[globalSetup] routedSession:', routedSessionId);
   console.log('[globalSetup] moderationSession:', moderationSessionId);
   console.log('[globalSetup] relayedSession:', relayedSessionId);
+  console.log('[globalSetup] e2eeSession:', e2ee ? e2ee.sessionId : 'not available');
   console.log('[globalSetup] bot tokens per session:', botPoolSize);
 };

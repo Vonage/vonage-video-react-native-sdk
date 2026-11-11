@@ -1,7 +1,11 @@
 'use strict';
 const { launchAndWaitForApp } = require('./helpers/waitForApp');
+const { TestSession } = require('./helpers/testSession');
+const { expect: jestExpect } = require('expect');
 
 describe('App Launch Test', () => {
+  let session;
+
   beforeAll(async () => {
     await launchAndWaitForApp({
       newInstance: true,
@@ -10,10 +14,16 @@ describe('App Launch Test', () => {
       },
       permissions: { camera: 'YES', microphone: 'YES' },
     });
+    session = await TestSession.create();
   });
 
   afterAll(async () => {
+    if (session) await session.teardown();
     await device.enableSynchronization();
+  });
+
+  afterEach(async () => {
+    if (session) await session.cleanup();
   });
 
   it('should launch the app successfully', async () => {
@@ -42,48 +52,29 @@ describe('App Launch Test', () => {
     }
   });
 
-  it('should connect and disconnect a session', async () => {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  it('JS reload while connected tears down the native session', async () => {
+    await session.connectApp();
+    const bot = await session.addBot();
+    await bot.waitForRemoteStream({ videoType: 'camera', hasAudio: true, hasVideo: true });
+    const [oldStream] = await bot.getRemoteStreams();
+    jestExpect(oldStream.connectionId).toBeTruthy();
 
-    console.log('Waiting for apiKeyInput to be visible...');
-    const apiKeyInput = element(by.id('apiKeyInput'));
-    await waitFor(apiKeyInput).toBeVisible().withTimeout(60000);
-    console.log('apiKeyInput is visible');
+    await device.reloadReactNative();
+    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(240000);
 
-    await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(30000);
+    // The reload must disconnect the native session that the old JS bundle created.
+    await bot.waitForConnectionDestroyed(oldStream.connectionId, 30000);
+    await bot.waitForStreamDestroyed(oldStream.streamId, 30000);
 
-    console.log('About to tap submit button');
-
-    await element(by.id('submitButton')).tap();
-
-    console.log('Tapped submit button, waiting for connection');
-
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-
-    try {
-      await expect(element(by.id('disconnectSession'))).toBeVisible();
-      console.log('Session connected - disconnect button found');
-    } catch (e) {
-      console.log('Disconnect button not found - session may not have connected');
-      try {
-        await expect(element(by.id('submitButton'))).toBeVisible();
-        console.log('Submit button still visible - connection likely failed');
-      } catch (e2) {
-        console.log('Neither submit nor disconnect button visible');
-      }
-      throw e;
-    }
-
-    try {
-      await expect(element(by.id('publisher'))).toBeVisible();
-    } catch (e) {
-      console.log('Publisher not visible - may be permissions issue or rendering issue');
-    }
-
-    await element(by.id('disconnectSession')).tap();
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    await expect(element(by.id('submitButton'))).toBeVisible();
+    // A new connect works and can publish again (the camera is not held by the old publisher).
+    const streamCount = await bot.getStreamCount();
+    await session.connectApp();
+    await bot.waitForNewStream(streamCount, 30000);
+    await bot.waitForRemoteStream({ videoType: 'camera', hasAudio: true, hasVideo: true });
+    const streams = await bot.getRemoteStreams();
+    jestExpect(streams).toHaveLength(1);
+    jestExpect(streams[0].connectionId).not.toBe(oldStream.connectionId);
+    jestExpect(streams[0].streamId).not.toBe(oldStream.streamId);
+    await waitFor(element(by.id('disconnectSession'))).toBeVisible().withTimeout(5000);
   });
 });

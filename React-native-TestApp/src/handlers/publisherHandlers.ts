@@ -6,6 +6,9 @@ export const createPublisherHandlers = (
 ) => ({
   audioLevel: (event: any) => {
     updateEvent('publisherEvents', 'audioLevel', true);
+    captureEvent('publisherAudioLevel', {
+      audioLevel: typeof event === 'number' ? event : event?.audioLevel,
+    });
   },
   audioNetworkStats: (event: any) => {
     updateEvent('publisherEvents', 'audioNetworkStats', true);
@@ -24,12 +27,18 @@ export const createPublisherHandlers = (
   },
   muteForced: (event: any) => {
     updateEvent('publisherEvents', 'forceMute', true);
+    captureEvent('publisherMuteForced', {});
   },
   rtcStatsReport: (event: any) => {
     updateEvent('publisherEvents', 'rtcStatsReport', true);
   },
   error: (event: any) => {
     updateEvent('publisherEvents', 'error', true);
+    captureEvent('publisherError', {
+      code: event?.code ?? event?.error?.code,
+      message: event?.message ?? event?.error?.message,
+      type: event?.type,
+    });
   },
   videoDisabled: (event: any) => {
     updateEvent('publisherEvents', 'videoDisabled', true);

@@ -2,12 +2,22 @@
 const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent, getLastEvent, waitForText } = require('./helpers/eventCapture');
+const { runAppCommandOk, resetAppProperties } = require('./helpers/appCommand');
+const { itIf } = require('./helpers/itIf');
 const { expect: jestExpect } = require('expect');
 
+const isIOS = device.getPlatform() === 'ios';
+// Native subscriber video event reasons are platform specific: iOS maps OTSubscriberVideoEventReason
+// (ios/Utils/Utils.swift), Android forwards the SDK's reason string unchanged.
+const REASON_SUBSCRIBE_TO_VIDEO = isIOS ? 'SubscriberPropertyChanged' : 'subscribeToVideo';
+const REASON_PUBLISH_VIDEO = isIOS ? 'PublisherPropertyChanged' : 'publishVideo';
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
- * Subscriber behavior with a single bot (relayed: toggles, unsubscribe, volume) and with several
- * bots (routed: multiple subscribers, disconnect behavior).
+ * Subscriber behavior with a single bot (toggles, unsubscribe, preferences, events) and with
+ * several bots (multiple subscribers, disconnect behavior).
  */
 describe('Subscriber Options', () => {
   let session;
@@ -29,61 +39,86 @@ describe('Subscriber Options', () => {
   });
 
   afterEach(async () => {
-    if (session) await session.cleanup();
+    if (!session) return;
+    await resetAppProperties();
+    await session.cleanup();
   });
 
+  /** Audio bytes the app's subscriber received over `windowMs`, from two audioNetworkStats samples. */
+  async function audioBytesOver(windowMs) {
+    const bytes = (e) => e && e.stats && e.stats.audioBytesReceived;
+    const first = await waitForEvent('subscriberAudioNetworkStats', 15000, (e) => typeof bytes(e) === 'number');
+    await sleep(windowMs);
+    const second = await waitForEvent(
+      'subscriberAudioNetworkStats',
+      15000,
+      (e) => typeof bytes(e) === 'number' && e.stats.timestamp !== first.stats.timestamp
+    );
+    return bytes(second) - bytes(first);
+  }
+
+  /** Requests subscriber RTC stats until the inbound video summary satisfies `predicate`. */
+  async function waitForInboundVideo(predicate, label, timeout = 45000) {
+    const deadline = Date.now() + timeout;
+    let last = null;
+    while (Date.now() < deadline) {
+      await runAppCommandOk('subscriberRtcStats');
+      try {
+        const report = await waitForEvent(
+          'subscriberRtcStatsReport',
+          6000,
+          (r) => Array.isArray(r.inboundVideo) && r.inboundVideo.length > 0
+        );
+        last = report.inboundVideo[0];
+        if (predicate(last)) return last;
+      } catch (_) {}
+      await sleep(2000);
+    }
+    throw new Error(`Timed out waiting for subscriber inbound video ${label}; last ${JSON.stringify(last)}`);
+  }
+
   describe('single bot scenarios (relayed)', () => {
-    it('subscriber appears when bot publishes', async () => {
-      await session.connectApp();
-
-      await setCaptureFilter(['streamCreated', 'connectionCreated']);
-
-      await session.addBot();
-      console.log('[sub] Subscriber visible.');
-
-      await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
-      await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
-
-      const streamEvent = await waitForEvent('streamCreated');
-      jestExpect(streamEvent.streamId).toBeTruthy();
-      jestExpect(typeof streamEvent.streamId).toBe('string');
-
-      const connEvent = await waitForEvent('connectionCreated');
-      jestExpect(connEvent.connectionId).toBeTruthy();
-      jestExpect(typeof connEvent.connectionId).toBe('string');
-    });
-
     it('toggle subscribeToVideo off and on', async () => {
       await session.connectApp();
+      await setCaptureFilter(['subscriberVideoDisabled', 'subscriberVideoEnabled']);
       await session.addBot();
 
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('toggleSubscribeVideo'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeVideo')).tap();
-      console.log('[subVideo] Toggled subscribeToVideo off.');
-
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      const disabled = await waitForEvent('subscriberVideoDisabled', 15000);
+      jestExpect(disabled.reason).toBe(REASON_SUBSCRIBE_TO_VIDEO);
+      console.log('[subVideo] videoDisabled reached JS:', JSON.stringify(disabled));
 
       await element(by.id('toggleSubscribeVideo')).tap();
-      console.log('[subVideo] Toggled subscribeToVideo on.');
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-      console.log('[subVideo] Subscribe video toggle works.');
+      const enabled = await waitForEvent('subscriberVideoEnabled', 15000);
+      jestExpect(enabled.reason).toBe(REASON_SUBSCRIBE_TO_VIDEO);
+      jestExpect(enabled.streamId).toBe(disabled.streamId);
+      console.log('[subVideo] videoEnabled reached JS:', JSON.stringify(enabled));
     });
 
     it('toggle subscribeToAudio off and on', async () => {
       await session.connectApp();
+      await setCaptureFilter(['subscriberAudioNetworkStats']);
       await session.addBot();
+
+      const receiving = await audioBytesOver(4000);
+      jestExpect(receiving).toBeGreaterThan(0);
 
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('toggleSubscribeAudio'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeAudio')).tap();
-      console.log('[subAudio] Toggled subscribeToAudio off (video-only).');
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
+      // Let audio already in flight arrive before measuring.
+      await sleep(2000);
+      const stopped = await audioBytesOver(4000);
+      console.log(`[subAudio] audio bytes in 4s: on=${receiving} off=${stopped}`);
+      jestExpect(stopped).toBeLessThan(receiving * 0.1);
 
       await element(by.id('toggleSubscribeAudio')).tap();
-      console.log('[subAudio] Toggled subscribeToAudio on.');
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-      console.log('[subAudio] Subscribe audio toggle works.');
+      await sleep(2000);
+      const resumed = await audioBytesOver(4000);
+      console.log(`[subAudio] audio bytes in 4s after resuming: ${resumed}`);
+      jestExpect(resumed).toBeGreaterThan(receiving * 0.5);
     });
 
     it('unsubscribe removes subscriber view', async () => {
@@ -114,28 +149,127 @@ describe('Subscriber Options', () => {
       console.log('[resubscribe] Subscriber view restored.');
     });
 
-    it('set volume to 0 does not crash', async () => {
-      await session.connectApp();
-      await session.addBot();
+    // Not automatable yet: the SDK never reads the volume back from the native subscriber
+    // (OTRNSubscriberComponentView.swift / OTRNSubscriberManager.kt only set it) and exposes no
+    // getter or event, so the test app cannot show the applied value.
+    itIf(false, 'the RN SDK exposes no way to read the audioVolume applied to the native subscriber')(
+      'audioVolume is applied to the native subscriber',
+      async () => {
+        await session.connectApp();
+        await session.addBot();
+        for (const audioVolume of [0, 50, -10, 150]) {
+          await runAppCommandOk('setSubscriberProperties', { properties: { audioVolume } });
+        }
+      }
+    );
 
-      await element(by.id('tabSubscriber')).tap();
-      await waitFor(element(by.id('setVolume0'))).toBeVisible().withTimeout(5000);
-      await element(by.id('setVolume0')).tap();
-      console.log('[volume0] Set volume to 0.');
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-      console.log('[volume0] Subscriber still exists after volume 0.');
+    it('preferences reach the native subscriber', async () => {
+      await session.connectApp();
+      await setCaptureFilter(['subscriberRtcStatsReport', 'captionReceived']);
+      await session.addBot({ publisherOptions: { resolution: '1280x720', frameRate: 30 } });
+
+      const full = await waitForInboundVideo((v) => v.frameWidth > 640, 'wider than 640');
+      console.log('[prefs] Without preferences:', JSON.stringify(full));
+
+      await runAppCommandOk('setSubscriberProperties', { properties: { preferredResolution: '640x480' } });
+      const medium = await waitForInboundVideo(
+        (v) => v.frameWidth > 0 && v.frameWidth <= 640 && v.frameHeight <= 480,
+        'at most 640x480'
+      );
+      console.log('[prefs] preferredResolution 640x480:', JSON.stringify(medium));
+
+      await runAppCommandOk('setSubscriberProperties', {
+        properties: { preferredResolution: { width: 320, height: 240 } },
+      });
+      const small = await waitForInboundVideo(
+        (v) => v.frameWidth > 0 && v.frameWidth <= 320 && v.frameHeight <= 240,
+        'at most 320x240'
+      );
+      console.log('[prefs] preferredResolution 320x240:', JSON.stringify(small));
+
+      await runAppCommandOk('setSubscriberProperties', { properties: { preferredFrameRate: 7 } });
+      const slow = await waitForInboundVideo(
+        (v) => typeof v.framesPerSecond === 'number' && v.framesPerSecond > 0 && v.framesPerSecond <= 10,
+        'at most ~7 fps'
+      );
+      console.log('[prefs] preferredFrameRate 7:', JSON.stringify(slow));
+
+      // The bot publishes no captions, so this only checks that turning captions off is accepted
+      // and that no caption reaches JS afterwards.
+      await runAppCommandOk('setSubscriberProperties', { properties: { subscribeToCaptions: false } });
+      await sleep(3000);
+      jestExpect(await getLastEvent('captionReceived')).toBeNull();
     });
 
-    it('set volume to 50 does not crash', async () => {
+    it('subscriber reports videoDisabled and videoEnabled when the bot toggles video', async () => {
       await session.connectApp();
-      await session.addBot();
+      await setCaptureFilter(['subscriberVideoDisabled', 'subscriberVideoEnabled']);
+      const bot = await session.addBot();
+      const botStreamId = await bot.getPublisherStreamId();
 
-      await element(by.id('tabSubscriber')).tap();
-      await waitFor(element(by.id('setVolume50'))).toBeVisible().withTimeout(5000);
-      await element(by.id('setVolume50')).tap();
-      console.log('[volume50] Set volume to 50.');
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-      console.log('[volume50] Subscriber still exists after volume 50.');
+      await bot.setPublishVideo(false);
+      const disabled = await waitForEvent('subscriberVideoDisabled', 15000);
+      jestExpect(disabled).toEqual({ reason: REASON_PUBLISH_VIDEO, streamId: botStreamId });
+
+      await bot.setPublishVideo(true);
+      const enabled = await waitForEvent('subscriberVideoEnabled', 15000);
+      jestExpect(enabled).toEqual({ reason: REASON_PUBLISH_VIDEO, streamId: botStreamId });
+    });
+
+    it('subscriber stats and rtcStatsReport events fire', async () => {
+      await session.connectApp();
+      await setCaptureFilter([
+        'subscriberAudioLevel',
+        'subscriberAudioNetworkStats',
+        'subscriberVideoNetworkStats',
+        'subscriberVideoDataReceived',
+        'subscriberRtcStatsReport',
+      ]);
+      const bot = await session.addBot();
+      const botStreamId = await bot.getPublisherStreamId();
+
+      const level = await waitForEvent('subscriberAudioLevel', 15000);
+      jestExpect(level.audioLevel).toBeGreaterThanOrEqual(0);
+      jestExpect(level.audioLevel).toBeLessThanOrEqual(1);
+
+      const audio = await waitForEvent('subscriberAudioNetworkStats', 15000);
+      jestExpect(audio.streamId).toBe(botStreamId);
+      jestExpect(audio.stats).toEqual(
+        jestExpect.objectContaining({
+          audioBytesReceived: jestExpect.any(Number),
+          audioPacketsReceived: jestExpect.any(Number),
+          audioPacketsLost: jestExpect.any(Number),
+        })
+      );
+
+      const video = await waitForEvent('subscriberVideoNetworkStats', 15000);
+      jestExpect(video.streamId).toBe(botStreamId);
+      jestExpect(video.stats).toEqual(
+        jestExpect.objectContaining({
+          videoBytesReceived: jestExpect.any(Number),
+          videoPacketsReceived: jestExpect.any(Number),
+          videoPacketsLost: jestExpect.any(Number),
+          timestamp: jestExpect.any(Number),
+        })
+      );
+
+      await waitForEvent('subscriberVideoDataReceived', 15000);
+
+      await runAppCommandOk('subscriberRtcStats');
+      const fromSubscriber = await waitForEvent('subscriberRtcStatsReport', 15000);
+      jestExpect(fromSubscriber.hasJsonStats).toBe(true);
+      jestExpect(fromSubscriber.reportCount).toBeGreaterThan(0);
+      jestExpect(fromSubscriber.inboundVideo.length).toBeGreaterThan(0);
+
+      // Render the subscriber through OTSubscriberView children to call the view's method.
+      await setCaptureFilter(['subscriberRtcStatsReport', 'subscriberConnected']);
+      await runAppCommandOk('setSubscriberMode', { mode: 'views' });
+      await waitForEvent('subscriberConnected', 15000, (e) => e.streamId === botStreamId);
+      await runAppCommandOk('subscriberViewRtcStats');
+      const fromView = await waitForEvent('subscriberRtcStatsReport', 15000);
+      jestExpect(fromView.hasJsonStats).toBe(true);
+      jestExpect(fromView.reportCount).toBeGreaterThan(0);
+      await runAppCommandOk('setSubscriberMode', { mode: 'default' });
     });
   });
 
@@ -145,12 +279,14 @@ describe('Subscriber Options', () => {
 
       await session.addBot();
       console.log('[multi] Bot1 joined.');
+      await waitForText('subscriberConnectedCount', 'subscribersConnected:1', 15000);
 
-      await session.addBot();
+      await session.addBot({ waitForSubscriber: false });
       console.log('[multi] Bot2 joined.');
 
-      await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
-      console.log('[multi] Subscriber visible with 2 bots.');
+      // One native subscriber per bot stream reported subscriberConnected.
+      await waitForText('subscriberConnectedCount', 'subscribersConnected:2', 20000);
+      console.log('[multi] Two subscriber views connected.');
     });
 
     it('subscriber persists after one bot disconnects', async () => {
@@ -167,25 +303,6 @@ describe('Subscriber Options', () => {
 
       await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
       console.log('[persist] Subscriber still visible after bot2 left.');
-    });
-
-    it('subscriber disappears when last bot disconnects', async () => {
-      await session.connectApp();
-
-      const bot1 = await session.addBot();
-      console.log('[disappear] Bot1 joined.');
-
-      const bot2 = await session.addBot();
-      console.log('[disappear] Bot2 joined and receiving app stream.');
-
-      await bot2.disconnect();
-      console.log('[disappear] Bot2 disconnected.');
-
-      await bot1.disconnect();
-      console.log('[disappear] Bot1 disconnected (last bot).');
-
-      await waitFor(element(by.id('subscriber'))).not.toExist().withTimeout(30000);
-      console.log('[disappear] Subscriber gone after all bots disconnected.');
     });
   });
 });

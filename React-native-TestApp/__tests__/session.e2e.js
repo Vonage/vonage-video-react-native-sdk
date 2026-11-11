@@ -92,4 +92,17 @@ describe('Session Lifecycle', () => {
     console.log('[session] Disconnected while subscribing — no crash.');
   });
 
+  it('connect and disconnect 20 times without a crash', async () => {
+    for (let cycle = 1; cycle <= 20; cycle++) {
+      await session.connectApp();
+      // Counters reset on every connect, so 1 means sessionConnected fired once in this cycle.
+      await waitFor(element(by.id('session-sessionConnected'))).toHaveText('1').withTimeout(5000);
+      await waitFor(element(by.id('session-error'))).toHaveText('0').withTimeout(1000);
+      await session.disconnectApp();
+      await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
+      console.log(`[session] Cycle ${cycle}/20 done.`);
+    }
+    await session.connectApp();
+    await waitFor(element(by.id('session-sessionConnected'))).toHaveText('1').withTimeout(5000);
+  }, 900000);
 });

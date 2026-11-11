@@ -39,38 +39,6 @@ describe('Screen Sharing', () => {
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
   }
 
-  it('screen share toggle publishes a new stream that the bot receives', async () => {
-    await session.connectApp();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-
-    const bot = await session.addBot();
-    await bot.waitForStream();
-
-    const streamCount = await bot.getStreamCount();
-    await toggleScreenShare();
-    await bot.waitForNewStream(streamCount, 30000);
-
-    jestExpect((await bot.getState()).subscriberCount).toBeGreaterThanOrEqual(1);
-  });
-
-  it('toggling screen share off restores camera publishing to bot', async () => {
-    await session.connectApp();
-    await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
-
-    const bot = await session.addBot();
-    await bot.waitForStream();
-
-    let streamCount = await bot.getStreamCount();
-    await toggleScreenShare();
-    await bot.waitForNewStream(streamCount, 30000);
-
-    streamCount = await bot.getStreamCount();
-    await toggleScreenShare();
-    await bot.waitForNewStream(streamCount, 30000);
-
-    jestExpect((await bot.getState()).subscriberCount).toBeGreaterThanOrEqual(1);
-  });
-
   it('camera audio and video come back after a screen share round trip', async () => {
     await session.connectApp();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
