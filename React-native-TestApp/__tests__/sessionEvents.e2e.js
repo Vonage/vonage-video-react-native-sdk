@@ -101,12 +101,19 @@ describe('Session Events', () => {
     const name = `rn-e2e-archive-${Date.now()}`;
     const archive = await startArchive(apiKey, apiSecret, apiUrl, sessionId, name);
 
-    const started = await waitForEvent('archiveStarted', 30000);
-    jestExpect(started).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
+    let stopped = false;
+    try {
+      const startedEvent = await waitForEvent('archiveStarted', 30000);
+      jestExpect(startedEvent).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
 
-    await stopArchive(apiKey, apiSecret, apiUrl, archive.id);
-    const stopped = await waitForEvent('archiveStopped', 30000);
-    jestExpect(stopped).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
+      await stopArchive(apiKey, apiSecret, apiUrl, archive.id);
+      stopped = true;
+      const stoppedEvent = await waitForEvent('archiveStopped', 30000);
+      jestExpect(stoppedEvent).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
+    } finally {
+      // A running archive would make the retry's startArchive fail with 409.
+      if (!stopped) await stopArchive(apiKey, apiSecret, apiUrl, archive.id).catch(() => {});
+    }
   });
 
   it('streamPropertyChanged reports hasAudio, hasVideo and videoDimensions with sessionId', async () => {

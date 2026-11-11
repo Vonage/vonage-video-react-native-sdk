@@ -741,6 +741,8 @@ class VideoCallScreen extends Component<{}, State> {
         // Disconnect (unmount OTSession), then run `cmd.command` on the unmounted session instance.
         const instance = this.sessionRef.current;
         await this.setStateAsync({ connectedToSession: false });
+        // OTSession unmount starts the native disconnect; give it time to finish.
+        await this.delay(cmd.delayMs ?? 3000);
         return this.executeCommand(cmd.command, instance);
       }
       default:
@@ -1482,11 +1484,9 @@ class VideoCallScreen extends Component<{}, State> {
     ));
   }
 
+  // E2E controls sit above the video so they stay on screen on small simulators/emulators.
   renderCaptureControls() {
-    // Results of commands that disconnect the session stay readable after the disconnect.
-    if (!this.state.connectedToSession) {
-      return <View style={{ padding: 4 }}>{this.renderCapturedEvents()}</View>;
-    }
+    if (!this.state.connectedToSession) return null;
 
     return (
       <View style={{ padding: 4 }}>
@@ -1537,7 +1537,6 @@ class VideoCallScreen extends Component<{}, State> {
             Clear
           </Text>
         </View>
-        {this.renderCapturedEvents()}
       </View>
     );
   }
@@ -1548,8 +1547,10 @@ class VideoCallScreen extends Component<{}, State> {
         <View style={{ flex: 1 }}>
           <ScrollView testID="mainScrollView" style={styles.container} contentContainerStyle={styles.scrollContent}>
             {this.renderConnectionInputs()}
-            {this.renderVideoSection()}
             {this.renderCaptureControls()}
+            {this.renderVideoSection()}
+            {/* Captured events stay readable after a disconnect (commands that disconnect). */}
+            <View style={{ padding: 4 }}>{this.renderCapturedEvents()}</View>
             {this.renderEventIndicators()}
           </ScrollView>
 

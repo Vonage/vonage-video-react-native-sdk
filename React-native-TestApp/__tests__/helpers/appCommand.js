@@ -1,6 +1,6 @@
 'use strict';
 
-const { waitForEvent } = require('./eventCapture');
+const { waitForEvent, scrollToTop } = require('./eventCapture');
 const { withTimeout } = require('./timeout');
 
 let nextId = 1;
@@ -17,6 +17,7 @@ let nextId = 1;
  */
 async function runAppCommand(op, args = {}, timeout = 20000) {
   const id = `${Date.now()}-${nextId++}`;
+  await scrollToTop();
   await element(by.id('commandInput')).replaceText(JSON.stringify({ id, op, ...args }));
   // On iOS replaceText leaves the keyboard open, which can intercept the tap on Run.
   try {

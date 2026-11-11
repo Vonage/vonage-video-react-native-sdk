@@ -7,6 +7,7 @@
 
 /** Captures only the given event types, clearing previously captured payloads first. */
 async function setCaptureFilter(eventTypes) {
+  await scrollToTop();
   await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
   // On iOS replaceText leaves the keyboard open, which can intercept the tap on Set Filter.
@@ -17,7 +18,19 @@ async function setCaptureFilter(eventTypes) {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
+/**
+ * The capture and command controls are at the top of the main scroll view. Detox taps an element
+ * by its screen coordinates, so a control scrolled out of view would get a tap meant for something
+ * else (on a small emulator, the tab bar).
+ */
+async function scrollToTop() {
+  try {
+    await element(by.id('mainScrollView')).scrollTo('top');
+  } catch (_) {}
+}
+
 async function clearCapturedEvents() {
+  await scrollToTop();
   await element(by.id('clearCapturedEvents')).tap();
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
@@ -68,4 +81,4 @@ async function waitForText(testID, text, timeout = 10000) {
   throw new Error(`Timed out after ${timeout}ms waiting for ${testID} to read "${text}", last value "${current}"`);
 }
 
-module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent, waitForText };
+module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent, waitForText, scrollToTop };

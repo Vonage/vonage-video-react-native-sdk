@@ -32,13 +32,26 @@ module.exports = async function globalSetup() {
 
   const ot = new OpenTok(apiKey, apiSecret, { apiUrl });
 
-  const createSession = (options) =>
+  const createSessionOnce = (options) =>
     new Promise((resolve, reject) => {
       ot.createSession(options, (error, session) => {
         if (error) reject(error);
         else resolve(session);
       });
     });
+
+  // A transient network error here fails the whole run, so retry a few times.
+  const createSession = async (options) => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await createSessionOnce(options);
+      } catch (error) {
+        if (attempt >= 3) throw error;
+        console.warn(`[globalSetup] createSession failed (attempt ${attempt}): ${error.message}. Retrying.`);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
+  };
 
   const generateToken = (sessionId, { role, data }) =>
     ot.generateToken(sessionId, {
