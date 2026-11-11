@@ -11,10 +11,7 @@ const isIOS = device.getPlatform() === 'ios';
 // Native subscriber video event reasons are platform specific: iOS maps OTSubscriberVideoEventReason
 // (ios/Utils/Utils.swift), Android forwards the SDK's reason string unchanged.
 const REASON_SUBSCRIBE_TO_VIDEO = isIOS ? 'SubscriberPropertyChanged' : 'subscribeToVideo';
-// Both platforms report the subscriber-property reason (not "publisher property changed" /
-// "publishVideo") when the remote publisher turns its video off in a routed session. The RN layer
-// forwards the native reason unchanged. Pinned to the observed values so a change shows up here.
-const REASON_PUBLISH_VIDEO = REASON_SUBSCRIBE_TO_VIDEO;
+const REASON_PUBLISH_VIDEO = isIOS ? 'PublisherPropertyChanged' : 'publishVideo';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -222,12 +219,15 @@ describe('Subscriber Options', () => {
       const bot = await session.addBot();
       const botStreamId = await bot.getPublisherStreamId();
 
+      // Wait for the publisher-side reason: a subscriber-side videoDisabled/videoEnabled (for
+      // example while the subscriber starts) can be captured first.
+      const byPublisher = (e) => e.reason === REASON_PUBLISH_VIDEO;
       await bot.setPublishVideo(false);
-      const disabled = await waitForEvent('subscriberVideoDisabled', 15000);
+      const disabled = await waitForEvent('subscriberVideoDisabled', 15000, byPublisher);
       jestExpect(disabled).toEqual({ reason: REASON_PUBLISH_VIDEO, streamId: botStreamId });
 
       await bot.setPublishVideo(true);
-      const enabled = await waitForEvent('subscriberVideoEnabled', 15000);
+      const enabled = await waitForEvent('subscriberVideoEnabled', 15000, byPublisher);
       jestExpect(enabled).toEqual({ reason: REASON_PUBLISH_VIDEO, streamId: botStreamId });
     });
 

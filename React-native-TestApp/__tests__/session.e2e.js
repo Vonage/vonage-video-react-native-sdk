@@ -2,7 +2,7 @@
 const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
-const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent, getLastEvent } = require('./helpers/eventCapture');
 const { expect: jestExpect } = require('expect');
 
 /**
@@ -97,7 +97,10 @@ describe('Session Lifecycle', () => {
       await session.connectApp();
       // Counters reset on every connect, so 1 means sessionConnected fired once in this cycle.
       await waitFor(element(by.id('session-sessionConnected'))).toHaveText('1').withTimeout(5000);
-      await waitFor(element(by.id('session-error'))).toHaveText('0').withTimeout(1000);
+      const errors = await element(by.id('session-error')).getAttributes();
+      if ((errors.text || errors.label) !== '0') {
+        throw new Error(`Cycle ${cycle}: session error ${JSON.stringify(await getLastEvent('sessionError'))}`);
+      }
       await session.disconnectApp();
       await waitFor(element(by.id('submitButton'))).toBeVisible().withTimeout(5000);
       console.log(`[session] Cycle ${cycle}/20 done.`);

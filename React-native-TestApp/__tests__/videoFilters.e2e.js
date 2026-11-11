@@ -2,6 +2,7 @@
 const { launchAndWaitForApp } = require('./helpers/waitForApp');
 const { TestSession } = require('./helpers/testSession');
 const { runAppCommand, runAppCommandOk, resetAppProperties } = require('./helpers/appCommand');
+const { pushBackgroundImage } = require('./helpers/backgroundImage');
 const { expect: jestExpect } = require('expect');
 
 const BLUR = { type: 'backgroundBlur', blurStrength: 'High' };
@@ -48,16 +49,20 @@ describe('Video Filters', () => {
 
   it('applyVideoFilter background replacement resolves', async () => {
     await connectAndPublish();
+    // backgroundImgUrl must be a local image file on mobile.
+    const backgroundImgUrl = pushBackgroundImage();
 
     const applied = await runAppCommand(
       'applyVideoFilter',
-      { filter: { type: 'backgroundReplacement', backgroundImgUrl: '$bundledImage' } },
+      { filter: { type: 'backgroundReplacement', backgroundImgUrl } },
       30000
     );
-    jestExpect(applied.ok).toBe(true);
-    jestExpect(applied.value).toEqual(
-      jestExpect.objectContaining({ type: 'backgroundReplacement', backgroundImgUrl: jestExpect.any(String) })
-    );
+    jestExpect(applied).toEqual({
+      id: applied.id,
+      op: 'applyVideoFilter',
+      ok: true,
+      value: { type: 'backgroundReplacement', backgroundImgUrl },
+    });
   });
 
   it('clearVideoFilter resolves and getVideoFilter returns null', async () => {

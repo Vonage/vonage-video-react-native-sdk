@@ -506,13 +506,19 @@ class jsSDKTesterBot {
 
   /**
    * Inbound RTP totals of the bot's subscriber to the given stream:
-   * `{ audioPacketsReceived, audioBytesReceived, videoFramesDecoded }`.
+   * `{ audioPacketsReceived, audioBytesReceived, videoFramesDecoded }`, or null while the subscriber
+   * is not ready.
    */
   async getInboundStats(streamId) {
     return this.page.evaluate(async (id) => {
       const subscriber = window.botSubscribers[id];
       if (!subscriber) return null;
-      const report = await subscriber.getRtcStatsReport();
+      let report;
+      try {
+        report = await subscriber.getRtcStatsReport();
+      } catch (_) {
+        return null;
+      }
       const totals = { audioPacketsReceived: 0, audioBytesReceived: 0, videoFramesDecoded: 0 };
       report.forEach((s) => {
         if (s.type !== 'inbound-rtp') return;

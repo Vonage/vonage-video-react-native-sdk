@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, ScrollView, ImageBackground, Alert, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, ImageBackground, Alert, TextInput } from 'react-native';
 import {
   OTSession,
   OTPublisher,
@@ -721,14 +721,9 @@ class VideoCallScreen extends Component<{}, State> {
         const view = Object.values(this.subscriberViewRefs).find(Boolean);
         return this.requireRef(view, 'OTSubscriberView').getRtcStatsReport();
       }
-      case 'applyVideoFilter': {
-        const filter = { ...cmd.filter };
-        if (filter.backgroundImgUrl === '$bundledImage') {
-          filter.backgroundImgUrl = Image.resolveAssetSource(require('../../assets/background.jpg')).uri;
-        }
-        await publisher().applyVideoFilter(filter);
+      case 'applyVideoFilter':
+        await publisher().applyVideoFilter(cmd.filter);
         return publisher().getVideoFilter();
-      }
       case 'clearVideoFilter':
         await publisher().clearVideoFilter();
         return publisher().getVideoFilter();
@@ -890,7 +885,9 @@ class VideoCallScreen extends Component<{}, State> {
           sessionId={this.state.input.sessionId}
           token={this.state.input.token}
           encryptionSecret={this.state.input.encryptionSecret}
-          signal={this.state.input.signal || {}}
+          // A new {} on every render makes OTSession send an empty signal on each update
+          // (componentDidUpdate compares the prop by reference), so pass undefined when unset.
+          signal={this.state.input.signal}
           options={{ apiUrl: this.state.input.apiUrl || credentials.apiUrl || undefined }}
           eventHandlers={this.sessionEventHandlers}
           ref={this.sessionRef}>

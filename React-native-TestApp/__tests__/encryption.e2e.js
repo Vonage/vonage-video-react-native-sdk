@@ -48,7 +48,14 @@ describe('Encryption', () => {
 
   /** The bot keeps receiving the app's media and its subscriber reports no secret mismatch. */
   async function expectBotDecodes(bot, streamId) {
-    const before = await bot.getInboundStats(streamId);
+    // The bot's subscriber can still be setting up right after the stream appears.
+    const deadline = Date.now() + 20000;
+    let before = null;
+    while (!before && Date.now() < deadline) {
+      before = await bot.getInboundStats(streamId);
+      if (!before) await sleep(1000);
+    }
+    jestExpect(before).not.toBeNull();
     await sleep(4000);
     const after = await bot.getInboundStats(streamId);
     jestExpect(after.audioPacketsReceived).toBeGreaterThan(before.audioPacketsReceived);

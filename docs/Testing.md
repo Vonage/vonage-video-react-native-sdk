@@ -259,7 +259,7 @@ const capabilities = await runAppCommandOk('getCapabilities');      // throws if
 | `republish { properties }` | Unmounts OTPublisher, merges the values, mounts a new one (init properties) |
 | `publisherRtcStats`, `subscriberRtcStats`, `subscriberViewRtcStats` | Calls `getRtcStatsReport()` on OTPublisher, OTSubscriber or the first OTSubscriberView |
 | `setSubscriberMode { mode: 'default' \| 'views' }` | Renders OTSubscriber with its default views or with OTSubscriberView children |
-| `applyVideoFilter { filter }`, `clearVideoFilter`, `getVideoFilter`, `setVideoTransformers { transformers }` | Calls the OTPublisher method; returns `getVideoFilter()`. `backgroundImgUrl: '$bundledImage'` uses the app's bundled image |
+| `applyVideoFilter { filter }`, `clearVideoFilter`, `getVideoFilter`, `setVideoTransformers { transformers }` | Calls the OTPublisher method; returns `getVideoFilter()`. For background replacement, `pushBackgroundImage()` (`helpers/backgroundImage.js`) copies an image to a local file the app can read (adb on Android, the simulator app container on iOS) and returns its path |
 | `afterDisconnect { command }` | Disconnects (unmounts OTSession), then runs `command` on the unmounted session instance |
 | `resetProperties` | Restores the initial publisher/subscriber properties. `resetAppProperties()` calls it; use it in `afterEach` before `session.cleanup()` in specs that change properties |
 
