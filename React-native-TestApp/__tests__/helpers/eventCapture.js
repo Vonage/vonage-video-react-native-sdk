@@ -24,6 +24,9 @@ async function setCaptureFilter(eventTypes) {
  * else (on a small emulator, the tab bar).
  */
 async function scrollToTop() {
+  // Only needed on the small Android emulator; on iOS, scrollTo waits for an idle app and hangs
+  // while the Video SDK keeps it busy.
+  if (device.getPlatform() !== 'android') return;
   try {
     await element(by.id('mainScrollView')).scrollTo('top');
   } catch (_) {}

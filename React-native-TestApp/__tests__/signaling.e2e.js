@@ -54,6 +54,8 @@ describe('Signaling', () => {
       const received = await bot.waitForSignal({ type: 'chat', data: 'hello' });
       jestExpect(received.from).toBe(appConnectionId);
     }
+    // The counter is only incremented by OTSession's signal event handler.
+    await waitFor(element(by.id('session-signalReceived'))).not.toHaveText('0').withTimeout(15000);
     const own = await waitForEvent('signal', 15000, (e) => e.data === 'hello');
     jestExpect(own).toEqual(jestExpect.objectContaining({ type: 'chat', data: 'hello', connectionId: appConnectionId }));
 

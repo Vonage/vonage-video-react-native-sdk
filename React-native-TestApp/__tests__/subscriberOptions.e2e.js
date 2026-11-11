@@ -11,7 +11,9 @@ const isIOS = device.getPlatform() === 'ios';
 // Native subscriber video event reasons are platform specific: iOS maps OTSubscriberVideoEventReason
 // (ios/Utils/Utils.swift), Android forwards the SDK's reason string unchanged.
 const REASON_SUBSCRIBE_TO_VIDEO = isIOS ? 'SubscriberPropertyChanged' : 'subscribeToVideo';
-const REASON_PUBLISH_VIDEO = isIOS ? 'PublisherPropertyChanged' : 'publishVideo';
+// Android reports "subscribeToVideo" (not "publishVideo") when the remote publisher turns its video
+// off; OTRNSubscriber.kt forwards the native SDK's reason unchanged. Pinned so a fix shows up here.
+const REASON_PUBLISH_VIDEO = isIOS ? 'PublisherPropertyChanged' : 'subscribeToVideo';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
