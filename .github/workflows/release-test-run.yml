@@ -1,0 +1,54 @@
+name: Release test run
+# Runs the Detox E2E suite on every push to a 2.* release branch (including the push
+# that creates it, and pre-release branches) and reports the
+# results to opentok/ClientSDKTests (React Native test run for that version).
+on:
+  push:
+    branches: ['2.*']   # also fires when the branch is created
+  workflow_dispatch:   # re-run manually from the release branch (no inputs: Mend IaC rule)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-test-run-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    # push is already filtered; this guards manual runs started from other branches.
+    if: startsWith(github.ref_name, '2.')
+    uses: ./.github/workflows/e2e-tests.yml
+    secrets: inherit
+
+  report:
+    needs: e2e
+    # Report even when tests failed; skip when the suite was skipped or cancelled.
+    if: always() && (needs.e2e.result == 'success' || needs.e2e.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-results-*
+          path: results
+      - name: Send iOS results
+        env:
+          CLIENTSDKTESTS_DISPATCH_TOKEN: ${{ secrets.CLIENTSDKTESTS_DISPATCH_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          files=$(ls results/e2e-results-ios*/jest-results-ios.json 2>/dev/null || true)
+          if [ -z "$files" ]; then echo "::warning::No iOS results"; exit 0; fi
+          node scripts/dispatch-test-results.js --platform ios --version "$VERSION" $files
+      - name: Send Android results
+        env:
+          CLIENTSDKTESTS_DISPATCH_TOKEN: ${{ secrets.CLIENTSDKTESTS_DISPATCH_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          file=results/e2e-results-android/jest-results-android.json
+          if [ ! -f "$file" ]; then echo "::warning::No Android results"; exit 0; fi
+          node scripts/dispatch-test-results.js --platform android --version "$VERSION" "$file"

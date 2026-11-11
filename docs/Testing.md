@@ -293,7 +293,14 @@ The test is reported as skipped with the reason in its title, and the CI summary
 
 ## CI
 
-Tests run on every PR via GitHub Actions (`ci-pr-tests.yml`). The `globalSetup` reads credentials from GitHub Secrets (`VONAGE_API_KEY`, `VONAGE_API_SECRET`, `API_URL`), which are passed as environment variables to the test step.
+The Detox jobs live in the reusable workflow `e2e-tests.yml` (`on: workflow_call`). Two workflows call it:
+
+- `ci-pr-tests.yml` on every PR from this repository, after `unit-tests`. The checks show up as `e2e-tests / e2e-ios-tests (ios26)`, `e2e-tests / e2e-ios-tests (ios27)` and `e2e-tests / e2e-android-tests`.
+- `release-test-run.yml` on every push to a `2.*` release branch (including the push that creates it) and on `workflow_dispatch` from such a branch. Its `report` job sends the results to `opentok/ClientSDKTests` with `scripts/dispatch-test-results.js` (one `ingest-results` repository dispatch per platform, `version` = branch name), which creates or updates the React Native test run for that version. It needs the `CLIENTSDKTESTS_DISPATCH_TOKEN` secret. Pushes made with `GITHUB_TOKEN` do not start it.
+
+Each E2E job uploads its Jest results as a small artifact (`e2e-results-ios26`, `e2e-results-ios27`, `e2e-results-android`) besides the diagnostics artifact. To check a payload locally: `node scripts/dispatch-test-results.js --platform ios --version 2.36.0 --dry-run <jest-results files>` writes `payload-ios.json` without sending it.
+
+The `globalSetup` reads credentials from GitHub Secrets (`VONAGE_API_KEY`, `VONAGE_API_SECRET`, `API_URL`), which are passed as environment variables to the test step.
 
 - **iOS** runs as a matrix of two legs, `ios26` (`macos-26-xlarge`, Xcode 26.6) and `ios27` (`xcode-27-xlarge`). Each leg selects a simulator of its iOS major with `scripts/ci-select-ios-simulator.sh <major>` and passes its UUID to Detox through `DETOX_DEVICE_ID`. A leg marked `experimental: true` does not fail the run. To roll the matrix forward, edit only the two `include` entries.
 - **Android** runs on an emulator through `scripts/run-android-e2e-in-emulator.sh`.
