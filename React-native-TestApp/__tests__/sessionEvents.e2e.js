@@ -100,16 +100,17 @@ describe('Session Events', () => {
     const { apiKey, apiSecret, apiUrl, sessionId } = session.credentials;
     const name = `rn-e2e-archive-${Date.now()}`;
     const archive = await startArchive(apiKey, apiSecret, apiUrl, sessionId, name);
+    console.log('[sessionEvents] Archive started via REST:', JSON.stringify({ id: archive.id, name: archive.name }));
 
     let stopped = false;
     try {
       const startedEvent = await waitForEvent('archiveStarted', 30000);
-      jestExpect(startedEvent).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
+      jestExpect(startedEvent).toEqual({ archiveId: archive.id, name: archive.name, sessionId });
 
       await stopArchive(apiKey, apiSecret, apiUrl, archive.id);
       stopped = true;
       const stoppedEvent = await waitForEvent('archiveStopped', 30000);
-      jestExpect(stoppedEvent).toEqual(jestExpect.objectContaining({ archiveId: archive.id, name }));
+      jestExpect(stoppedEvent).toEqual({ archiveId: archive.id, name: archive.name, sessionId });
     } finally {
       // A running archive would make the retry's startArchive fail with 409.
       if (!stopped) await stopArchive(apiKey, apiSecret, apiUrl, archive.id).catch(() => {});

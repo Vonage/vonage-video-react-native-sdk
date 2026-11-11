@@ -16,6 +16,10 @@ end
 
 target 'ReactNativeTesApp' do
   config = use_native_modules!
+
+  # Optional Vonage Media Library, needed by applyVideoFilter / setVideoTransformers.
+  # Keep the version in step with VonageClientSDKVideo in OpentokReactNative.podspec.
+  pod 'VonageClientSDKVideoTransformers', '2.35.1'
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

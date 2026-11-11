@@ -115,6 +115,10 @@ dependencies {
     // MultiDex support for apps with >64K methods
     implementation("androidx.multidex:multidex:2.0.1")
 
+    // Optional Vonage Media Library, needed by applyVideoFilter / setVideoTransformers.
+    // Keep the version in step with com.vonage:client-sdk-video in android/build.gradle.
+    implementation("com.vonage:client-sdk-video-transformers:2.35.2-alpha.0")
+
     // Detox for E2E testing - use '+' to always match the version installed by npm
     androidTestImplementation("com.wix:detox:+")
     androidTestImplementation("androidx.test:runner:1.6.2")

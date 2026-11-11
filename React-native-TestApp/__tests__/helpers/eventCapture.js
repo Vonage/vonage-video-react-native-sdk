@@ -61,7 +61,21 @@ async function waitForEvent(eventType, timeout = 30000, predicate = () => true) 
     if (payload && predicate(payload)) return payload;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  throw new Error(`Timed out waiting for event: ${eventType}`);
+  const last = await getLastEvent(eventType);
+  throw new Error(`Timed out waiting for event: ${eventType}${last ? ` (last captured: ${JSON.stringify(last)})` : ''}`);
+}
+
+/** Polls until a payload is captured for any of the event types; returns `{ type, payload }`. */
+async function waitForAnyEvent(eventTypes, timeout = 30000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    for (const type of eventTypes) {
+      const payload = await getLastEvent(type);
+      if (payload) return { type, payload };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  throw new Error(`Timed out waiting for any of: ${eventTypes.join(', ')}`);
 }
 
 /**
@@ -84,4 +98,12 @@ async function waitForText(testID, text, timeout = 10000) {
   throw new Error(`Timed out after ${timeout}ms waiting for ${testID} to read "${text}", last value "${current}"`);
 }
 
-module.exports = { setCaptureFilter, clearCapturedEvents, getLastEvent, waitForEvent, waitForText, scrollToTop };
+module.exports = {
+  setCaptureFilter,
+  clearCapturedEvents,
+  getLastEvent,
+  waitForEvent,
+  waitForAnyEvent,
+  waitForText,
+  scrollToTop,
+};

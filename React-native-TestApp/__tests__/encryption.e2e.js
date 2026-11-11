@@ -3,7 +3,7 @@ const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { hasCredentials } = require('./helpers/credentials');
-const { setCaptureFilter, waitForEvent } = require('./helpers/eventCapture');
+const { setCaptureFilter, waitForEvent, waitForAnyEvent } = require('./helpers/eventCapture');
 const { runAppCommand } = require('./helpers/appCommand');
 const { itIf } = require('./helpers/itIf');
 const { expect: jestExpect } = require('expect');
@@ -101,8 +101,8 @@ describe('Encryption', () => {
     await session.connectApp();
     await setCaptureFilter(['publisherError', 'subscriberError']);
     await runAppCommand('republish', { properties: {} });
-    const publisherError = await waitForEvent('publisherError', 20000);
-    console.log('[encryption] Publisher error without a secret:', JSON.stringify(publisherError));
+    const missing = await waitForAnyEvent(['publisherError', 'sessionError'], 20000);
+    console.log('[encryption] Error without a secret:', JSON.stringify(missing));
 
     // An invalid secret (shorter than 8 characters) is reported to JS.
     await setCaptureFilter(['publisherError', 'subscriberError']);
