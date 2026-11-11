@@ -46,17 +46,26 @@ describe('Subscriber Options', () => {
     await session.cleanup();
   });
 
-  /** Audio bytes the app's subscriber received over `windowMs`, from two audioNetworkStats samples. */
-  async function audioBytesOver(windowMs) {
-    const bytes = (e) => e && e.stats && e.stats.audioBytesReceived;
-    const first = await waitForEvent('subscriberAudioNetworkStats', 15000, (e) => typeof bytes(e) === 'number');
-    await sleep(windowMs);
+  /**
+   * What the app's subscriber received over `windowMs`: audio bytes (two audioNetworkStats samples)
+   * and the highest audioLevel sampled every 250 ms.
+   */
+  async function sampleAudio(windowMs) {
+    const bytesOf = (e) => e && e.stats && e.stats.audioBytesReceived;
+    const first = await waitForEvent('subscriberAudioNetworkStats', 15000, (e) => typeof bytesOf(e) === 'number');
+    let maxLevel = 0;
+    const end = Date.now() + windowMs;
+    while (Date.now() < end) {
+      const level = await getLastEvent('subscriberAudioLevel');
+      if (level && typeof level.audioLevel === 'number') maxLevel = Math.max(maxLevel, level.audioLevel);
+      await sleep(250);
+    }
     const second = await waitForEvent(
       'subscriberAudioNetworkStats',
       15000,
-      (e) => typeof bytes(e) === 'number' && e.stats.timestamp !== first.stats.timestamp
+      (e) => typeof bytesOf(e) === 'number' && e.stats.timestamp !== first.stats.timestamp
     );
-    return bytes(second) - bytes(first);
+    return { bytes: bytesOf(second) - bytesOf(first), maxLevel };
   }
 
   /** Requests subscriber RTC stats until the inbound video summary satisfies `predicate`. */
@@ -101,26 +110,31 @@ describe('Subscriber Options', () => {
 
     it('toggle subscribeToAudio off and on', async () => {
       await session.connectApp();
-      await setCaptureFilter(['subscriberAudioNetworkStats']);
+      await setCaptureFilter(['subscriberAudioNetworkStats', 'subscriberAudioLevel']);
       await session.addBot();
 
-      const receiving = await audioBytesOver(4000);
-      jestExpect(receiving).toBeGreaterThan(0);
+      // Android stops receiving audio packets; iOS keeps receiving them but stops the audio
+      // (audioLevel drops to 0). Either shows that subscribeToAudio reached the native subscriber.
+      const on = await sampleAudio(4000);
+      console.log(`[subAudio] on: ${JSON.stringify(on)}`);
+      jestExpect(on.bytes).toBeGreaterThan(0);
+      jestExpect(on.maxLevel).toBeGreaterThan(0);
 
       await element(by.id('tabSubscriber')).tap();
       await waitFor(element(by.id('toggleSubscribeAudio'))).toBeVisible().withTimeout(5000);
       await element(by.id('toggleSubscribeAudio')).tap();
-      // Let audio already in flight arrive before measuring.
-      await sleep(2000);
-      const stopped = await audioBytesOver(4000);
-      console.log(`[subAudio] audio bytes in 4s: on=${receiving} off=${stopped}`);
-      jestExpect(stopped).toBeLessThan(receiving * 0.1);
+      // Clearing the captured samples (and waiting) drops levels and packets from before the toggle.
+      await setCaptureFilter(['subscriberAudioNetworkStats', 'subscriberAudioLevel']);
+      const off = await sampleAudio(4000);
+      console.log(`[subAudio] off: ${JSON.stringify(off)}`);
+      jestExpect(off.bytes < on.bytes * 0.1 || off.maxLevel === 0).toBe(true);
 
       await element(by.id('toggleSubscribeAudio')).tap();
-      await sleep(2000);
-      const resumed = await audioBytesOver(4000);
-      console.log(`[subAudio] audio bytes in 4s after resuming: ${resumed}`);
-      jestExpect(resumed).toBeGreaterThan(receiving * 0.5);
+      await setCaptureFilter(['subscriberAudioNetworkStats', 'subscriberAudioLevel']);
+      const resumed = await sampleAudio(4000);
+      console.log(`[subAudio] resumed: ${JSON.stringify(resumed)}`);
+      jestExpect(resumed.bytes).toBeGreaterThan(on.bytes * 0.5);
+      jestExpect(resumed.maxLevel).toBeGreaterThan(0);
     });
 
     it('unsubscribe removes subscriber view', async () => {

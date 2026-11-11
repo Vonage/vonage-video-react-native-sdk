@@ -752,10 +752,13 @@ class VideoCallScreen extends Component<{}, State> {
 
   runCommand = async () => {
     let cmd: any;
+    // iOS may turn typed quotes into smart quotes, which JSON.parse rejects.
+    const input = this.state.commandInput.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
     try {
-      cmd = JSON.parse(this.state.commandInput);
+      cmd = JSON.parse(input);
     } catch (e: any) {
-      this.captureEvent('commandResult', { id: null, op: null, ok: false, error: { message: String(e?.message ?? e) } });
+      const id = /"id"\s*:\s*"([^"]+)"/.exec(input)?.[1] ?? null;
+      this.captureEvent('commandResult', { id, op: null, ok: false, error: { message: `Invalid command JSON: ${e?.message ?? e}` } });
       return;
     }
     const { id, op } = cmd;
@@ -1499,6 +1502,7 @@ class VideoCallScreen extends Component<{}, State> {
             placeholder='{"id":"1","op":"getCapabilities"}'
             autoCapitalize="none"
             autoCorrect={false}
+            spellCheck={false}
           />
           <Text
             testID="runCommand"
