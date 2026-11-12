@@ -296,9 +296,13 @@ The test is reported as skipped with the reason in its title, and the CI summary
 The Detox jobs live in the reusable workflow `e2e-tests.yml` (`on: workflow_call`). Two workflows call it:
 
 - `ci-pr-tests.yml` on every PR from this repository, after `unit-tests`. The checks show up as `e2e-tests / e2e-ios-tests (ios26)`, `e2e-tests / e2e-ios-tests (ios27)` and `e2e-tests / e2e-android-tests`.
-- `release-test-run.yml` on every push to a `2.*` release branch (including the push that creates it) and on `workflow_dispatch` from such a branch. Its `report` job sends the results to `opentok/ClientSDKTests` with `scripts/dispatch-test-results.js` (one `ingest-results` repository dispatch per platform, `version` = branch name), which creates or updates the React Native test run for that version. It needs the `CLIENTSDKTESTS_DISPATCH_TOKEN` secret. Pushes made with `GITHUB_TOKEN` do not start it.
+- `release-test-run.yml` on later pushes to a `2.*` release branch (final and pre-release) and on `workflow_dispatch` from such a branch. Its `report` job sends the results to `opentok/ClientSDKTests`.
 
-Each E2E job uploads its Jest results as a small artifact (`e2e-results-ios26`, `e2e-results-ios27`, `e2e-results-android`) besides the diagnostics artifact. To check a payload locally: `node scripts/dispatch-test-results.js --platform ios --version 2.36.0 --dry-run <jest-results files>` writes `payload-ios.json` without sending it.
+`release-test-run.yml` does not run the suite when a `2.*` branch is created. Its `inherit` job uses `scripts/find-base-ci-results.sh` to find the PR CI run that tested the commit the branch was cut from (commit → merged PR → PR head commit → newest completed `ci-pr-tests.yml` run whose E2E jobs ran), downloads its `*e2e-diagnostics*` artifacts and sends those results. If no such run exists (direct push, fork PR, expired artifacts), it only logs a warning: start `Release test run` manually on the branch.
+
+`scripts/send-results.sh` sends `results/*/artifacts/jest-results-<platform>.json` with `scripts/dispatch-test-results.js`: one `ingest-results` repository dispatch per platform, `version` = branch name, which creates or updates the React Native test run for that version. It needs the `CLIENTSDKTESTS_DISPATCH_TOKEN` secret. Pushes made with `GITHUB_TOKEN` do not start the workflow.
+
+To check locally: `GH_REPO=Vonage/vonage-video-react-native-sdk bash scripts/find-base-ci-results.sh <sha> /tmp/r` downloads the results, and `node scripts/dispatch-test-results.js --platform ios --version 2.36.0 --dry-run /tmp/r/*/artifacts/jest-results-ios.json` writes `payload-ios.json` without sending it.
 
 The `globalSetup` reads credentials from GitHub Secrets (`VONAGE_API_KEY`, `VONAGE_API_SECRET`, `API_URL`), which are passed as environment variables to the test step.
 

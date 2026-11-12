@@ -1,11 +1,11 @@
 name: Release test run
-# Runs the Detox E2E suite on every push to a 2.* release branch (including the push
-# that creates it, and pre-release branches) and reports the
-# results to opentok/ClientSDKTests (React Native test run for that version).
+# 2.* branches (final and pre-release). Branch creation reuses the PR CI results of the
+# commit it was cut from; later pushes and manual runs run the suite. Results go to
+# opentok/ClientSDKTests as the React Native test run for the version = branch name.
 on:
   push:
-    branches: ['2.*']   # also fires when the branch is created
-  workflow_dispatch:   # re-run manually from the release branch (no inputs: Mend IaC rule)
+    branches: ['2.*']
+  workflow_dispatch:   # no inputs (Mend IaC rule)
 
 permissions:
   contents: read
@@ -15,15 +15,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  inherit:
+    if: github.event_name == 'push' && github.event.created
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read        # list runs and download artifacts of PR CI
+      pull-requests: read  # commits/{sha}/pulls
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Find PR CI results of the base commit
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if bash scripts/find-base-ci-results.sh "${{ github.sha }}" results; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No inherited results. Start 'Release test run' manually on ${{ github.ref_name }} to run the suite."
+          fi
+      - name: Send results
+        if: steps.find.outputs.found == 'true'
+        env:
+          CLIENTSDKTESTS_DISPATCH_TOKEN: ${{ secrets.CLIENTSDKTESTS_DISPATCH_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: bash scripts/send-results.sh
+
   e2e:
-    # push is already filtered; this guards manual runs started from other branches.
-    if: startsWith(github.ref_name, '2.')
+    if: startsWith(github.ref_name, '2.') && !(github.event_name == 'push' && github.event.created)
     uses: ./.github/workflows/e2e-tests.yml
     secrets: inherit
 
   report:
     needs: e2e
-    # Report even when tests failed; skip when the suite was skipped or cancelled.
     if: always() && (needs.e2e.result == 'success' || needs.e2e.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -34,21 +63,10 @@ jobs:
           node-version: 22
       - uses: actions/download-artifact@v4
         with:
-          pattern: e2e-results-*
+          pattern: '*e2e-diagnostics*'
           path: results
-      - name: Send iOS results
+      - name: Send results
         env:
           CLIENTSDKTESTS_DISPATCH_TOKEN: ${{ secrets.CLIENTSDKTESTS_DISPATCH_TOKEN }}
           VERSION: ${{ github.ref_name }}
-        run: |
-          files=$(ls results/e2e-results-ios*/jest-results-ios.json 2>/dev/null || true)
-          if [ -z "$files" ]; then echo "::warning::No iOS results"; exit 0; fi
-          node scripts/dispatch-test-results.js --platform ios --version "$VERSION" $files
-      - name: Send Android results
-        env:
-          CLIENTSDKTESTS_DISPATCH_TOKEN: ${{ secrets.CLIENTSDKTESTS_DISPATCH_TOKEN }}
-          VERSION: ${{ github.ref_name }}
-        run: |
-          file=results/e2e-results-android/jest-results-android.json
-          if [ ! -f "$file" ]; then echo "::warning::No Android results"; exit 0; fi
-          node scripts/dispatch-test-results.js --platform android --version "$VERSION" "$file"
+        run: bash scripts/send-results.sh
