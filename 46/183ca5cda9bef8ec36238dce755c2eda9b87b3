@@ -1,18 +1,38 @@
 AGENTS.md
-  h_25a96a0890a0d0 21
+  1934232f9f53f128 1
 OpentokReactNative.podspec
-  h_25a96a0890a0d0 34
+  1934232f9f53f128 1
 android/build.gradle
-  h_25a96a0890a0d0 100
+  1934232f9f53f128 1
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "46183ca5cda9bef8ec36238dce755c2eda9b87b3",
-  "prompts": {},
-  "humans": {
-    "h_25a96a0890a0d0": {
-      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+  "prompts": {
+    "1934232f9f53f128": {
+      "agent_id": {
+        "tool": "kirocrew",
+        "id": "8c21463f-d155-4b64-9730-3baf4861815c",
+        "model": "claude"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-11-12T15:35:44.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (kirocrew/claude).",
+          "timestamp": "2026-11-12T15:35:44.000Z"
+        }
+      ],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
     }
   }
 }
