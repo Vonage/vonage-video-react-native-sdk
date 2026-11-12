@@ -128,6 +128,7 @@ const sanitizePreferredVideoCodecs = (preferredVideoCodecs = '') => {
     const filtered = preferredVideoCodecs.filter((codec, index, array) =>
       ['vp8', 'vp9', 'h264'].includes(codec) && array.indexOf(codec) === index
     );
+    //TESTING CI ONLY CHANGE
     return filtered.join(';');
   }
   // The empty string the function can return represents the SDK uses the project's default setting for preferred video codecs.
