@@ -1,0 +1,14 @@
+React-native-TestApp/package.json
+  h_b9583e878a641a 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bcbaa9ff068416c6795a53ce82fa5ef60d8793b2",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}
