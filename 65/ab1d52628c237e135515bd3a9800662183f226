@@ -1,0 +1,20 @@
+src/__tests__/OTSession.eventHandlers.test.js
+  s_0e8e00f76795e3::t_b5a3778c43b41d 57
+  s_0e8e00f76795e3::t_c00629a493c377 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "65ab1d52628c237e135515bd3a9800662183f226",
+  "prompts": {},
+  "sessions": {
+    "s_0e8e00f76795e3": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "sess_61664259-f42a-4973-90f2-06e686e98115",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}

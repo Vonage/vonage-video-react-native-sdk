@@ -1,0 +1,42 @@
+React-native-TestApp/__tests__/helpers/jsSDKTesterBot.js
+  886d8a3a6a9253e1 269-328
+React-native-TestApp/__tests__/screenShare.e2e.js
+  886d8a3a6a9253e1 73-194
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  886d8a3a6a9253e1 43-45,334-390,570-576,579,740,755-771,802-811
+React-native-TestApp/src/types/index.ts
+  886d8a3a6a9253e1 143-145
+docs/Testing.md
+  886d8a3a6a9253e1 113,202-204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "b80c56f92445c407cb89a6ee359048b0ba35c818",
+  "prompts": {
+    "886d8a3a6a9253e1": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "c98f80b1-3be9-4752-99a3-3cbcd939fc27",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-11-02T15:10:41.208Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (kiro/auto).",
+          "timestamp": "2026-11-02T15:10:41.208Z"
+        }
+      ],
+      "total_additions": 285,
+      "total_deletions": 2,
+      "accepted_lines": 285,
+      "overriden_lines": 0
+    }
+  }
+}

@@ -1,0 +1,34 @@
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  537b1b1ae74b73c4 364,366-367,752
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "853f044f643d45a8b6ca23092e14f22e279acc2b",
+  "prompts": {
+    "537b1b1ae74b73c4": {
+      "agent_id": {
+        "tool": "kiro",
+        "id": "cf205769-47bb-483f-8e73-af0adaf6b0df",
+        "model": "auto"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vg-ai attribution override: 100% AI]",
+          "timestamp": "2026-11-02T15:10:41.394Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vg-ai attribution override (kiro/auto).",
+          "timestamp": "2026-11-02T15:10:41.394Z"
+        }
+      ],
+      "total_additions": 4,
+      "total_deletions": 16,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
