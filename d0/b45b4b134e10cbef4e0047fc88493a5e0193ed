@@ -1,0 +1,14 @@
+src/helpers/OTPublisherHelper.js
+  h_b9583e878a641a 131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d0b45b4b134e10cbef4e0047fc88493a5e0193ed",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}
