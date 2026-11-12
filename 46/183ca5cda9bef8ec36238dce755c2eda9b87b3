@@ -1,0 +1,18 @@
+AGENTS.md
+  h_25a96a0890a0d0 21
+OpentokReactNative.podspec
+  h_25a96a0890a0d0 34
+android/build.gradle
+  h_25a96a0890a0d0 100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46183ca5cda9bef8ec36238dce755c2eda9b87b3",
+  "prompts": {},
+  "humans": {
+    "h_25a96a0890a0d0": {
+      "author": "Victor Cuenca <victor.cuenca@vonage.com>"
+    }
+  }
+}
