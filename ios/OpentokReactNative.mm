@@ -203,6 +203,27 @@ RCT_EXPORT_MODULE()
 }
 
 // sessionId required for multi-session
+- (void)setTargetScalabilityMode:(nonnull NSString *)sessionId
+                     publisherId:(nonnull NSString *)publisherId
+                            mode:(nonnull NSString *)mode
+                         resolve:(nonnull RCTPromiseResolveBlock)resolve
+                          reject:(nonnull RCTPromiseRejectBlock)reject {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [impl setTargetScalabilityMode:sessionId publisherId:publisherId mode:mode resolve:resolve reject:reject];
+    });
+}
+
+// sessionId required for multi-session
+- (void)getTargetScalabilityMode:(nonnull NSString *)sessionId
+                     publisherId:(nonnull NSString *)publisherId
+                         resolve:(nonnull RCTPromiseResolveBlock)resolve
+                          reject:(nonnull RCTPromiseRejectBlock)reject {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [impl getTargetScalabilityMode:sessionId publisherId:publisherId resolve:resolve reject:reject];
+    });
+}
+
+// sessionId required for multi-session
 - (void)setVideoTransformers:(nonnull NSString *)sessionId
                  publisherId:(nonnull NSString *)publisherId
                 transformers:(nonnull NSArray *)transformers

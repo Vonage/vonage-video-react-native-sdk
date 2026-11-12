@@ -12,7 +12,11 @@ import {
   isConnected,
   getPublisherStream,
 } from './helpers/OTSessionHelper';
-import { sanitizeProperties } from './helpers/OTPublisherHelper';
+import {
+  sanitizeProperties,
+  scalabilityModes,
+  isValidScalabilityMode,
+} from './helpers/OTPublisherHelper';
 import OTContext from './contexts/OTContext';
 
 const parseStatsString = (rawStats) => {
@@ -207,6 +211,31 @@ export default class OTPublisher extends React.Component {
       this.state.publisherId,
       transformers
     );
+  }
+
+  async setTargetScalabilityMode(mode) {
+    //NOSONAR - this method is exposed externally
+    if (!isValidScalabilityMode(mode)) {
+      throw new Error(
+        `setTargetScalabilityMode: mode must be one of ${scalabilityModes.join(
+          ', '
+        )} (got "${mode}").`
+      );
+    }
+    await OT.setTargetScalabilityMode(
+      this.context.sessionId,
+      this.state.publisherId,
+      mode
+    );
+  }
+
+  async getTargetScalabilityMode() {
+    //NOSONAR - this method is exposed externally
+    const mode = await OT.getTargetScalabilityMode(
+      this.context.sessionId,
+      this.state.publisherId
+    );
+    return mode ?? undefined;
   }
 
   // Mirrors the Web SDK's Publisher.applyVideoFilter().

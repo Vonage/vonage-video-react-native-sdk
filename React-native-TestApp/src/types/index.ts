@@ -145,6 +145,7 @@ export interface State {
   isLoadingMeetCredentials: boolean;
   streams: Stream[];
   publisherVideoStats: VideoStats | null;
+  scalabilityModeValue: string;
   activeTab: TabName;
   subscribedStreams: string[];
   unsubscribedStreams: string[];

@@ -1,4 +1,35 @@
-import { sanitizeProperties } from '../helpers/OTPublisherHelper';
+import {
+  sanitizeProperties,
+  scalabilityModes,
+  isValidScalabilityMode,
+} from '../helpers/OTPublisherHelper';
+
+describe('isValidScalabilityMode', () => {
+  it('lists the nine supported modes', () => {
+    expect(scalabilityModes).toEqual([
+      'L1T1',
+      'L1T2',
+      'L1T3',
+      'L2T1',
+      'L2T2',
+      'L2T3',
+      'L3T1',
+      'L3T2',
+      'L3T3',
+    ]);
+  });
+
+  it.each(scalabilityModes)('accepts %s', (mode) => {
+    expect(isValidScalabilityMode(mode)).toBe(true);
+  });
+
+  it.each(['', 'L4T1', 'L1T4', 'l1t1', ' L1T1', null, undefined, 3, {}, []])(
+    'rejects %p',
+    (value) => {
+      expect(isValidScalabilityMode(value)).toBe(false);
+    }
+  );
+});
 
 describe('sanitizeProperties', () => {
   it('returns defaults for invalid input', () => {
