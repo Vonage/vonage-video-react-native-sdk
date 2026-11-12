@@ -68,6 +68,17 @@ export type VideoSource = 'screen' | 'camera';
 export type VideoScaleType = 'fill' | 'fit';
 export type VideoCodec = 'vp8' | 'vp9' | 'h264';
 export type PreferredVideoCodecs = 'automatic' | [VideoCodec, ...VideoCodec[]];
+/** SVC scalability mode: number of spatial (L) and temporal (T) layers. Beta. */
+export type ScalabilityMode =
+  | 'L1T1'
+  | 'L1T2'
+  | 'L1T3'
+  | 'L2T1'
+  | 'L2T2'
+  | 'L2T3'
+  | 'L3T1'
+  | 'L3T2'
+  | 'L3T3';
 
 export enum DegradationPreference {
   NotSet = -1,
@@ -415,6 +426,17 @@ export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   clearVideoFilter: () => Promise<void>;
   /** The last successfully applied built-in filter, or null. */
   getVideoFilter: () => VideoFilter | null;
+  /**
+   * Sets the target SVC scalability mode. Beta. Rejects for an unsupported mode,
+   * and with `OT_INVALID_STATE` if the native publisher does not exist yet.
+   * Calling it after the `streamCreated` event is always safe.
+   */
+  setTargetScalabilityMode: (mode: ScalabilityMode) => Promise<void>;
+  /**
+   * The requested target scalability mode, not the mode the encoder applied.
+   * Rejects with `OT_INVALID_STATE` if the native publisher does not exist yet.
+   */
+  getTargetScalabilityMode: () => Promise<ScalabilityMode | undefined>;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {

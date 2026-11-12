@@ -101,7 +101,7 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | App Launch | `app.e2e.js` | Basic app launch and session connect/disconnect |
 | Publish & Subscribe | `publisher.e2e.js` | App publishes → bot receives, bot publishes → app subscribes |
 | Subscriber | `subscriber.e2e.js` | Subscriber appears/disappears with bot lifecycle |
-| Publisher Options | `publisherOptions.e2e.js` | Mute, camera off, unpublish/republish, audio/video-only |
+| Publisher Options | `publisherOptions.e2e.js` | Mute, camera off, unpublish/republish, audio/video-only, target scalability mode |
 | Subscriber Options | `subscriberOptions.e2e.js` | Multiple bots, bot disconnect, subscribe audio/video toggles |
 | Session Lifecycle | `session.e2e.js` | Connect/disconnect cycles, disconnect while publishing/subscribing, signals |
 | Moderation | `moderation.e2e.js` | forceMuteAll, force-disconnect, forceMuteStream via REST, forceUnpublish via a moderator bot |

@@ -431,6 +431,35 @@ public class OpentokReactNativeModule extends NativeOpentokSpec implements
     }
 
     @Override
+    public void setTargetScalabilityMode(String sessionId, String publisherId, String mode, Promise promise) {
+        UiThreadUtil.runOnUiThread(() -> {
+            Publisher publisher = sharedState.getPublishers().get(publisherId);
+            if (publisher == null) {
+                promise.reject("OT_INVALID_STATE", "Publisher not found.");
+                return;
+            }
+            try {
+                publisher.setTargetScalabilityMode(mode);
+                promise.resolve(null);
+            } catch (Exception error) {
+                promise.reject("OT_INVALID_PARAMETER", error.getMessage(), error);
+            }
+        });
+    }
+
+    @Override
+    public void getTargetScalabilityMode(String sessionId, String publisherId, Promise promise) {
+        UiThreadUtil.runOnUiThread(() -> {
+            Publisher publisher = sharedState.getPublishers().get(publisherId);
+            if (publisher == null) {
+                promise.reject("OT_INVALID_STATE", "Publisher not found.");
+                return;
+            }
+            promise.resolve(publisher.getTargetScalabilityMode());
+        });
+    }
+
+    @Override
     public void setVideoTransformers(String sessionId, String publisherId, ReadableArray videoTransformers, Promise promise) {
         UiThreadUtil.runOnUiThread(() -> {
             Publisher publisher = sharedState.getPublishers().get(publisherId);

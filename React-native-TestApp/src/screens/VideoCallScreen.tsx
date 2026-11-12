@@ -7,6 +7,7 @@ import {
   type OTSessionInstance,
   type OTPublisherInstance,
   type OTSubscriberInstance,
+  type ScalabilityMode,
 } from '@vonage/client-sdk-video-react-native';
 import { State, DegradationPreference, VideoStats, TabName } from '../types';
 import { fetchMeetCredentials } from '../services/meetService';
@@ -120,6 +121,7 @@ class VideoCallScreen extends Component<{}, State> {
     subscriberProperties: {},
     streams: [],
     publisherVideoStats: null,
+    scalabilityModeValue: '',
     captureFilter: [],
     capturedEvents: {},
     captureFilterInput: '',
@@ -606,6 +608,25 @@ class VideoCallScreen extends Component<{}, State> {
     }
   };
 
+  publisherMethodSetTargetScalabilityMode = async (mode: string) => {
+    try {
+      await this.pubRef.current?.setTargetScalabilityMode(
+        mode as ScalabilityMode,
+      );
+    } catch (error: any) {
+      this.setState({ scalabilityModeValue: `error: ${error.message}` });
+    }
+  };
+
+  publisherMethodGetTargetScalabilityMode = async () => {
+    try {
+      const mode = await this.pubRef.current?.getTargetScalabilityMode();
+      this.setState({ scalabilityModeValue: mode ?? 'none' });
+    } catch (error: any) {
+      this.setState({ scalabilityModeValue: `error: ${error.message}` });
+    }
+  };
+
   subscriberMethodGetRtcStatsReport = () => {
     if (this.subRef.current) {
       this.subRef.current.getRtcStatsReport();
@@ -850,6 +871,35 @@ class VideoCallScreen extends Component<{}, State> {
               : 'Front Camera'
           }
         />
+        <ButtonComponent
+          testID="setScalabilityL1T2"
+          handleSubmit={() =>
+            this.publisherMethodSetTargetScalabilityMode('L1T2')
+          }
+          label="SVC L1T2"
+        />
+        <ButtonComponent
+          testID="setScalabilityL3T3"
+          handleSubmit={() =>
+            this.publisherMethodSetTargetScalabilityMode('L3T3')
+          }
+          label="SVC L3T3"
+        />
+        <ButtonComponent
+          testID="setScalabilityInvalid"
+          handleSubmit={() =>
+            this.publisherMethodSetTargetScalabilityMode('L9T9')
+          }
+          label="SVC Invalid"
+        />
+        <ButtonComponent
+          testID="getScalabilityMode"
+          handleSubmit={this.publisherMethodGetTargetScalabilityMode}
+          label="Get SVC"
+        />
+        <Text testID="scalabilityModeValue" style={{ fontSize: 11 }}>
+          {this.state.scalabilityModeValue}
+        </Text>
       </View>
     );
   }
