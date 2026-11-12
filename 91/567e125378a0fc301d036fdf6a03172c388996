@@ -1,38 +1,58 @@
 React-native-TestApp/__tests__/publisherOptions.e2e.js
-  h_b9583e878a641a 92-117
+  648e0379daf49279 1-26
 React-native-TestApp/src/screens/VideoCallScreen.tsx
-  h_b9583e878a641a 10,124,611-629,874-902
+  648e0379daf49279 1-50
 React-native-TestApp/src/types/index.ts
-  h_b9583e878a641a 148
+  648e0379daf49279 1
 android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
-  h_b9583e878a641a 433-461
+  648e0379daf49279 1-29
 docs/Testing.md
-  h_b9583e878a641a 104
+  648e0379daf49279 1
 ios/OpentokReactNative.mm
-  h_b9583e878a641a 205-225
+  648e0379daf49279 1-21
 ios/OpentokReactNative.swift
-  h_b9583e878a641a 408-440
+  648e0379daf49279 1-33
 src/NativeOpentok.ts
-  h_b9583e878a641a 163-171
+  648e0379daf49279 1-9
 src/OTPublisher.js
-  h_b9583e878a641a 15-19,216-240
+  648e0379daf49279 1-30
 src/__tests__/OTPublisher.scalabilityMode.test.js
-  h_b9583e878a641a 1-146
+  648e0379daf49279 1-146
 src/__tests__/OTPublisherHelper.test.js
-  h_b9583e878a641a 1-32
+  648e0379daf49279 1-32
 src/helpers/OTPublisherHelper.js
-  h_b9583e878a641a 211-225
+  648e0379daf49279 1-15
 src/types.ts
-  h_b9583e878a641a 71-81,429-439
+  648e0379daf49279 1-22
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.7.5",
+  "git_ai_version": "vonage-override-1.0.0",
   "base_commit_sha": "91567e125378a0fc301d036fdf6a03172c388996",
-  "prompts": {},
-  "humans": {
-    "h_b9583e878a641a": {
-      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+  "prompts": {
+    "648e0379daf49279": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "23811f27-be35-4731-a6a8-40090d54a772",
+        "model": "gpt-4o"
+      },
+      "human_author": "igorperunovicvonage <igor.perunovic@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-11-12T08:10:31.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (github-copilot/gpt-4o).",
+          "timestamp": "2026-11-12T08:10:31.000Z"
+        }
+      ],
+      "total_additions": 415,
+      "total_deletions": 4,
+      "accepted_lines": 415,
+      "overriden_lines": 0
     }
   }
 }
