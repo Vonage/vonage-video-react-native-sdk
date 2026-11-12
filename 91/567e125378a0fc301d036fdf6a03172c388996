@@ -1,0 +1,38 @@
+React-native-TestApp/__tests__/publisherOptions.e2e.js
+  h_b9583e878a641a 92-117
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  h_b9583e878a641a 10,124,611-629,874-902
+React-native-TestApp/src/types/index.ts
+  h_b9583e878a641a 148
+android/src/main/java/com/opentokreactnative/OpentokReactNativeModule.java
+  h_b9583e878a641a 433-461
+docs/Testing.md
+  h_b9583e878a641a 104
+ios/OpentokReactNative.mm
+  h_b9583e878a641a 205-225
+ios/OpentokReactNative.swift
+  h_b9583e878a641a 408-440
+src/NativeOpentok.ts
+  h_b9583e878a641a 163-171
+src/OTPublisher.js
+  h_b9583e878a641a 15-19,216-240
+src/__tests__/OTPublisher.scalabilityMode.test.js
+  h_b9583e878a641a 1-146
+src/__tests__/OTPublisherHelper.test.js
+  h_b9583e878a641a 1-32
+src/helpers/OTPublisherHelper.js
+  h_b9583e878a641a 211-225
+src/types.ts
+  h_b9583e878a641a 71-81,429-439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "91567e125378a0fc301d036fdf6a03172c388996",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}
