@@ -1,20 +1,9 @@
 'use strict';
 
 /**
- * Jest globalSetup script for E2E tests.
- *
- * Runs OUTSIDE of Jest's module sandbox as a plain Node process.
- * This avoids ESM compatibility issues (uuid v10 in opentok) that
- * prevent require('opentok') inside the Jest/Detox environment.
- *
- * Flow:
- *   1. Validates env vars
- *   2. Uses the opentok SDK directly (safe here — outside Jest sandbox)
- *   3. Creates sessions and generates tokens
- *   4. Writes .e2e-credentials.json for test consumption
- *
- * IMPORTANT: This does NOT write to sdk-config.json.
- * sdk-config.json is reserved for manual testing credentials only.
+ * Jest globalSetup for the E2E tests. It runs as a plain Node process, outside Jest's module
+ * sandbox, because the opentok package cannot be loaded inside it. Creates the sessions and tokens
+ * and writes .e2e-credentials.json (sdk-config.json is reserved for manual testing).
  */
 
 const path = require('path');
@@ -25,7 +14,6 @@ const OpenTok = require(require.resolve('opentok', { paths: [path.join(__dirname
 const CREDENTIALS_PATH = path.join(__dirname, '.e2e-credentials.json');
 
 module.exports = async function globalSetup() {
-  // Environment variable resolution
   const apiKey = process.env.E2E_API_KEY || process.env.VONAGE_API_KEY;
   const apiSecret = process.env.E2E_API_SECRET || process.env.VONAGE_API_SECRET;
   const apiUrl = process.env.E2E_API_URL || process.env.API_URL || 'https://api.opentok.com';
@@ -44,7 +32,6 @@ module.exports = async function globalSetup() {
 
   const ot = new OpenTok(apiKey, apiSecret, { apiUrl });
 
-  // Promisified session creation
   const createSession = (options) =>
     new Promise((resolve, reject) => {
       ot.createSession(options, (error, session) => {
@@ -53,7 +40,6 @@ module.exports = async function globalSetup() {
       });
     });
 
-  // Generate token helper
   const generateToken = (sessionId, { role, data }) =>
     ot.generateToken(sessionId, {
       role,
@@ -73,13 +59,18 @@ module.exports = async function globalSetup() {
   const routedSession = await createSession({ mediaMode: 'routed' });
   const routedSessionId = routedSession.sessionId;
   const tokenApp = generateToken(routedSessionId, { role: 'moderator', data: 'participant=app' });
-  const tokenSubscriber = generateToken(routedSessionId, { role: 'subscriber', data: 'participant=subscriber' });
+
+  // Dedicated session for moderation specs: force-mute state is sticky per
+  // session, so it must not leak into other specs.
+  const moderationSession = await createSession({ mediaMode: 'routed' });
+  const moderationSessionId = moderationSession.sessionId;
+  const moderationTokenApp = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=app' });
+  const moderatorBotToken = generateToken(moderationSessionId, { role: 'moderator', data: 'participant=moderator-bot' });
 
   const relayedSession = await createSession({ mediaMode: 'relayed' });
   const relayedSessionId = relayedSession.sessionId;
   const relayedTokenApp = generateToken(relayedSessionId, { role: 'moderator', data: 'participant=app' });
 
-  // Write credentials to temp file (NOT to sdk-config.json)
   const credentials = {
     routed: {
       apiKey,
@@ -89,7 +80,17 @@ module.exports = async function globalSetup() {
       sessionId: routedSessionId,
       tokenApp,
       botTokens: generateBotTokens(routedSessionId),
-      tokenSubscriber,
+      mediaMode: 'routed',
+    },
+    moderation: {
+      apiKey,
+      apiSecret,
+      apiUrl,
+      jsSdkUrl,
+      sessionId: moderationSessionId,
+      tokenApp: moderationTokenApp,
+      botTokens: generateBotTokens(moderationSessionId),
+      moderatorBotToken,
       mediaMode: 'routed',
     },
     relayed: {
@@ -107,6 +108,7 @@ module.exports = async function globalSetup() {
   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2));
   console.log('[globalSetup] Credentials written to', CREDENTIALS_PATH);
   console.log('[globalSetup] routedSession:', routedSessionId);
+  console.log('[globalSetup] moderationSession:', moderationSessionId);
   console.log('[globalSetup] relayedSession:', relayedSessionId);
   console.log('[globalSetup] bot tokens per session:', botPoolSize);
 };
