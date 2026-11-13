@@ -75,3 +75,6 @@ android/.gradle
 
 artifacts/
 coverage/
+
+# dispatch-test-results.js --dry-run output
+payload-*.json
