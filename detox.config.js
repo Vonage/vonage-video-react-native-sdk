@@ -36,9 +36,9 @@ module.exports = {
   devices: {
     simulator: {
       type: 'ios.simulator',
-      device: {
-        type: process.env.DETOX_DEVICE_NAME || 'iPhone 15',
-      },
+      device: process.env.DETOX_DEVICE_ID
+        ? { id: process.env.DETOX_DEVICE_ID }
+        : { type: process.env.DETOX_DEVICE_NAME || 'iPhone 15' },
     },
     emulator: {
       type: 'android.emulator',

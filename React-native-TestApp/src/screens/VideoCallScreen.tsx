@@ -40,6 +40,8 @@ class VideoCallScreen extends Component<{}, State> {
     connectedToSession: false,
     connectionSettingsExpanded: false,
     isScreenSharing: false,
+    simultaneousScreenShare: false,
+    localStreamIds: { camera: '', screen: '' },
     showRecIndicator: false,
     forceDisconnect: false,
     publisherProps: '',
@@ -216,7 +218,7 @@ class VideoCallScreen extends Component<{}, State> {
   };
 
   captureEvent = (eventType: string, payload: any) => {
-    if (this.state.captureFilter.includes(eventType)) {
+    if (eventType === 'sessionError' || this.state.captureFilter.includes(eventType)) {
       this.setState((prev) => ({
         capturedEvents: {
           ...prev.capturedEvents,
@@ -326,6 +328,58 @@ class VideoCallScreen extends Component<{}, State> {
       this.captureEvent
     ),
     rtcStatsReport: this.handlePublisherVideoStats,
+  };
+
+  setLocalStreamId = (slot: 'camera' | 'screen', streamId: string) => {
+    this.setState((prev) => ({
+      localStreamIds: { ...prev.localStreamIds, [slot]: streamId },
+    }));
+  };
+
+  clearLocalStreamId = (slot: 'camera' | 'screen', streamId: string) => {
+    this.setState((prev) =>
+      prev.localStreamIds[slot] === streamId
+        ? { localStreamIds: { ...prev.localStreamIds, [slot]: '' } }
+        : null
+    );
+  };
+
+  mainPublisherSlot = (): 'camera' | 'screen' =>
+    this.state.isScreenSharing ? 'screen' : 'camera';
+
+  mainPublisherEventHandlers = {
+    ...this.publisherEventHandlers,
+    streamCreated: (event: any) => {
+      this.publisherEventHandlers.streamCreated(event);
+      this.setLocalStreamId(this.mainPublisherSlot(), event.streamId);
+      this.captureEvent('publisherStreamCreated', event);
+    },
+    streamDestroyed: (event: any) => {
+      this.publisherEventHandlers.streamDestroyed(event);
+      this.clearLocalStreamId(this.mainPublisherSlot(), event.streamId);
+      this.captureEvent('publisherStreamDestroyed', event);
+    },
+  };
+
+  screenPublisherProperties = {
+    videoSource: 'screen' as const,
+    publishAudio: false,
+    audioTrack: false,
+    scaleBehavior: 'fit' as const,
+  };
+
+  screenPublisherEventHandlers = {
+    streamCreated: (event: any) => {
+      this.setLocalStreamId('screen', event.streamId);
+      this.captureEvent('screenPublisherStreamCreated', event);
+    },
+    streamDestroyed: (event: any) => {
+      this.clearLocalStreamId('screen', event.streamId);
+      this.captureEvent('screenPublisherStreamDestroyed', event);
+    },
+    error: (event: any) => {
+      this.captureEvent('screenPublisherError', event);
+    },
   };
 
   logNextSubscriberVideoStats = () => {
@@ -471,16 +525,12 @@ class VideoCallScreen extends Component<{}, State> {
   sessionMethodForceMuteAll = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.forceMuteAll([]);
-      this.updateEvent('sessionEvents', 'forceMute', true);
-      this.updateEvent('publisherEvents', 'forceMute', true);
     }
   };
 
   sessionMethodDisableForceMute = async () => {
     if (this.state.sessionEvents.sessionConnected && this.sessionRef.current) {
       await this.sessionRef.current.disableForceMute();
-      this.updateEvent('sessionEvents', 'forceMute', 0);
-      this.updateEvent('publisherEvents', 'forceMute', 0);
     }
   };
 
@@ -511,8 +561,16 @@ class VideoCallScreen extends Component<{}, State> {
     this.updateEvent('subscriberProperties', 'subscribeToVideo', !current);
   };
 
+  toggleSimultaneousScreenShare = () => {
+    if (this.state.isScreenSharing) return;
+    this.setState((prev) => ({
+      simultaneousScreenShare: !prev.simultaneousScreenShare,
+    }));
+  };
+
   toggleScreenShare = async () => {
     const { isScreenSharing } = this.state;
+    if (this.state.simultaneousScreenShare) return;
 
     try {
       this.setState({ forceDisconnect: true }, () => {
@@ -673,7 +731,7 @@ class VideoCallScreen extends Component<{}, State> {
                 <OTPublisher
                   properties={this.state.publisherProperties}
                   style={{ flex: 1 }}
-                  eventHandlers={this.publisherEventHandlers}
+                  eventHandlers={this.mainPublisherEventHandlers}
                   ref={this.pubRef}>
                   {this.state.showRecIndicator && (
                     <Text style={styles.recording}>● REC</Text>
@@ -688,6 +746,23 @@ class VideoCallScreen extends Component<{}, State> {
                 )}
               </View>
             )}
+            {this.state.simultaneousScreenShare && (
+              <View testID="screenPublisher" style={styles.video}>
+                <OTPublisher
+                  properties={this.screenPublisherProperties}
+                  style={{ flex: 1 }}
+                  eventHandlers={this.screenPublisherEventHandlers}
+                />
+              </View>
+            )}
+            <View style={{ position: 'absolute', top: 2, left: 2, backgroundColor: 'rgba(0,0,0,0.6)', padding: 2, borderRadius: 3 }}>
+              <Text testID="cameraStreamId" style={{ fontSize: 8, color: '#fff' }}>
+                {`camera:${this.state.localStreamIds.camera}`}
+              </Text>
+              <Text testID="screenStreamId" style={{ fontSize: 8, color: '#fff' }}>
+                {`screen:${this.state.localStreamIds.screen}`}
+              </Text>
+            </View>
             {/* Try auto-subscribe mode - no streamId specified */}
             {this.state.subscribedStreams.length > 0 && (
             <View testID="subscriber" style={styles.video}>
@@ -717,6 +792,11 @@ class VideoCallScreen extends Component<{}, State> {
           testID="toggleScreenShare"
           handleSubmit={this.toggleScreenShare}
           label={this.state.isScreenSharing ? 'Stop Share' : 'Screen Share'}
+        />
+        <ButtonComponent
+          testID="toggleSimultaneousScreenShare"
+          handleSubmit={this.toggleSimultaneousScreenShare}
+          label={this.state.simultaneousScreenShare ? 'Stop Screen+' : 'Screen +Cam'}
         />
         <ButtonComponent
           testID="logNextSubscriberVideoStats"
@@ -824,6 +904,11 @@ class VideoCallScreen extends Component<{}, State> {
           testID="muteAll"
           handleSubmit={this.sessionMethodForceMuteAll}
           label="Mute All"
+        />
+        <ButtonComponent
+          testID="disableForceMute"
+          handleSubmit={this.sessionMethodDisableForceMute}
+          label="Disable Force Mute"
         />
       </View>
     );
