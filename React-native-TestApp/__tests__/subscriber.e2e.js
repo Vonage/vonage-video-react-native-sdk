@@ -1,4 +1,5 @@
 'use strict';
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 const { setCaptureFilter, waitForEvent, clearCapturedEvents } = require('./helpers/eventCapture');
@@ -9,52 +10,43 @@ describe('Subscriber Tests', () => {
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await device.launchApp({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.create();
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('subscriber appears when bot publishes', async () => {
-    // Connect app
     console.log('[subscriber] Connecting app...');
     await session.connectApp();
 
     // Set up event capture BEFORE bot joins
     await setCaptureFilter(['streamCreated', 'connectionCreated']);
 
-    // Add bot — addBot() waits for subscriber internally
     console.log('[subscriber] Adding bot...');
     const bot = await session.addBot();
     console.log('[subscriber] Subscriber visible!');
 
-    // Verify event indicators
     await waitFor(element(by.id('session-streamCreated'))).not.toHaveText('0').withTimeout(5000);
     await waitFor(element(by.id('session-connectionCreated'))).not.toHaveText('0').withTimeout(5000);
 
-    // Verify streamCreated payload
     const streamEvent = await waitForEvent('streamCreated', 15000);
     console.log('[subscriber] streamCreated payload:', JSON.stringify(streamEvent));
     jestExpect(streamEvent.streamId).toBeTruthy();
     jestExpect(typeof streamEvent.streamId).toBe('string');
 
-    // Verify connectionCreated payload
     const connEvent = await waitForEvent('connectionCreated', 15000);
     console.log('[subscriber] connectionCreated payload:', JSON.stringify(connEvent));
     jestExpect(connEvent.connectionId).toBeTruthy();
@@ -62,24 +54,15 @@ describe('Subscriber Tests', () => {
   });
 
   it('subscriber disappears when bot disconnects', async () => {
-    // Connect app
     console.log('[subscriber] Connecting app...');
     await session.connectApp();
 
-    // Set up event capture for streamDestroyed
     await setCaptureFilter(['streamDestroyed']);
 
-    // Add a fresh bot for this test — addBot() waits for subscriber
     console.log('[subscriber] Adding bot...');
     const bot = await session.addBot();
 
-    // Get bot's streamId before disconnect for later verification
-    const botStreamId = await bot.page.evaluate(() => {
-      if (window.botPublisher && window.botPublisher.stream) {
-        return window.botPublisher.stream.streamId;
-      }
-      return null;
-    });
+    const botStreamId = await bot.getPublisherStreamId();
     console.log('[subscriber] Bot streamId before disconnect:', botStreamId);
 
     // Bot disconnects — we explicitly disconnect rather than relying on cleanup
@@ -87,7 +70,6 @@ describe('Subscriber Tests', () => {
     console.log('[subscriber] Bot disconnecting...');
     await bot.disconnect();
 
-    // Verify streamDestroyed event with payload
     const destroyedEvent = await waitForEvent('streamDestroyed', 30000);
     console.log('[subscriber] streamDestroyed payload:', JSON.stringify(destroyedEvent));
     jestExpect(destroyedEvent.streamId).toBeTruthy();
@@ -95,7 +77,6 @@ describe('Subscriber Tests', () => {
       jestExpect(destroyedEvent.streamId).toBe(botStreamId);
     }
 
-    // Confirm the counter incremented
     await waitFor(element(by.id('session-streamDestroyed'))).not.toHaveText('0').withTimeout(5000);
     console.log('[subscriber] Stream destroyed event verified with correct streamId.');
 

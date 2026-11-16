@@ -24,6 +24,13 @@ export default class OTSession extends Component {
     this.validateProps();
     this.eventHandlers = props.eventHandlers;
     this.state = { connectionId: null };
+  }
+
+  componentDidMount() {
+    // Side effects (initSession/connect/native event registration) belong in a
+    // lifecycle method, not the constructor, so the component is safe under
+    // React concurrent rendering / StrictMode (which speculatively constructs
+    // and discards instances).
     this.initComponent();
   }
 
@@ -72,6 +79,7 @@ export default class OTSession extends Component {
     this._eventSubscriptions.push(
       OT.onSessionConnected((event) => {
         if (event?.sessionId !== sessionId) return;
+        this.connecting = false;
         // The sessionConnected event nests the id as event.connection.connectionId
         // (event.connectionId is undefined). Keep an instance mirror for the
         // synchronous read in onStreamCreated below, and put it in state so
@@ -126,6 +134,10 @@ export default class OTSession extends Component {
     this._eventSubscriptions.push(
       OT.onSessionError((event) => {
         if (event?.sessionId !== sessionId) return;
+        if (this.connecting) {
+          this.reportConnectError(event);
+          return;
+        }
         this.eventHandlers?.error?.(event);
       })
     );
@@ -186,7 +198,24 @@ export default class OTSession extends Component {
       })
     );
 
-    OT.connect(sessionId, token);
+    this.connecting = true;
+    this.connectErrorReported = false;
+    Promise.resolve(OT.connect(sessionId, token)).catch((error) => {
+      this.reportConnectError({
+        code: error?.code,
+        message: error?.message,
+        sessionId,
+      });
+    });
+  }
+
+  // A failed connect can arrive as a promise rejection, a sessionError event,
+  // or both, so report only the first one per connect attempt.
+  reportConnectError(error) {
+    if (this.connectErrorReported) return;
+    this.connectErrorReported = true;
+    this.connecting = false;
+    this.eventHandlers?.error?.(error);
   }
 
   initComponent = () => {
@@ -236,6 +265,8 @@ export default class OTSession extends Component {
   }
 
   componentDidUpdate(previousProps) {
+    this.eventHandlers = this.props.eventHandlers;
+
     const shouldUseDefault = (value, defaultValue) =>
       value === undefined ? defaultValue : value;
 

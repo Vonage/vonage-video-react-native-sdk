@@ -54,11 +54,39 @@ const clearPublisherStream = (sessionId) => {
 
 const getStreams = (sessionId) => streams[sessionId] || [];
 
-const getPublisherStream = (sessionId) => publisherStreams[sessionId];
+const getPublisherStreams = (sessionId) =>
+  Object.values(publisherStreams[sessionId] || {});
+
+const getPublisherStream = (sessionId, publisherId) =>
+  publisherStreams[sessionId]?.[publisherId];
+
+// A publisher keeps its id for its whole life but gets a new stream id every
+// time it publishes, so the current stream is stored under the publisher id.
+const setPublisherStream = (sessionId, publisherId, streamId) => {
+  if (!publisherId || !streamId) return;
+  publisherStreams[sessionId] = {
+    ...publisherStreams[sessionId],
+    [publisherId]: streamId,
+  };
+};
+
+// Only clears the entry if it still holds the destroyed stream, so a late
+// destroyed event of an old stream cannot drop the stream published after it.
+const removePublisherStream = (sessionId, publisherId, streamId) => {
+  if (!streamId || getPublisherStream(sessionId, publisherId) !== streamId) {
+    return;
+  }
+  const current = { ...publisherStreams[sessionId] };
+  delete current[publisherId];
+  publisherStreams[sessionId] = current;
+};
+
+const getEventStreamId = (event) =>
+  event && (event.streamId ?? (event.nativeEvent && event.nativeEvent.streamId));
 
 const isConnected = (sessionId) => connected[sessionId];
 
-const dispatchEvent = (sessionId, type, event) => {
+const dispatchEvent = (sessionId, type, event, publisherId) => {
   if (!eventHandlers[sessionId]) {
     return;
   }
@@ -69,10 +97,10 @@ const dispatchEvent = (sessionId, type, event) => {
     });
   }
   if (type === 'publisherStreamCreated') {
-    publisherStreams[sessionId] = event.streamId;
+    setPublisherStream(sessionId, publisherId, getEventStreamId(event));
   }
   if (type === 'publisherStreamDestroyed') {
-    delete publisherStreams[sessionId];
+    removePublisherStream(sessionId, publisherId, getEventStreamId(event));
   }
 };
 
@@ -229,6 +257,7 @@ export {
   clearStreams,
   getStreams,
   getPublisherStream,
+  getPublisherStreams,
   isConnected,
   setIsConnected,
   dispatchEvent,

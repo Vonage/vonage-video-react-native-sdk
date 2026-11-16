@@ -254,10 +254,16 @@ export type OTPublisherProperties = {
   videoTrack?: boolean;
 };
 
+/** Sent to the publisher `error` handler when Android camera or microphone permissions are denied. */
+export type PublisherPermissionsErrorEvent = {
+  type: 'Permissions error';
+  permissionsDenied: string[];
+};
+
 export type OTPublisherEventHandlers = {
   audioLevel?: CallbackWithParam<{ audioLevel: number }>;
   audioNetworkStats?: CallbackWithParam<PublisherAudioNetworkStats[] | unknown>;
-  error?: CallbackWithParam<ErrorEvent | unknown>;
+  error?: CallbackWithParam<ErrorEvent | PublisherPermissionsErrorEvent | unknown>;
   muteForced?: Callback;
   /** @deprecated Never emitted by the SDK; listen to `error` instead. */
   otrnError?: CallbackWithParam<unknown>;
@@ -388,10 +394,27 @@ export type OTSessionInstance = React.Component<OTSessionProps> & {
   forceDisconnect: (connectionId: string) => Promise<boolean>;
 };
 
+/**
+ * High-level video filter, mirroring the Web SDK's Publisher.applyVideoFilter().
+ * NOTE (mobile): for `backgroundReplacement`, `backgroundImgUrl` must be a LOCAL
+ * image file path — a remote URL is not fetched by the native media library.
+ */
+export type VideoFilter =
+  | { type: 'backgroundBlur'; blurStrength?: 'Low' | 'High' }
+  | { type: 'backgroundReplacement'; backgroundImgUrl: string };
+
 export type OTPublisherInstance = React.Component<OTPublisherProps> & {
   getRtcStatsReport: () => void;
-  setVideoTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
-  setAudioTransformers: (transformers: Array<{ name: string; properties?: string }>) => void;
+  setVideoTransformers: (
+    transformers: Array<{ name: string; properties?: string }>
+  ) => Promise<void>;
+  setAudioTransformers: (
+    transformers: Array<{ name: string; properties?: string }>
+  ) => void;
+  applyVideoFilter: (filter: VideoFilter) => Promise<void>;
+  clearVideoFilter: () => Promise<void>;
+  /** The last successfully applied built-in filter, or null. */
+  getVideoFilter: () => VideoFilter | null;
 };
 
 export type OTSubscriberInstance = React.Component<OTSubscriberProps> & {

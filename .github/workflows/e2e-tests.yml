@@ -1,0 +1,237 @@
+name: E2E tests
+
+# Reusable Detox E2E suite (iOS matrix + Android emulator).
+# Called by ci-pr-tests.yml (pull requests) and release-test-run.yml (2.* release branches).
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-ios-tests:
+    name: e2e-ios-tests (${{ matrix.leg }})
+    environment: prod
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - leg: ios26
+            runner: macos-26-xlarge
+            xcode: '26.6'
+            ios: '26'
+            experimental: false
+          - leg: ios27
+            runner: xcode-27-xlarge
+            xcode: ''
+            ios: '27'
+            experimental: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Select Xcode
+        if: matrix.xcode != ''
+        uses: maxim-lobanov/setup-xcode@v1.7.0
+        with:
+          xcode-version: ${{ matrix.xcode }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Install applesimutils
+        run: |
+          brew tap wix/brew
+          brew trust wix/brew
+          brew install applesimutils
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: React-native-TestApp/ios/Pods
+          key: ${{ runner.os }}-${{ matrix.leg }}-pods-${{ hashFiles('React-native-TestApp/ios/Podfile.lock', 'React-native-TestApp/ios/Podfile') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.leg }}-pods-
+
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
+        run: npm install
+
+      - name: Install CocoaPods dependencies
+        working-directory: React-native-TestApp/ios
+        run: pod install
+
+      - name: Select iOS simulator
+        id: select-simulator
+        run: bash scripts/ci-select-ios-simulator.sh ${{ matrix.ios }}
+
+      - name: Build iOS Detox app
+        env:
+          DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
+        run: npm run test:e2e:ios:build
+
+      - name: Start Metro bundler
+        run: bash scripts/ci-start-metro.sh React-native-TestApp
+
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=ios&dev=true&minify=false'
+
+      - name: Run iOS Detox tests
+        env:
+          DETOX_DEVICE_ID: ${{ steps.select-simulator.outputs.udid }}
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
+        run: npm run test:e2e:ios:ci
+
+      - name: E2E results summary
+        if: always()
+        run: |
+          RESULTS=artifacts/jest-results-ios.json
+          if [ ! -f "$RESULTS" ]; then
+            echo "No Jest results file found at $RESULTS" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r --arg title "iOS E2E results (${{ matrix.leg }})" -f scripts/e2e-results-summary.jq "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload iOS E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-e2e-diagnostics-${{ matrix.leg }}
+          path: |
+            artifacts/
+            React-native-TestApp/metro.log
+          if-no-files-found: ignore
+
+  e2e-android-tests:
+    environment: prod
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Install React-native-TestApp dependencies
+        working-directory: React-native-TestApp
+        run: npm install
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Linux runtime deps for emulator tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0
+
+      - name: Verify Detox Android setup
+        run: |
+          echo "=== Node / npm versions ==="
+          node --version
+          npm --version
+          echo "=== Installed Detox npm version ==="
+          node -e "console.log(require('./node_modules/detox/package.json').version)"
+          echo "=== Java version ==="
+          java -version
+          echo "=== Gradle wrapper properties ==="
+          cat React-native-TestApp/android/gradle/wrapper/gradle-wrapper.properties
+          echo "=== Detox Android maven artifacts ==="
+          ls -la node_modules/detox/Detox-android/ || echo "Detox-android directory not found"
+          find node_modules/detox/Detox-android -name "*.pom" 2>/dev/null | head -20 || echo "No POM files found"
+
+      - name: Build Android Detox app
+        run: npm run test:e2e:android:build
+
+      - name: Enable KVM for hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Debug Android device profiles
+        run: |
+          echo "=== avdmanager version ==="
+          avdmanager --version || true
+          echo "=== available pixel device profiles ==="
+          avdmanager list device | grep -i pixel || true
+          echo "=== first 120 device definitions ==="
+          avdmanager list device | head -n 120 || true
+
+      - name: Start Metro bundler
+        run: bash scripts/ci-start-metro.sh React-native-TestApp
+
+      - name: Warm up Metro bundle
+        run: curl -fsS --max-time 300 -o /dev/null 'http://127.0.0.1:8081/index.bundle?platform=android&dev=true&minify=false'
+
+      - name: Start Android emulator and run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          VONAGE_API_KEY: ${{ secrets.VONAGE_API_KEY }}
+          VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
+        with:
+          api-level: 36
+          arch: x86_64
+          avd-name: Pixel_8_API_36
+          emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: sh ./scripts/run-android-e2e-in-emulator.sh
+
+      - name: E2E results summary
+        if: always()
+        run: |
+          RESULTS=artifacts/jest-results-android.json
+          if [ ! -f "$RESULTS" ]; then
+            echo "No Jest results file found at $RESULTS" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r --arg title "Android E2E results" -f scripts/e2e-results-summary.jq "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Android E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-diagnostics
+          path: |
+            React-native-TestApp/metro.log
+            metro-android.log
+            android-logcat.txt
+            android-dumpsys-activities.txt
+            android-dumpsys-package.txt
+            artifacts/
+          if-no-files-found: ignore
