@@ -1,50 +1,42 @@
 'use strict';
+const { launchAndWaitForApp } = require('./helpers/waitForApp');
 
 const { TestSession } = require('./helpers/testSession');
 
 /**
- * P2P (Relayed) Session Tests
- *
- * Verifies publish/subscribe behavior in relayed (peer-to-peer) sessions.
- * Relayed sessions route media directly between participants (no server relay).
- *
+ * Publish/subscribe in relayed (peer-to-peer) sessions.
  */
 describe('P2P (Relayed) Session', () => {
   let session;
 
   beforeAll(async () => {
     console.log('[setup] Launching app...');
-    await device.launchApp({
+    await launchAndWaitForApp({
       newInstance: true,
       permissions: { camera: 'YES', microphone: 'YES' },
     });
-    await device.disableSynchronization();
-
-    const { waitForAppReady } = require('./helpers/waitForApp');
-    await waitForAppReady();
     console.log('[setup] App ready.');
 
     session = await TestSession.createRelayed({ timeout: 45000 });
   });
 
   afterAll(async () => {
-    await session.teardown();
+    if (session) await session.teardown();
     await device.terminateApp();
   });
 
   afterEach(async () => {
-    await session.cleanup();
+    if (session) await session.cleanup();
   });
 
   it('app publishes in P2P — bot receives stream', async () => {
     await session.connectApp();
     console.log('[p2p-pub] Connected.');
 
-    // addBot waits for subscriber; then verify bot received app stream
     const bot = await session.addBot({ subscriberTimeout: 45000 });
 
     try {
-      await bot.waitForSubscriber(45000);
+      await bot.waitForStream({ timeout: 45000 });
     } catch (e) {
       const state = await bot.getState();
       throw new Error(`P2P: Bot did not receive app stream. State: ${JSON.stringify(state)}`);
@@ -62,7 +54,6 @@ describe('P2P (Relayed) Session', () => {
     await session.connectApp();
     console.log('[p2p-sub] Connected.');
 
-    // addBot waits for subscriber view
     await session.addBot({ subscriberTimeout: 30000 });
 
     await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
@@ -75,13 +66,11 @@ describe('P2P (Relayed) Session', () => {
 
     await session.addBot({ subscriberTimeout: 30000 });
 
-    // Unpublish
     await element(by.id('tabSession')).tap();
     await waitFor(element(by.id('stopPublishing'))).toBeVisible().withTimeout(5000);
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Unpublished.');
 
-    // Republish
     await element(by.id('stopPublishing')).tap();
     console.log('[p2p-unpub] Republished.');
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(15000);
@@ -94,16 +83,13 @@ describe('P2P (Relayed) Session', () => {
 
     await session.addBot({ subscriberTimeout: 30000 });
 
-    // Disable video (audio-only)
     await element(by.id('tabPublisher')).tap();
     await waitFor(element(by.id('hasVideo'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasVideo')).tap();
     console.log('[p2p-audio] Video off.');
 
-    // Verify publisher still exists
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
-    // Restore video
     await element(by.id('hasVideo')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[p2p-audio] Audio-only publish OK in P2P.');
@@ -115,16 +101,13 @@ describe('P2P (Relayed) Session', () => {
 
     await session.addBot({ subscriberTimeout: 30000 });
 
-    // Disable audio (video-only)
     await element(by.id('tabPublisher')).tap();
     await waitFor(element(by.id('hasAudio'))).toBeVisible().withTimeout(5000);
     await element(by.id('hasAudio')).tap();
     console.log('[p2p-video] Audio off.');
 
-    // Verify publisher still exists
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
 
-    // Restore audio
     await element(by.id('hasAudio')).tap();
     await waitFor(element(by.id('publisher'))).toExist().withTimeout(5000);
     console.log('[p2p-video] Video-only publish OK in P2P.');

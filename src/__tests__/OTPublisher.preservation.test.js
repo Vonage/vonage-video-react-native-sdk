@@ -332,7 +332,6 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
     it('should dispatch publisherStreamDestroyed if there is an active publisher stream', () => {
       jest.clearAllMocks();
       const mockStreamId = 'stream-123';
-      getPublisherStream.mockReturnValue(mockStreamId);
 
       const streamDestroyedHandler = jest.fn();
       const publisherInstance = new OTPublisher({
@@ -346,6 +345,7 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         publisherId: mockPublisherId,
       };
       publisherInstance.published = true;
+      getPublisherStream.mockReturnValue(mockStreamId);
 
       publisherInstance.componentWillUnmount();
 
@@ -359,7 +359,12 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         {
           streamId: mockStreamId,
           nativeEvent: { streamId: mockStreamId },
-        }
+        },
+        mockPublisherId
+      );
+      expect(getPublisherStream).toHaveBeenCalledWith(
+        mockSessionId,
+        mockPublisherId
       );
       expect(streamDestroyedHandler).toHaveBeenCalledWith({ streamId: mockStreamId });
     });

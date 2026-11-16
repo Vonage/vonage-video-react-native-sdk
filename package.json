@@ -56,14 +56,14 @@
     "test": "jest",
     "test:unit": "jest --watch=false",
     "test:e2e:ios:build": "detox build-framework-cache && detox build -c ios.sim.debug",
-    "test:e2e:ios": "detox test -c ios.sim.debug --take-screenshots failing --record-logs failing -- --testPathIgnorePatterns /node_modules/ \\.stress\\.js$",
-    "test:e2e:ios:ci": "detox test -c ios.sim.debug --headless --take-screenshots failing --record-logs failing -- --testPathIgnorePatterns /node_modules/ \\.stress\\.js$",
+    "test:e2e:ios": "detox test -c ios.sim.debug --take-screenshots failing --record-logs failing",
+    "test:e2e:ios:ci": "mkdir -p artifacts && detox test -c ios.sim.debug --headless --take-screenshots failing --record-logs failing -- --json --outputFile=artifacts/jest-results-ios.json",
     "test:e2e:ios:suite": "detox test -c ios.sim.debug -- --testPathPattern",
     "test:e2e:ios:build:release": "detox build-framework-cache && detox build -c ios.sim.release",
     "test:e2e:ios:release": "detox test -c ios.sim.release",
     "test:e2e:ios:suite:release": "detox test -c ios.sim.release -- --testPathPattern",
     "test:e2e:android:build": "detox build -c android.emu.debug",
-    "test:e2e:android": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000 --testPathIgnorePatterns /node_modules/ \\.stress\\.js$",
+    "test:e2e:android": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000",
     "test:e2e:android:suite": "detox test -c android.emu.debug --record-logs all --take-screenshots failing -- --testTimeout=240000 --testPathPattern",
     "test:e2e:install-bot": "npx playwright install chromium",
     "test:e2e:local": "sh scripts/run-e2e-local.sh",
@@ -74,8 +74,7 @@
     "clean": "del-cli android/build lib",
     "prepare": "node scripts/generate-package-info.js && bob build && node build-expo.js",
     "release": "release-it",
-    "version:local": "node -pe 'require(\"./package.json\").version'",
-    "version:published": "npm show @vonage/client-sdk-video-react-native version"
+    "version:local": "node -pe 'require(\"./package.json\").version'"
   },
   "keywords": [
     "react-native",
@@ -145,6 +144,9 @@
   },
   "overrides": {
     "form-data": "^4.0.6",
+    "image-size": "^2.0.4",
+    "fast-xml-parser": "^5.7.0",
+    "qs": "^6.16.0",
     "get-uri": {
       "basic-ftp": "^6.2.3"
     },
@@ -260,6 +262,12 @@
     },
     "android": {
       "javaPackageName": "com.opentokreactnative"
+    },
+    "ios": {
+      "componentProvider": {
+        "OTRNPublisher": "OTRNPublisherComponentView",
+        "OTRNSubscriber": "OTRNSubscriberComponentView"
+      }
     }
   },
   "create-react-native-library": {

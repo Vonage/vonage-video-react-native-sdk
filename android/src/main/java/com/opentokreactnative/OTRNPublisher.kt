@@ -87,7 +87,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     fun emitOpenTokEvent(name: String, payload: WritableMap) {
-        val reactContext = context as ThemedReactContext
+        val reactContext = context as? ThemedReactContext ?: return
+        if (!reactContext.hasActiveReactInstance()) return
         val eventDispatcher = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)?.eventDispatcher
         val event = OpenTokEvent(reactContext.surfaceId, id, name, payload)
         eventDispatcher?.dispatchEvent(event)
@@ -245,6 +246,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     private fun publishStream() {
+        // onAttachedToWindow fires again after every detach; a second Publisher would
+        // orphan the first in the shared map and contend for the camera.
+        if (publisher != null) return
+        val resolvedPublisherId = this.props?.get("publisherId") as? String ?: return
         var pubOrSub: String? = ""
         var zOrder: String? = ""
         var preferredVideoCodecs: PublisherKit.PreferredVideoCodecs? = this.getPreferredVideoCodecs();
@@ -356,7 +361,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         publisher?.setRtcStatsReportListener(this)
 
         // Move this to streamcreated? Can we get the publisherID there? or streamID is enough
-        val resolvedPublisherId = this.props?.get("publisherId") as String
         sharedState.getPublishers()
             .put(resolvedPublisherId, publisher ?: return);
         registeredPublisherId = resolvedPublisherId
@@ -577,6 +581,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 pub.setRtcStatsReportListener(null)
             }
             runCatching { removeAllViews() }
+            registeredPublisherId?.let { sharedState.getPublishers().remove(it, pub) }
+            pub.session?.let { session -> runCatching { session.unpublish(pub) } }
+            pub.stream?.let { sharedState.getPublisherStreams().remove(it.streamId) }
+            runCatching { pub.destroy() }
         }
 
         publisher = null

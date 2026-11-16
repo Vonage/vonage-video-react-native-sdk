@@ -18,7 +18,7 @@ The SDK uses exclusively the React Native **New Architecture** (TurboModules + F
 - **Test frameworks:** Jest (unit), Detox (E2E), Playwright (bot for E2E)
 - **Release tooling:** release-it, conventional-changelog
 - **Linting:** ESLint with `@react-native` config, Prettier
-- **Native SDK dependency:** VonageClientSDKVideo v2.34.0 (iOS CocoaPod, Android Maven)
+- **Native SDK dependency:** VonageClientSDKVideo v2.36.0 (iOS CocoaPod, Android Maven)
 - **Node version:** v22.13.0 (see `.nvmrc`) — minimum required by React Native 0.87
 
 ## Architecture
@@ -117,7 +117,8 @@ cd ios && pod install && cd ..
 ### E2E tests
 - Framework: Detox (iOS and Android)
 - Bot: Playwright (Chromium) for simulating a remote participant
-- Location: `React-native-TestApp/e2e/`
+- Location: `React-native-TestApp/__tests__/*.e2e.js`, helpers in `React-native-TestApp/__tests__/helpers/`
+- **Adding or extending E2E tests:** read `docs/Testing.md` first.
 
 **iOS:**
 ```bash

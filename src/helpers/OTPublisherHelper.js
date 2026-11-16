@@ -173,7 +173,7 @@ const sanitizeProperties = (properties) => {
     publishCaptions: sanitizeBooleanProperty(
       properties.publishCaptions ? properties.publishCaptions : false
     ),
-    name: properties.name ? properties.name : '',
+    name: properties.name != null ? String(properties.name) : '',
     cameraPosition: sanitizeCameraPosition(properties.cameraPosition),
     cameraTorch: sanitizeCameraTorch(properties.cameraTorch),
     cameraZoomFactor: sanitizeCameraZoomFactor(properties.cameraZoomFactor),

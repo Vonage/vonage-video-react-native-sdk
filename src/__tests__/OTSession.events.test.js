@@ -86,8 +86,8 @@ const EMITTERS = [
   'onArchiveStopped',
 ];
 
-const createSession = (eventHandlers = {}) =>
-  new OTSession({
+const createSession = (eventHandlers = {}) => {
+  const session = new OTSession({
     apiKey: 'k',
     sessionId: SESSION_ID,
     token: 't',
@@ -95,6 +95,9 @@ const createSession = (eventHandlers = {}) =>
     options: {},
     signal: {},
   });
+  session.componentDidMount();
+  return session;
+};
 
 describe('OTSession native event dispatch', () => {
   beforeEach(() => {

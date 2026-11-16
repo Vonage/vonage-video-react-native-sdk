@@ -1,26 +1,15 @@
 'use strict';
 
 /**
- * Event Capture helpers for E2E tests.
- *
- * Works with the capture system in VideoCallScreen:
- *   - captureFilterInput (TextInput) — comma-separated event types
- *   - setCaptureFilter (Text/button) — applies the filter
- *   - clearCapturedEvents (Text/button) — clears captured payloads
- *   - lastEvent-{type} (hidden Text) — last JSON payload per type
+ * Helpers for the event capture UI of the test app (VideoCallScreen): a comma-separated filter
+ * of event types and one `lastEvent-{type}` element per type with the last JSON payload.
  */
 
-/**
- * Configures which event types the app should capture.
- * Always clears previously captured events first to avoid stale data.
- * Waits for the filter to propagate through React's setState before returning.
- * @param {string[]} eventTypes - e.g. ['signal', 'streamPropertyChanged']
- */
+/** Captures only the given event types, clearing previously captured payloads first. */
 async function setCaptureFilter(eventTypes) {
   await element(by.id('clearCapturedEvents')).tap();
   await element(by.id('captureFilterInput')).replaceText(eventTypes.join(','));
-  // Dismiss keyboard before tapping Set Filter — on iOS, replaceText leaves
-  // the keyboard open which can intercept the tap on Set Filter button.
+  // On iOS replaceText leaves the keyboard open, which can intercept the tap on Set Filter.
   try {
     await element(by.id('mainScrollView')).tap({ x: 5, y: 5 });
   } catch (_) {}
@@ -28,20 +17,12 @@ async function setCaptureFilter(eventTypes) {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
-/**
- * Clears all previously captured event payloads.
- */
 async function clearCapturedEvents() {
   await element(by.id('clearCapturedEvents')).tap();
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
 
-/**
- * Reads the last captured payload for a given event type.
- * Returns the parsed JSON object, or null if not yet captured.
- * @param {string} eventType - e.g. 'signal'
- * @returns {Promise<object|null>}
- */
+/** Returns the parsed last payload captured for an event type, or null. */
 async function getLastEvent(eventType) {
   try {
     const attrs = await element(by.id(`lastEvent-${eventType}`)).getAttributes();
@@ -56,17 +37,12 @@ async function getLastEvent(eventType) {
   }
 }
 
-/**
- * Polls until a captured event payload appears, or times out.
- * @param {string} eventType - e.g. 'signal'
- * @param {number} [timeout=30000] - max wait in ms
- * @returns {Promise<object>} the parsed event payload
- */
-async function waitForEvent(eventType, timeout = 30000) {
+/** Polls until a payload (matching `predicate`, if given) is captured for the event type, or throws after `timeout` ms. */
+async function waitForEvent(eventType, timeout = 30000, predicate = () => true) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     const payload = await getLastEvent(eventType);
-    if (payload) return payload;
+    if (payload && predicate(payload)) return payload;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
   throw new Error(`Timed out waiting for event: ${eventType}`);

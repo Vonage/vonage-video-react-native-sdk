@@ -7,7 +7,7 @@ import {
   addEventListener,
   removeEventListener,
   getStreams,
-  getPublisherStream,
+  getPublisherStreams,
 } from './helpers/OTSessionHelper';
 import OTSubscriberView from './OTSubscriberView';
 
@@ -23,9 +23,12 @@ export default class OTSubscriber extends Component {
   constructor(props, context) {
     super(props, context);
     let initialStreams = [...getStreams(this.context.sessionId)];
-    let initialPublisherStream = getPublisherStream(this.context.sessionId);
-    if (props.subscribeToSelf && initialPublisherStream) {
-      initialStreams.push(initialPublisherStream);
+    if (props.subscribeToSelf) {
+      getPublisherStreams(this.context.sessionId).forEach((streamId) => {
+        if (!initialStreams.includes(streamId)) {
+          initialStreams.push(streamId);
+        }
+      });
     }
     sanitizeStreamProperties(props.streamProperties);
     this.state = {
@@ -108,7 +111,8 @@ export default class OTSubscriber extends Component {
 
   publisherStreamDestroyedHandler = (stream) => {
     if (this.state.subscribeToSelf) {
-      this.streamDestroyedHandler(stream);
+      const streamId = stream.streamId ?? stream.nativeEvent?.streamId;
+      this.streamDestroyedHandler({ streamId });
     }
   };
   getRtcStatsReport() {
