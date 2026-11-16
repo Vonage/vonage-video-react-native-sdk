@@ -253,7 +253,10 @@ export default class OTSession extends Component {
   }
 
   disconnectSession(sessionId) {
-    OT.disconnect(sessionId);
+    // The native disconnect() promise can reject (e.g. the session is already
+    // gone). The component is being torn down, so there is no one to report it
+    // to; catch it so it doesn't surface as an unhandled promise rejection.
+    Promise.resolve(OT.disconnect(sessionId)).catch(() => {});
   }
 
   componentDidUpdate(previousProps) {
