@@ -44,6 +44,8 @@ export default class OTPublisher extends React.Component {
   eventHandlers = {};
   publisherProperties = {};
   published = false;
+  // Audio transformers set while previewing; applied once the stream exists.
+  pendingAudioTransformers = undefined;
   unmounted = false;
   videoTransformerQueue = Promise.resolve();
   videoTransformers = [];
@@ -93,6 +95,12 @@ export default class OTPublisher extends React.Component {
       if (isConnected(this.context?.sessionId)) {
         this.publishToSession();
       }
+    }
+    if (!prevProps.previewOnly && this.props.previewOnly && this.published) {
+      console.warn(
+        'OTPublisher: previewOnly cannot be turned back on after the ' +
+          'publisher has published. Unmount the publisher to leave the session.'
+      );
     }
   }
 
@@ -228,6 +236,13 @@ export default class OTPublisher extends React.Component {
 
   setAudioTransformers(transformers = []) {
     //NOSONAR - this method is exposed externally
+    if (this.props.previewOnly && !this.published) {
+      // Audio capture only starts on publish, so hold the transformers until
+      // the publisher's stream is created instead of applying them now.
+      this.pendingAudioTransformers = transformers;
+      return;
+    }
+    this.pendingAudioTransformers = undefined;
     OT.setAudioTransformers(
       this.context.sessionId,
       this.state.publisherId,
@@ -366,8 +381,42 @@ export default class OTPublisher extends React.Component {
     ...this.props.style,
   });
 
+  onStreamCreated = (event) => {
+    dispatchEvent(
+      this.context.sessionId,
+      'publisherStreamCreated',
+      event.nativeEvent,
+      this.state.publisherId
+    );
+    if (this.pendingAudioTransformers !== undefined) {
+      const transformers = this.pendingAudioTransformers;
+      this.pendingAudioTransformers = undefined;
+      OT.setAudioTransformers(
+        this.context.sessionId,
+        this.state.publisherId,
+        transformers
+      );
+    }
+    this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
+  };
+
+  onError = (event) => {
+    // A failed publish leaves no stream behind. Clear the flag so the next
+    // sessionConnected or previewOnly change can publish again.
+    if (
+      this.published &&
+      !getPublisherStream(this.context?.sessionId, this.state.publisherId)
+    ) {
+      this.published = false;
+    }
+    this.props.eventHandlers?.error?.(event.nativeEvent);
+  };
+
   onStreamDestroyed = (event) => {
     if (this.unmounted) return;
+    // The stream is gone (for example after a disconnect), so a later
+    // sessionConnected publishes again, as it did before previewOnly existed.
+    this.published = false;
     dispatchEvent(
       this.context.sessionId,
       'publisherStreamDestroyed',
@@ -386,18 +435,8 @@ export default class OTPublisher extends React.Component {
         emitAudioLevel={!!this.props.eventHandlers?.audioLevel}
         emitAudioNetworkStats={!!this.props.eventHandlers?.audioNetworkStats}
         emitVideoNetworkStats={!!this.props.eventHandlers?.videoNetworkStats}
-        onError={(event) => {
-          this.props.eventHandlers?.error?.(event.nativeEvent);
-        }}
-        onStreamCreated={(event) => {
-          dispatchEvent(
-            this.context.sessionId,
-            'publisherStreamCreated',
-            event.nativeEvent,
-            this.state.publisherId
-          );
-          this.props.eventHandlers?.streamCreated?.(event.nativeEvent);
-        }}
+        onError={this.onError}
+        onStreamCreated={this.onStreamCreated}
         onStreamDestroyed={this.onStreamDestroyed}
         onAudioLevel={
           this.props.eventHandlers?.audioLevel

@@ -78,9 +78,11 @@ Keep `publishVideo: true` while previewing — setting it to `false` stops the
 camera capturer (that is the "camera off" toggle in a lobby UI). The native
 SDKs only start audio capture when publishing begins, so `audioLevel` events
 are not emitted during preview; they start once the publisher is published.
+For the same reason, audio transformers set with `setAudioTransformers()`
+while previewing are applied when the publisher's stream is created.
 See `React-native-TestApp/src/screens/WaitingRoomScreen.tsx` for a complete
 example. Switching a published publisher back to `previewOnly` is not
-supported.
+supported and logs a warning.
 
 ---
 

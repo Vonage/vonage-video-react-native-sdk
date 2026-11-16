@@ -367,7 +367,8 @@ export type OTPublisherProps = ViewProps & {
    * (outside OTSession) for a pre-call lobby. Defaults to false.
    *
    * Note: the native SDKs only start audio capture when publishing begins,
-   * so audioLevel events are not emitted while previewing.
+   * so audioLevel events are not emitted while previewing, and audio
+   * transformers set while previewing are applied once the stream is created.
    */
   previewOnly?: boolean;
 };

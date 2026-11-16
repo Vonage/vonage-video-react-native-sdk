@@ -33,7 +33,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     private var sessionId: String? = ""
     private var publisherId: String? = ""
     private var previewOnly: Boolean = false
-    private var ownsPreview = false
     private var pendingBackCameraCycle = false
 
     @Volatile private var emitAudioLevel: Boolean = false
@@ -103,9 +102,26 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     public fun setPreviewOnly(value: Boolean) {
-        // Only the value present when the view attaches matters natively;
-        // the preview-to-publish transition is driven from JS via OT.publish.
+        // The preview-to-publish transition is driven from JS via OT.publish.
+        val turnedOn = value && !previewOnly
         previewOnly = value
+        if (turnedOn) {
+            startPreviewIfUnpublished()
+        }
+    }
+
+    // Handles previewOnly turning on after the publisher was created but before
+    // it published: the Android SDK renders nothing until publish or startPreview.
+    private fun startPreviewIfUnpublished() {
+        val pub = publisher ?: return
+        if (pub.session != null || pub.stream != null) return
+        if (pendingBackCameraCycle) {
+            // No stream will be created, so switch to the back camera now.
+            pendingBackCameraCycle = false
+            pub.cycleCamera()
+            pub.setPublishVideo(this.props?.get("publishVideo") as? Boolean ?: true)
+        }
+        pub.startPreview()
     }
 
     public fun setEmitAudioLevel(value: Boolean) {
@@ -374,7 +390,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             // preview-to-publish transition happens through OT.publish from
             // JS when the previewOnly prop is set to false.
             publisher?.startPreview()
-            ownsPreview = true
         }
         // Complete a publish() that arrived before this view attached (see module contract).
         if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
@@ -383,7 +398,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
-        ownsPreview = false
         if (pendingBackCameraCycle) {
             pendingBackCameraCycle = false
             this.publisher?.cycleCamera()
@@ -567,8 +581,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         released = true
 
         val pub = publisher
-        val destroyPreview = ownsPreview
-        ownsPreview = false
         pendingBackCameraCycle = false
         if (pub != null) {
             runCatching {
@@ -589,12 +601,6 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         publisher = null
         Utils.releasePublisherIfSame(registeredPublisherId, pub, "viewDropped")
-        // Only destroy a preview this view started and never published; session
-        // teardown handles published capturers, and destroying a publisher whose
-        // camera never initialized can crash Camera2VideoCapturer.
-        if (destroyPreview) {
-            runCatching { pub?.destroy() }
-        }
     }
 
     inner class OpenTokEvent(

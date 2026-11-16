@@ -71,5 +71,12 @@ class OTRN : NSObject {
     }
     var error: OTError?
     session.publish(publisher, error: &error)
+    // A synchronous publish failure would otherwise be dropped; report it
+    // through the publisher's error event like an asynchronous failure.
+    if let error = error {
+      DispatchQueue.main.async {
+        publisher.delegate?.publisher(publisher, didFailWithError: error)
+      }
+    }
   }
 }
