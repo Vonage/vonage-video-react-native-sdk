@@ -20,7 +20,37 @@ static inline std::string SafeStdStringFromValue(id value) {
     return std::string("");
 }
 
+static inline bool SafeBoolFromValue(id value) {
+    return [value isKindOfClass:[NSNumber class]] ? [(NSNumber *)value boolValue] : false;
+}
+
+static inline int SafeIntFromValue(id value) {
+    return [value isKindOfClass:[NSNumber class]] ? [(NSNumber *)value intValue] : 0;
+}
+
 using namespace facebook::react;
+
+template <typename TPayload>
+static TPayload StreamPayloadFromEventData(NSDictionary *eventData) {
+    TPayload payload{};
+    payload.streamId = SafeStdStringFromValue(eventData[@"streamId"]);
+    payload.connectionId = SafeStdStringFromValue(eventData[@"connectionId"]);
+    payload.creationTime = SafeStdStringFromValue(eventData[@"creationTime"]);
+    payload.hasAudio = SafeBoolFromValue(eventData[@"hasAudio"]);
+    payload.hasVideo = SafeBoolFromValue(eventData[@"hasVideo"]);
+    payload.width = SafeIntFromValue(eventData[@"width"]);
+    payload.height = SafeIntFromValue(eventData[@"height"]);
+    payload.name = SafeStdStringFromValue(eventData[@"name"]);
+    payload.sessionId = SafeStdStringFromValue(eventData[@"sessionId"]);
+    payload.videoType = SafeStdStringFromValue(eventData[@"videoType"]);
+    id connection = eventData[@"connection"];
+    if ([connection isKindOfClass:[NSDictionary class]]) {
+        payload.connection.connectionId = SafeStdStringFromValue(connection[@"connectionId"]);
+        payload.connection.creationTime = SafeStdStringFromValue(connection[@"creationTime"]);
+        payload.connection.data = SafeStdStringFromValue(connection[@"data"]);
+    }
+    return payload;
+}
 
 @interface OTRNPublisherComponentView
     : RCTViewComponentView <RCTOTRNPublisherViewProtocol>
@@ -178,8 +208,7 @@ using namespace facebook::react;
 - (void)handleStreamCreated:(NSDictionary *)eventData {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTRNPublisherEventEmitter::OnStreamCreated payload{
-            .streamId = SafeStdStringFromValue(eventData[@"streamId"])};
+        auto payload = StreamPayloadFromEventData<OTRNPublisherEventEmitter::OnStreamCreated>(eventData);
         eventEmitter->onStreamCreated(std::move(payload));
     }
 }
@@ -197,8 +226,7 @@ using namespace facebook::react;
 - (void)handleStreamDestroyed:(NSDictionary *)eventData {
     auto eventEmitter = [self getEventEmitter];
     if (eventEmitter) {
-        OTRNPublisherEventEmitter::OnStreamDestroyed payload{
-            .streamId = SafeStdStringFromValue(eventData[@"streamId"])};
+        auto payload = StreamPayloadFromEventData<OTRNPublisherEventEmitter::OnStreamDestroyed>(eventData);
         eventEmitter->onStreamDestroyed(std::move(payload));
     }
 }

@@ -71,6 +71,7 @@ StreamStruct makeStreamStruct(NSDictionary *streamDict) {
     return StreamStruct{
         .name = SafeStdStringFromValue(safeStreamDict[@"name"]),
         .streamId = SafeStdStringFromValue(safeStreamDict[@"streamId"]),
+        .connectionId = SafeStdStringFromValue(safeStreamDict[@"connectionId"]),
         .hasAudio = SafeBoolFromValue(safeStreamDict[@"hasAudio"]),
         .hasCaptions = SafeBoolFromValue(safeStreamDict[@"hasCaptions"]),
         .hasVideo = SafeBoolFromValue(safeStreamDict[@"hasVideo"]),

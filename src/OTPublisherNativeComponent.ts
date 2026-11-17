@@ -3,6 +3,20 @@ import { codegenNativeComponent } from 'react-native';
 
 export type StreamEvent = {
   streamId: string;
+  connectionId: string;
+  creationTime: string;
+  hasAudio: boolean;
+  hasVideo: boolean;
+  width: CodegenTypes.Int32;
+  height: CodegenTypes.Int32;
+  name: string;
+  sessionId: string;
+  videoType: string;
+  connection: {
+    connectionId: string;
+    creationTime: string;
+    data: string;
+  };
 };
 
 export type ErrorEvent = {
