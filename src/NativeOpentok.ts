@@ -160,6 +160,15 @@ export interface Spec extends TurboModule {
       properties?: string;
     }>
   ): Promise<void>;
+  setTargetScalabilityMode(
+    sessionId: string,
+    publisherId: string,
+    mode: string
+  ): Promise<void>;
+  getTargetScalabilityMode(
+    sessionId: string,
+    publisherId: string
+  ): Promise<string | null>;
   publish(sessionId: string, publisherId: string): void;
   unpublish(sessionId: string, publisherId: string): void;
   removeSubscriber(sessionId: string, streamId: string): void;

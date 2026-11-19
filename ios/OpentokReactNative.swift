@@ -405,6 +405,39 @@ import React
         publisher.audioTransformers = nativeTransformers
     }
 
+    @objc public func setTargetScalabilityMode(
+        _ sessionId: String,
+        publisherId: String,
+        mode: String,
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            reject("OT_INVALID_STATE", "Publisher not found.", nil)
+            return
+        }
+        var error: NSError?
+        publisher.setTargetScalabilityMode(mode, error: &error)
+        if let error = error {
+            reject("OT_INVALID_PARAMETER", error.localizedDescription, error)
+            return
+        }
+        resolve(nil)
+    }
+
+    @objc public func getTargetScalabilityMode(
+        _ sessionId: String,
+        publisherId: String,
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let publisher = OTRN.sharedState.publishers[publisherId] else {
+            reject("OT_INVALID_STATE", "Publisher not found.", nil)
+            return
+        }
+        resolve(publisher.targetScalabilityMode)
+    }
+
     @objc public func setVideoTransformers(
         _ sessionId: String,
         publisherId: String,
