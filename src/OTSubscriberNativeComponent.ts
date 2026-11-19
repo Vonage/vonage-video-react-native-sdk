@@ -5,6 +5,7 @@ export interface StreamEvent {
   stream: {
     name: string;
     streamId: string;
+    connectionId: string;
     hasAudio: boolean;
     hasCaptions?: boolean;
     hasVideo: boolean;
