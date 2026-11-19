@@ -100,6 +100,24 @@ describe('OTSession connect() rejection handling', () => {
     );
   });
 
+  it('does not leave a rejected disconnect unhandled on unmount', async () => {
+    OT.disconnect = jest.fn(() => Promise.reject(new Error('disconnect failed')));
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const session = mount(base());
+      await flush();
+      session.componentWillUnmount();
+      await flush();
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(OT.disconnect).toHaveBeenCalledWith('sid-1');
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
   it('passes later session errors through after connecting', async () => {
     OT.connect.mockImplementationOnce(() => Promise.resolve());
     const error = jest.fn();
