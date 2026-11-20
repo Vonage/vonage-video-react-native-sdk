@@ -294,6 +294,7 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         ...publisherInstance.state,
         publisherId: mockPublisherId,
       };
+      publisherInstance.published = true;
 
       publisherInstance.componentWillUnmount();
 
@@ -317,6 +318,7 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         ...publisherInstance.state,
         publisherId: mockPublisherId,
       };
+      publisherInstance.published = true;
 
       publisherInstance.componentWillUnmount();
 
@@ -342,6 +344,7 @@ describe('Preservation: Existing Instance Methods and Lifecycle Unchanged', () =
         ...publisherInstance.state,
         publisherId: mockPublisherId,
       };
+      publisherInstance.published = true;
       getPublisherStream.mockReturnValue(mockStreamId);
 
       publisherInstance.componentWillUnmount();

@@ -32,6 +32,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     private var sessionId: String? = ""
     private var publisherId: String? = ""
+    private var previewOnly: Boolean = false
+    private var pendingBackCameraCycle = false
 
     @Volatile private var emitAudioLevel: Boolean = false
     @Volatile private var emitAudioNetworkStats: Boolean = false
@@ -97,6 +99,29 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublisherId(str: String?) {
         publisherId = str
+    }
+
+    public fun setPreviewOnly(value: Boolean) {
+        // The preview-to-publish transition is driven from JS via OT.publish.
+        val turnedOn = value && !previewOnly
+        previewOnly = value
+        if (turnedOn) {
+            startPreviewIfUnpublished()
+        }
+    }
+
+    // Handles previewOnly turning on after the publisher was created but before
+    // it published: the Android SDK renders nothing until publish or startPreview.
+    private fun startPreviewIfUnpublished() {
+        val pub = publisher ?: return
+        if (pub.session != null || pub.stream != null) return
+        if (pendingBackCameraCycle) {
+            // No stream will be created, so switch to the back camera now.
+            pendingBackCameraCycle = false
+            pub.cycleCamera()
+            pub.setPublishVideo(this.props?.get("publishVideo") as? Boolean ?: true)
+        }
+        pub.startPreview()
     }
 
     public fun setEmitAudioLevel(value: Boolean) {
@@ -296,9 +321,17 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 )
             }
             if (this.props?.get("cameraPosition") as String == "back") {
-                // Do not set publishVideo here, start when stream is created
-                // to avoid front camera preview flash
-                publisher?.setPublishVideo(false)
+                if (previewOnly) {
+                    // No stream is created while previewing, so switch the
+                    // camera right away before the preview starts.
+                    publisher?.cycleCamera()
+                    publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
+                } else {
+                    // Do not set publishVideo here, start when stream is created
+                    // to avoid front camera preview flash
+                    publisher?.setPublishVideo(false)
+                    pendingBackCameraCycle = true
+                }
             } else {
                 publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
             }
@@ -351,6 +384,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             this.addView(publisher?.view)
             requestLayout()
         }
+
+        if (previewOnly) {
+            // Render the local camera preview without publishing. The
+            // preview-to-publish transition happens through OT.publish from
+            // JS when the previewOnly prop is set to false.
+            publisher?.startPreview()
+        }
         // Complete a publish() that arrived before this view attached (see module contract).
         if (sharedState.getPendingPublishers().remove(resolvedPublisherId) != null) {
             sharedState.getSessions().get(sessionId)?.publish(publisher)
@@ -358,8 +398,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
     }
 
     override fun onStreamCreated(publisher: PublisherKit, stream: Stream) {
-        val cameraPosition = this.props?.get("cameraPosition") as? String ?: "front"
-        if (cameraPosition == "back") {
+        if (pendingBackCameraCycle) {
+            pendingBackCameraCycle = false
             this.publisher?.cycleCamera()
             this.publisher?.setPublishVideo(this.props?.get("publishVideo") as Boolean)
         }
@@ -541,6 +581,7 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         released = true
 
         val pub = publisher
+        pendingBackCameraCycle = false
         if (pub != null) {
             runCatching {
                 pub.setPublisherListener(null)
