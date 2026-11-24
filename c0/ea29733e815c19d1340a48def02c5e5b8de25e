@@ -1,0 +1,80 @@
+React-native-TestApp/__tests__/captionsTranslation.e2e.js
+  4f8ee4f4ab9c7015 1-91
+React-native-TestApp/src/handlers/publisherHandlers.ts
+  4f8ee4f4ab9c7015 1
+React-native-TestApp/src/handlers/subscriberHandlers.ts
+  4f8ee4f4ab9c7015 1
+React-native-TestApp/src/screens/VideoCallScreen.tsx
+  4f8ee4f4ab9c7015 1-40
+React-native-TestApp/src/utils/propertyUpdaters.ts
+  4f8ee4f4ab9c7015 1-6
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  4f8ee4f4ab9c7015 1-27
+android/src/main/java/com/opentokreactnative/OTRNPublisherManager.kt
+  4f8ee4f4ab9c7015 1-5
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  4f8ee4f4ab9c7015 1-27
+android/src/main/java/com/opentokreactnative/OTRNSubscriberManager.kt
+  4f8ee4f4ab9c7015 1-7
+docs/Testing.md
+  4f8ee4f4ab9c7015 1
+ios/OTRNPublisherComponentView.mm
+  4f8ee4f4ab9c7015 1-5
+ios/OTRNPublisherComponentView.swift
+  4f8ee4f4ab9c7015 1-27
+ios/OTRNSubscriberComponentView.mm
+  4f8ee4f4ab9c7015 1-5
+ios/OTRNSubscriberComponentView.swift
+  4f8ee4f4ab9c7015 1-26
+ios/Utils/Utils.swift
+  4f8ee4f4ab9c7015 1-15
+src/OTPublisher.js
+  4f8ee4f4ab9c7015 1-11
+src/OTPublisherNativeComponent.ts
+  4f8ee4f4ab9c7015 1
+src/OTSubscriberNativeComponent.ts
+  4f8ee4f4ab9c7015 1
+src/OTSubscriberView.js
+  4f8ee4f4ab9c7015 1-7
+src/__fixtures__/captionsTranslation.types.ts
+  4f8ee4f4ab9c7015 1-28
+src/__tests__/captionsTranslation.test.js
+  4f8ee4f4ab9c7015 1-160
+src/__tests__/language.test.js
+  4f8ee4f4ab9c7015 1-157
+src/helpers/language.ts
+  4f8ee4f4ab9c7015 1-96
+src/types.ts
+  4f8ee4f4ab9c7015 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "c0ea29733e815c19d1340a48def02c5e5b8de25e",
+  "prompts": {
+    "4f8ee4f4ab9c7015": {
+      "agent_id": {
+        "tool": "kirocrew",
+        "id": "13090bda-e318-49c9-8aef-e8871b0b9b82",
+        "model": "claude"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-11-24T15:56:10.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (kirocrew/claude).",
+          "timestamp": "2026-11-24T15:56:10.000Z"
+        }
+      ],
+      "total_additions": 762,
+      "total_deletions": 3,
+      "accepted_lines": 762,
+      "overriden_lines": 0
+    }
+  }
+}
