@@ -20,6 +20,9 @@ export const parsePublisherProperty = (prop: string): { key: string; value: any 
     case 'videoSource':
       value = String(arr[1]);
       break;
+    case 'inputLanguage':
+      value = arr[1] === 'null' ? null : String(arr[1]);
+      break;
     default:
       return null;
   }
@@ -44,6 +47,9 @@ export const parseSubscriberProperty = (prop: string): { key: string; value: any
       break;
     case 'preferredResolution':
       value = String(arr[1]);
+      break;
+    case 'translationLanguage':
+      value = { languageCode: arr[1] === 'null' ? null : String(arr[1]) };
       break;
     default:
       return null;

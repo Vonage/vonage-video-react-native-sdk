@@ -51,6 +51,7 @@ export const createSubscriberHandlers = (
   },
   error: (event: any) => {
     updateEvent('subscriberEvents', 'error', true);
+    captureEvent?.('subscriberError', event);
   },
   videoDisableWarning: (event: any) => {
     updateEvent('subscriberEvents', 'videoDisableWarning', true);

@@ -92,6 +92,7 @@ static TPayload StreamPayloadFromEventData(NSDictionary *eventData) {
         @"degradationPreference" : @(viewProps.degradationPreference),
         @"publishVideo" : @(viewProps.publishVideo),
         @"publishCaptions" : @(viewProps.publishCaptions),
+        @"inputLanguage" : RCTNSStringFromString(viewProps.inputLanguage),
         @"allowAudioCaptureWhileMuted" : @(viewProps.allowAudioCaptureWhileMuted),
         @"maxVideoBitrate" : @(viewProps.maxVideoBitrate),
         @"videoBitratePreset" : RCTNSStringFromString(viewProps.videoBitratePreset),
@@ -176,6 +177,10 @@ static TPayload StreamPayloadFromEventData(NSDictionary *eventData) {
 
     if (oldViewProps.scaleBehavior != newViewProps.scaleBehavior) {
         [_impl setScaleBehavior:RCTNSStringFromString(newViewProps.scaleBehavior)];
+    }
+
+    if (oldViewProps.inputLanguage != newViewProps.inputLanguage) {
+        [_impl setInputLanguage:RCTNSStringFromString(newViewProps.inputLanguage)];
     }
 
     if (oldViewProps.cameraPosition != newViewProps.cameraPosition) {

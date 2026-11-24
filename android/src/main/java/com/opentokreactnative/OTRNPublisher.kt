@@ -1,6 +1,7 @@
 package com.opentokreactnative
 
 import android.content.Context
+import android.util.Log
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
 import android.widget.FrameLayout
@@ -127,6 +128,30 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
     public fun setPublishCaptions(value: Boolean) {
         publisher?.setPublishCaptions(value)
+    }
+
+    // Latest value from the prop setter ("" = no language); null until the setter runs.
+    private var inputLanguage: String? = null
+    // Value the native object has now (null = no language).
+    private var appliedInputLanguage: String? = null
+
+    fun setInputLanguage(value: String?) {
+        inputLanguage = value ?: ""
+        applyInputLanguage()
+    }
+
+    private fun applyInputLanguage() {
+        val target = publisher ?: return
+        val language = (inputLanguage
+            ?: this.props?.get("inputLanguage") as? String)
+            ?.ifEmpty { null }
+        if (language == appliedInputLanguage) return
+        try {
+            target.setCaptionsInputLanguage(language)
+            appliedInputLanguage = language
+        } catch (e: IllegalArgumentException) {
+            Log.w("OTRNPublisher", "inputLanguage not applied: ${e.message}")
+        }
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -306,6 +331,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
 
         publisher?.setPublishAudio(this.props?.get("publishAudio") as Boolean)
         publisher?.setPublishCaptions(this.props?.get("publishCaptions") as Boolean)
+        appliedInputLanguage = null
+        applyInputLanguage()
         val degradationPreferenceInt =
             (this.props?.get("degradationPreference") as? Double)?.toInt() ?: -1
         publisher?.setDegradationPreference(

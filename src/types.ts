@@ -32,8 +32,11 @@ import type {
   VideoDisabledEvent,
   VideoEnabledEvent,
 } from './OTSubscriberNativeComponent';
+import type { LanguageCode, TranslationLanguage } from './helpers/language';
 
 export type {
+  LanguageCode,
+  TranslationLanguage,
   ArchiveEvent,
   Connection,
   ConnectionEvent,
@@ -243,6 +246,12 @@ export type OTPublisherProperties = {
   preferredVideoCodecs?: PreferredVideoCodecs | '';
   publishAudio?: boolean;
   publishCaptions?: boolean;
+  /**
+   * The language spoken by this publisher, used to transcribe its audio.
+   * Use a supported language code (any case), or `null` to let the server choose.
+   * Defaults to `null`. An unsupported value logs a warning and keeps the current value.
+   */
+  inputLanguage?: LanguageCode | null;
   publishSenderStats?: boolean;
   publishVideo?: boolean;
   resolution?: '1920x1080' | '1280x720' | '640x480' | '352x288' | 'MEDIUM';
@@ -292,7 +301,14 @@ export type OTSubscriberProperties = {
    */
   subscribeToAudio?: boolean;
   subscribeToCaptions?: boolean;
-  
+  /**
+   * The language to translate the captions of this subscriber into.
+   * Use `{ languageCode }` with a supported code (any case). Use `null` or
+   * `{ languageCode: null }` to turn translation off. Defaults to `null`.
+   * An unsupported value logs a warning and keeps the current value.
+   */
+  translationLanguage?: TranslationLanguage | null;
+
   /**
    * Defaults to `true` when omitted.
    */

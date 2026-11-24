@@ -61,6 +61,13 @@ class OTRNSubscriberManager(context: ReactApplicationContext) :
         view?.setSubscribeToCaptions(value)
     }
 
+    override fun setTranslationLanguage(
+        view: OTRNSubscriber?,
+        value: String?
+    ) {
+        view?.setTranslationLanguage(value)
+    }
+
     override fun setAudioVolume(
         view: OTRNSubscriber?,
         value: Float

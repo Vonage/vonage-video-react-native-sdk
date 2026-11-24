@@ -850,6 +850,26 @@ class VideoCallScreen extends Component<{}, State> {
               : 'Front Camera'
           }
         />
+        <ButtonComponent
+          testID="setInputLanguageEn"
+          handleSubmit={() => this.updateEvent('publisherProperties', 'inputLanguage', 'en-US')}
+          label="Speak en-US"
+        />
+        <ButtonComponent
+          testID="setInputLanguageIt"
+          handleSubmit={() => this.updateEvent('publisherProperties', 'inputLanguage', 'it-IT')}
+          label="Speak it-IT"
+        />
+        <ButtonComponent
+          testID="setInputLanguageOff"
+          handleSubmit={() => this.updateEvent('publisherProperties', 'inputLanguage', null)}
+          label="Speak Default"
+        />
+        <ButtonComponent
+          testID="setInputLanguageInvalid"
+          handleSubmit={() => this.updateEvent('publisherProperties', 'inputLanguage', 'english')}
+          label="Speak english"
+        />
       </View>
     );
   }
@@ -892,6 +912,26 @@ class VideoCallScreen extends Component<{}, State> {
           testID="setVolume50"
           handleSubmit={() => this.updateEvent('subscriberProperties', 'audioVolume', 50)}
           label="Volume 50"
+        />
+        <ButtonComponent
+          testID="setTranslationLanguageEs"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'translationLanguage', { languageCode: 'es-ES' })}
+          label="Translate es-ES"
+        />
+        <ButtonComponent
+          testID="setTranslationLanguageFr"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'translationLanguage', { languageCode: 'fr-FR' })}
+          label="Translate fr-FR"
+        />
+        <ButtonComponent
+          testID="setTranslationLanguageOff"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'translationLanguage', { languageCode: null })}
+          label="Translate Off"
+        />
+        <ButtonComponent
+          testID="setTranslationLanguageInvalid"
+          handleSubmit={() => this.updateEvent('subscriberProperties', 'translationLanguage', { languageCode: 'xx-YY' })}
+          label="Translate xx-YY"
         />
       </View>
     );

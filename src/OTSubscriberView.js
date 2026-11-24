@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { OT } from './OT';
 import OTRNSubscriber from './OTSubscriberNativeComponent';
 import OTContext from './contexts/OTContext';
+import { createTranslationLanguageResolver } from './helpers/language';
 
 const withParsedJsonStats = (nativeEvent) => {
   if (!nativeEvent || typeof nativeEvent !== 'object') {
@@ -36,6 +37,8 @@ export default class OTSubscriberView extends React.Component {
     },
   };
 
+  resolveTranslationLanguage = createTranslationLanguageResolver();
+
   getRtcStatsReport() {
     //NOSONAR - this method is exposed externally
     OT.getSubscriberRtcStatsReport(this.context.sessionId);
@@ -57,6 +60,7 @@ export default class OTSubscriberView extends React.Component {
       preferredFrameRate,
       preferredResolution,
       subscribeToCaptions,
+      translationLanguage,
     } = {
       ...subscriberProperties,
       ...Object.fromEntries(
@@ -89,6 +93,9 @@ export default class OTSubscriberView extends React.Component {
         subscribeToVideo={subscribeToVideo}
         scaleBehavior={scaleBehavior}
         subscribeToCaptions={subscribeToCaptions ?? false}
+        translationLanguage={this.resolveTranslationLanguage(
+          translationLanguage
+        )}
         preferredFrameRate={preferredFrameRate ?? 32767}
         preferredResolution={nativeResolution(preferredResolution)}
         audioVolume={audioVolume ?? 100}

@@ -157,6 +157,9 @@ import React
         publisher.publishCaptions = Utils.sanitizeBooleanProperty(
             properties["publishCaptions"] as Any
         )
+        appliedInputLanguage = nil
+        applyInputLanguage(
+            properties["inputLanguage"] as? String, to: publisher)
         publisher.degradationPreference = Utils.convertVideoDegradationPreference(
             properties["degradationPreference"] as Any
         )
@@ -292,6 +295,30 @@ import React
         }
 
         publisher.cameraZoomFactor = cameraZoomFactor
+    }
+
+    // Value the native publisher has now (nil = no language).
+    private var appliedInputLanguage: String?
+
+    @objc public func setInputLanguage(_ language: String) {
+        guard let publisherId = self.publisherId,
+            let publisher = OTRN.sharedState.publishers[publisherId]
+        else { return }
+        applyInputLanguage(language, to: publisher)
+    }
+
+    private func applyInputLanguage(
+        _ value: String?, to publisher: OTPublisher
+    ) {
+        let language = Utils.languageOrNil(value)
+        if language == appliedInputLanguage { return }
+        publisher.captionsInputLanguage = language
+        // The native setter drops a value it cannot apply without an error, so read it back.
+        if Utils.isSameLanguage(publisher.captionsInputLanguage, language) {
+            appliedInputLanguage = language
+        } else {
+            print("OTRN: inputLanguage not applied: \(language ?? "nil")")
+        }
     }
 
     @objc public func setVideoContentHint(_ videoContentHint: String) {

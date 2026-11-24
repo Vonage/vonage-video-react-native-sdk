@@ -13,6 +13,7 @@ import {
   getPublisherStream,
 } from './helpers/OTSessionHelper';
 import { sanitizeProperties } from './helpers/OTPublisherHelper';
+import { createInputLanguageResolver } from './helpers/language';
 import OTContext from './contexts/OTContext';
 
 const parseStatsString = (rawStats) => {
@@ -48,6 +49,7 @@ export default class OTPublisher extends React.Component {
   videoTransformers = [];
   videoFilter = null;
   videoFiltersDisposed = false;
+  resolveInputLanguage = createInputLanguageResolver();
 
   constructor(props) {
     super(props);
@@ -60,7 +62,7 @@ export default class OTPublisher extends React.Component {
       publishVideo: mergedProperties.publishVideo,
       permissionsGranted: Platform.OS === 'ios',
       componentMounted: false,
-      publisherProperties: sanitizeProperties(mergedProperties),
+      publisherProperties: this.getPublisherProperties(mergedProperties),
     };
     this.eventHandlers = props.eventHandlers;
     this.initComponent(props.eventHandlers);
@@ -79,12 +81,19 @@ export default class OTPublisher extends React.Component {
 
   componentDidUpdate() {
     const { properties } = this.props;
-    const sanitizedProperties = sanitizeProperties(properties);
+    const sanitizedProperties = this.getPublisherProperties(properties);
     if (!isEqual(this.state.publisherProperties, sanitizedProperties)) {
       this.setState((prevState) => ({
         publisherProperties: sanitizedProperties,
       }));
     }
+  }
+
+  getPublisherProperties(properties) {
+    return {
+      ...sanitizeProperties(properties),
+      inputLanguage: this.resolveInputLanguage(properties?.inputLanguage),
+    };
   }
 
   onSessionConnected = () => {
