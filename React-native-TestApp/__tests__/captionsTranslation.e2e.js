@@ -5,6 +5,8 @@ const {
   setCaptureFilter,
   getLastEvent,
 } = require('./helpers/eventCapture');
+// Detox replaces the global expect with one for UI elements.
+const { expect: jestExpect } = require('expect');
 
 /**
  * Captions translation properties (VIDCS-5281).
@@ -62,7 +64,7 @@ describe('Captions translation', () => {
     await waitFor(element(by.id('subscriber'))).toExist().withTimeout(5000);
     // The bot still receives the app stream, so the session is healthy.
     await bot.waitForStream({ timeout: 30000 });
-    expect(await getLastEvent('subscriberError')).toBeNull();
+    jestExpect(await getLastEvent('subscriberError')).toBeNull();
   });
 
   it('changes the publisher input language at runtime', async () => {
@@ -83,9 +85,9 @@ describe('Captions translation', () => {
     }
 
     const streams = await bot.getRemoteStreams();
-    expect(streams.some((s) => s.videoType === 'camera' && s.hasAudio)).toBe(
-      true
-    );
-    expect(await getLastEvent('publisherError')).toBeNull();
+    jestExpect(
+      streams.some((s) => s.videoType === 'camera' && s.hasAudio)
+    ).toBe(true);
+    jestExpect(await getLastEvent('publisherError')).toBeNull();
   });
 });
