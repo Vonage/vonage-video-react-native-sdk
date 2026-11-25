@@ -108,6 +108,72 @@ class Utils {
             return "Unknown"
         }
     }
+    static func convertNetworkCondition(_ condition: OTNetworkCondition)
+        -> String
+    {
+        switch condition {
+        case .critical:
+            return "critical"
+        case .warning:
+            return "warning"
+        case .fair:
+            return "fair"
+        case .good:
+            return "good"
+        case .excellent:
+            return "excellent"
+        default:
+            return "unknown"
+        }
+    }
+    static func convertNetworkConditionReason(_ reason: OTNetworkReason)
+        -> String
+    {
+        switch reason {
+        case .none:
+            return "none"
+        case .bandwidth:
+            return "bandwidth"
+        case .packetLoss:
+            return "packetLoss"
+        case .noSubscribers:
+            return "noSubscribers"
+        case .downstreamConstraint:
+            return "downstreamConstraint"
+        default:
+            return "unknown"
+        }
+    }
+    static func convertQualityLimitationReason(
+        _ reason: OTPublisherVideoEventReason
+    ) -> String {
+        switch reason {
+        case .qualityDegradationBandwidth:
+            return "bandwidth"
+        case .qualityDegradationCPU:
+            return "cpu"
+        case .qualityDegradationOther:
+            return "other"
+        default:
+            return "none"
+        }
+    }
+    static func convertQualityRestriction(_ restriction: OTQualityRestriction)
+        -> String
+    {
+        switch restriction {
+        case .none:
+            return "none"
+        case .spatial:
+            return "spatial"
+        case .temporal:
+            return "temporal"
+        case .spatialAndTemporal:
+            return "spatialAndTemporal"
+        default:
+            return "unknown"
+        }
+    }
 
     static func sanitizeIncludeServer(_ value: Any)
         -> OTSessionICEIncludeServers

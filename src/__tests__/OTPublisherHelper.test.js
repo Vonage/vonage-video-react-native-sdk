@@ -277,6 +277,16 @@ describe('sanitizeProperties - numeric and enum sanitizers', () => {
       expect(result.allowAudioCaptureWhileMuted).toBe(true);
       expect(result.publishSenderStats).toBe(false);
     });
+
+    it('keeps publishSenderStats true when explicitly enabled', () => {
+      const result = sanitizeProperties({ publishSenderStats: true });
+      expect(result.publishSenderStats).toBe(true);
+    });
+
+    it('defaults publishSenderStats to false when omitted', () => {
+      expect(sanitizeProperties({}).publishSenderStats).toBe(false);
+      expect(sanitizeProperties(undefined).publishSenderStats).toBe(false);
+    });
   });
 
   describe('preferredVideoCodecs', () => {

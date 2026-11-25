@@ -75,6 +75,31 @@ class EventUtils {
         return statsArray;
     }
 
+    static func prepareTransportStats(_ transport: OTTransportStats) -> Dictionary<String, Any> {
+        var transportStats: Dictionary<String, Any> = [:];
+        transportStats["connectionEstimatedBandwidth"] = transport.connectionEstimatedBandwidth;
+        transportStats["networkCondition"] = Utils.convertNetworkCondition(transport.networkCondition);
+        transportStats["networkConditionReason"] = Utils.convertNetworkConditionReason(transport.networkConditionReason);
+        return transportStats;
+    }
+
+    static func preparePublisherVideoLayerStats(_ layer: OTPublisherKitVideoLayerStats) -> Dictionary<String, Any> {
+        var layerStats: Dictionary<String, Any> = [:];
+        layerStats["width"] = layer.width;
+        layerStats["height"] = layer.height;
+        layerStats["encodedFrameRate"] = layer.encodedFrameRate.isFinite ? layer.encodedFrameRate : 0;
+        layerStats["bitrate"] = layer.bitrate;
+        layerStats["totalBitrate"] = layer.totalBitrate;
+        layerStats["qualityLimitationReason"] = Utils.convertQualityLimitationReason(layer.qualityLimitationReason);
+        if let scalabilityMode = layer.scalabilityMode {
+            layerStats["scalabilityMode"] = scalabilityMode;
+        }
+        if let codec = layer.codec {
+            layerStats["codec"] = codec;
+        }
+        return layerStats;
+    }
+
     static func preparePublisherVideoNetworkStats(_ videoStats: [OTPublisherKitVideoNetworkStats]) -> [Dictionary<String, Any>] {
         var statsArray:[Dictionary<String, Any>] = [];
         for value in videoStats {
@@ -85,6 +110,11 @@ class EventUtils {
             stats["videoBytesSent"] = value.videoBytesSent;
             stats["videoPacketsSent"] = value.videoPacketsSent;
             stats["timestamp"] = value.timestamp;
+            stats["startTime"] = value.startTime;
+            stats["videoLayers"] = value.videoLayers.map { preparePublisherVideoLayerStats($0) };
+            if let transport = value.transport {
+                stats["transport"] = prepareTransportStats(transport);
+            }
             statsArray.append(stats);
         }
         return statsArray;
@@ -100,6 +130,10 @@ class EventUtils {
             stats["audioPacketsSent"] = value.audioPacketsSent;
             stats["audioBytesSent"] = value.audioBytesSent;
             stats["timestamp"] = value.timestamp;
+            stats["startTime"] = value.startTime;
+            if let transport = value.transport {
+                stats["transport"] = prepareTransportStats(transport);
+            }
             statsArray.append(stats);
         }
         return statsArray;
@@ -121,6 +155,20 @@ class EventUtils {
         if let senderStats = videoStats.senderStats {
             videoStatsEventData["senderStats"] = prepareJSSenderStatsEventData(senderStats);
         }
+        videoStatsEventData["width"] = videoStats.width;
+        videoStatsEventData["height"] = videoStats.height;
+        videoStatsEventData["decodedFrameRate"] = videoStats.decodedFrameRate.isFinite ? videoStats.decodedFrameRate : 0;
+        videoStatsEventData["bitrate"] = videoStats.bitrate;
+        videoStatsEventData["totalBitrate"] = videoStats.totalBitrate;
+        videoStatsEventData["pauseCount"] = videoStats.pauseCount;
+        videoStatsEventData["totalPausesDuration"] = videoStats.totalPausesDuration;
+        videoStatsEventData["freezeCount"] = videoStats.freezeCount;
+        videoStatsEventData["totalFreezesDuration"] = videoStats.totalFreezesDuration;
+        if let codec = videoStats.codec {
+            videoStatsEventData["codec"] = codec;
+        }
+        videoStatsEventData["senderQualityRestriction"] = Utils.convertQualityRestriction(videoStats.senderQualityRestriction);
+        videoStatsEventData["remotePublisherQualityRestriction"] = Utils.convertQualityRestriction(videoStats.remotePublisherQualityRestriction);
 
         return videoStatsEventData;
     }

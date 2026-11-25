@@ -51,6 +51,9 @@ export default class OTPublisher extends React.Component {
 
   constructor(props) {
     super(props);
+    // Known issue: the merged defaultProps.audioFallback overrides the screen-share
+    // default (subscriber fallback off), and iOS creates the publisher from these
+    // first props. Tracked separately.
     const mergedProperties = {
       ...OTPublisher.defaultProps.properties,
       ...props.properties,

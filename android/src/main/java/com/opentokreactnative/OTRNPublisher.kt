@@ -21,6 +21,7 @@ import com.opentok.android.Stream
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils
 import com.opentokreactnative.utils.toVideoScaleType;
+import com.opentokreactnative.utils.toWritableMap
 
 class OTRNPublisher : FrameLayout, PublisherListener,
     PublisherKit.AudioLevelListener,
@@ -250,6 +251,8 @@ class OTRNPublisher : FrameLayout, PublisherListener,
         if (this.props?.get("videoSource") == "screen") {
             var publisherBuilder: Publisher.Builder = Publisher.Builder(context)
                 .audioBitrate((this.props?.get("audioBitrate") as Double).toInt())
+                .publisherAudioFallbackEnabled(this.props?.get("publisherAudioFallback") as Boolean)
+                .subscriberAudioFallbackEnabled(this.props?.get("subscriberAudioFallback") as Boolean)
                 .name(this.props?.get("name") as String)
                 .frameRate(
                     Publisher.CameraCaptureFrameRate.valueOf(
@@ -442,7 +445,10 @@ class OTRNPublisher : FrameLayout, PublisherListener,
             audioStats.putDouble("audioPacketsLost", stat.audioPacketsLost.toDouble())
             audioStats.putDouble("audioPacketsSent", stat.audioPacketsSent.toDouble())
             audioStats.putDouble("audioBytesSent", stat.audioBytesSent.toDouble())
-            audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
+            // Sample time (native timeStamp), matching iOS. Previously this key carried startTime.
+            audioStats.putDouble("timestamp", stat.timeStamp)
+            audioStats.putDouble("startTime", stat.startTime)
+            stat.transport?.let { audioStats.putMap("transport", it.toWritableMap()) }
             statsArray.pushMap(audioStats)
         }
         val serializedStats = statsArray.toString()
@@ -474,7 +480,13 @@ class OTRNPublisher : FrameLayout, PublisherListener,
                 audioStats.putDouble("videoPacketsLost", stat.videoPacketsLost.toDouble())
                 audioStats.putDouble("videoBytesSent", stat.videoBytesSent.toDouble())
                 audioStats.putDouble("videoPacketsSent", stat.videoPacketsSent.toDouble())
-                audioStats.putDouble("timestamp", stat.startTime) // matches iOS key and TS spec
+                // Sample time (native timeStamp), matching iOS. Previously this key carried startTime.
+                audioStats.putDouble("timestamp", stat.timeStamp)
+                audioStats.putDouble("startTime", stat.startTime)
+                val videoLayers: WritableArray = Arguments.createArray()
+                stat.videoLayers?.forEach { layer -> videoLayers.pushMap(layer.toWritableMap()) }
+                audioStats.putArray("videoLayers", videoLayers)
+                stat.transport?.let { audioStats.putMap("transport", it.toWritableMap()) }
                 statsArrayMap.pushMap(audioStats)
             }
             val serializedStats = statsArrayMap.toString()
