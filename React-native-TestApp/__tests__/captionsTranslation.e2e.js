@@ -74,12 +74,13 @@ describe('Captions translation', () => {
     await bot.waitForStream({ timeout: 30000 });
 
     await element(by.id('tabPublisher')).tap();
+    // Only two values reach the native SDK (it-IT and null). The invalid value
+    // stops in JS. More native changes in a short time hit the server rate
+    // limit (error 5010).
     for (const testID of [
-      'setInputLanguageEn',
       'setInputLanguageIt',
-      'setInputLanguageOff',
       'setInputLanguageInvalid',
-      'setInputLanguageEn',
+      'setInputLanguageOff',
     ]) {
       await tapControl(testID);
     }
