@@ -103,6 +103,52 @@ export type StreamPropertyChangedEvent = {
   sessionId: string;
 };
 
+export type NetworkCondition =
+  | 'unknown'
+  | 'critical'
+  | 'warning'
+  | 'fair'
+  | 'good'
+  | 'excellent';
+
+export type NetworkConditionReason =
+  | 'none'
+  | 'unknown'
+  | 'bandwidth'
+  | 'packetLoss'
+  | 'noSubscribers'
+  | 'downstreamConstraint';
+
+export type TransportStats = {
+  /** Estimated available bandwidth of the connection, in bits per second. */
+  connectionEstimatedBandwidth: number;
+  networkCondition: NetworkCondition;
+  networkConditionReason: NetworkConditionReason;
+};
+
+export type QualityLimitationReason = 'none' | 'bandwidth' | 'cpu' | 'other';
+
+export type PublisherVideoLayerStats = {
+  width: number;
+  height: number;
+  encodedFrameRate: number;
+  /** Payload bitrate, in bits per second. */
+  bitrate: number;
+  /** Bitrate including RTP headers and padding, in bits per second. */
+  totalBitrate: number;
+  /** The scalability mode the encoder reports in use, for example `"L3T3"`. */
+  scalabilityMode?: string;
+  codec?: string;
+  qualityLimitationReason: QualityLimitationReason;
+};
+
+export type QualityRestriction =
+  | 'unknown'
+  | 'none'
+  | 'spatial'
+  | 'temporal'
+  | 'spatialAndTemporal';
+
 export type PublisherAudioNetworkStats = {
   connectionId?: string;
   subscriberId?: string;
@@ -110,6 +156,9 @@ export type PublisherAudioNetworkStats = {
   audioBytesSent: number;
   audioPacketsSent: number;
   timestamp: number;
+  /** Unix timestamp (ms) from which the cumulative totals started accumulating. */
+  startTime: number;
+  transport?: TransportStats;
 };
 
 export type PublisherVideoNetworkStats = {
@@ -119,6 +168,11 @@ export type PublisherVideoNetworkStats = {
   videoBytesSent: number;
   videoPacketsSent: number;
   timestamp: number;
+  /** Unix timestamp (ms) from which the cumulative totals started accumulating. */
+  startTime: number;
+  /** Active video encoding layers (simulcast or SVC). */
+  videoLayers: PublisherVideoLayerStats[];
+  transport?: TransportStats;
 };
 
 /**
@@ -137,6 +191,27 @@ export type VideoNetworkStatsEvent = {
   videoPacketsLost: number;
   videoPacketsReceived: number;
   timestamp: number;
+  /** Decoded frame width, in pixels. */
+  width: number;
+  /** Decoded frame height, in pixels. */
+  height: number;
+  decodedFrameRate: number;
+  /** Payload bitrate, in bits per second. */
+  bitrate: number;
+  /** Bitrate including RTP headers and padding, in bits per second. */
+  totalBitrate: number;
+  /** Number of video pauses (no frame rendered for 5 seconds or more). */
+  pauseCount: number;
+  /** Total duration of video pauses, in milliseconds. */
+  totalPausesDuration: number;
+  freezeCount: number;
+  /** Total duration of video freezes, in milliseconds. */
+  totalFreezesDuration: number;
+  codec?: string;
+  /** Restriction applied by the immediate sender (Media Router in routed sessions, the publisher in relayed sessions). */
+  senderQualityRestriction: QualityRestriction;
+  /** Restriction applied by the originating publisher. */
+  remotePublisherQualityRestriction: QualityRestriction;
 };
 
 export type SubscriberAudioNetworkStatsEvent = {
@@ -173,7 +248,7 @@ type SubscriberAudioNetworkStatsFlatPayload = {
 
 /**
  * Android-only flat shape of the subscriber `videoNetworkStats` payload (iOS never sends it).
- * Same shape as `VideoNetworkStatsEvent`.
+ * Contains only the baseline fields; newer fields are only available in `stats`.
  */
 type SubscriberVideoNetworkStatsFlatPayload = {
   /** @deprecated Android-only flat field; use `stats.senderStats`. */

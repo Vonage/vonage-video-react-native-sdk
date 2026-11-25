@@ -24,6 +24,7 @@ import com.opentok.android.VideoUtils
 import com.opentokreactnative.utils.Utils;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.toVideoScaleType;
+import com.opentokreactnative.utils.toQualityRestrictionString
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -456,6 +457,26 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
                     put("connectionEstimatedBandwidth", sender.connectionEstimatedBandwidth)
                 })
             }
+            put("width", stats?.width ?: 0)
+            put("height", stats?.height ?: 0)
+            put("decodedFrameRate", stats?.decodedFrameRate?.takeIf { it.isFinite() } ?: 0.0)
+            put("bitrate", stats?.bitrate ?: 0L)
+            put("totalBitrate", stats?.totalBitrate ?: 0L)
+            put("pauseCount", stats?.pauseCount ?: 0L)
+            put("totalPausesDuration", stats?.totalPausesDuration ?: 0L)
+            put("freezeCount", stats?.freezeCount ?: 0L)
+            put("totalFreezesDuration", stats?.totalFreezesDuration ?: 0L)
+            stats?.codec?.let { put("codec", it) }
+            put(
+                "senderQualityRestriction",
+                (stats?.senderQualityRestriction
+                    ?: SubscriberKit.SubscriberVideoStats.QUALITY_RESTRICTION_UNKNOWN).toQualityRestrictionString()
+            )
+            put(
+                "remotePublisherQualityRestriction",
+                (stats?.remotePublisherQualityRestriction
+                    ?: SubscriberKit.SubscriberVideoStats.QUALITY_RESTRICTION_UNKNOWN).toQualityRestrictionString()
+            )
         }
 
         val stream = buildStreamMapFromCache()

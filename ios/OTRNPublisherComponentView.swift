@@ -81,10 +81,6 @@ import React
         settings.allowAudioCaptureWhileMuted = Utils.sanitizeBooleanProperty(
             properties["allowAudioCaptureWhileMuted"] as Any
         )
-        let publishSenderStats = Utils.sanitizeBooleanProperty(
-            properties["publishSenderStats"] as Any
-        )
-        print("publishSenderStats: \(publishSenderStats)")
         settings.senderStatsTrack = Utils.sanitizeBooleanProperty(
             properties["publishSenderStats"] as Any
         )
@@ -610,16 +606,7 @@ private class PublisherNetworkStatsDelegateHandler: NSObject,
         _ publisher: OTPublisherKit,
         audioNetworkStatsUpdated stats: [OTPublisherKitAudioNetworkStats]
     ) {
-        let statsArray = stats.map { stat -> [String: Any] in
-            return [
-                "connectionId": stat.connectionId,
-                "subscriberId": stat.subscriberId,
-                "audioPacketsLost": stat.audioPacketsLost,
-                "audioBytesSent": stat.audioBytesSent,
-                "audioPacketsSent": stat.audioPacketsSent,
-                "timestamp": stat.timestamp,
-            ]
-        }
+        let statsArray = EventUtils.preparePublisherAudioNetworkStats(stats)
 
         if let jsonData = try? JSONSerialization.data(
             withJSONObject: statsArray
@@ -635,16 +622,7 @@ private class PublisherNetworkStatsDelegateHandler: NSObject,
         _ publisher: OTPublisherKit,
         videoNetworkStatsUpdated stats: [OTPublisherKitVideoNetworkStats]
     ) {
-        let statsArray = stats.map { stat -> [String: Any] in
-            return [
-                "connectionId": stat.connectionId,
-                "subscriberId": stat.subscriberId,
-                "videoPacketsLost": stat.videoPacketsLost,
-                "videoBytesSent": stat.videoBytesSent,
-                "videoPacketsSent": stat.videoPacketsSent,
-                "timestamp": stat.timestamp,
-            ]
-        }
+        let statsArray = EventUtils.preparePublisherVideoNetworkStats(stats)
 
         if let jsonData = try? JSONSerialization.data(
             withJSONObject: statsArray
