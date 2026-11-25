@@ -1,0 +1,30 @@
+android/src/main/java/com/opentokreactnative/OTRNPublisher.kt
+  h_b9583e878a641a 24,254-255,448-451,483-489
+android/src/main/java/com/opentokreactnative/OTRNSubscriber.kt
+  h_b9583e878a641a 27,460-479
+android/src/main/java/com/opentokreactnative/utils/KotlinUtils.kt
+  h_b9583e878a641a 6-7,9-11,17-67
+ios/OTRNPublisherComponentView.swift
+  h_b9583e878a641a 609,625
+ios/Utils/EventUtils.swift
+  h_b9583e878a641a 78-102,113-117,133-136,158-171
+ios/Utils/Utils.swift
+  h_b9583e878a641a 111-176
+src/OTPublisher.js
+  h_b9583e878a641a 54-56
+src/__tests__/OTPublisherHelper.test.js
+  h_b9583e878a641a 280-289
+src/types.ts
+  h_b9583e878a641a 106-151,159-161,171-175,194-214,251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ed5606ab133b56cbe2876c5720ffbc98cff02473",
+  "prompts": {},
+  "humans": {
+    "h_b9583e878a641a": {
+      "author": "igorperunovicvonage <igor.perunovic@vonage.com>"
+    }
+  }
+}
