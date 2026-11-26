@@ -1,0 +1,34 @@
+React-native-TestApp/__tests__/captionsTranslation.e2e.js
+  c789871b0ac08b85 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "vonage-override-1.0.0",
+  "base_commit_sha": "2f83e96e18f78ee608ac51ffb292bdb995d1fe09",
+  "prompts": {
+    "c789871b0ac08b85": {
+      "agent_id": {
+        "tool": "kirocrew",
+        "id": "9608e146-f6e0-4c79-8ac2-8dbfeec7cca6",
+        "model": "claude"
+      },
+      "human_author": "Victor Cuenca <victor.cuenca@vonage.com>",
+      "messages": [
+        {
+          "type": "user",
+          "text": "[vonage-git-ai override: 100% AI]",
+          "timestamp": "2026-11-26T11:51:40.000Z"
+        },
+        {
+          "type": "assistant",
+          "text": "Attribution set via vonage-git-ai override (kirocrew/claude).",
+          "timestamp": "2026-11-26T11:51:40.000Z"
+        }
+      ],
+      "total_additions": 5,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
