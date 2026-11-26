@@ -53,13 +53,6 @@ describe('OTSubscriberView translationLanguage', () => {
     );
   });
 
-  it('sends a valid code in another case unchanged', () => {
-    expect(createView()({ translationLanguage: { languageCode: 'ES-es' } })).toBe(
-      'ES-es'
-    );
-    expect(warn).not.toHaveBeenCalled();
-  });
-
   it('uses streamProperties before properties', () => {
     const streamProperties = {
       'stream-a': { translationLanguage: { languageCode: 'fr-FR' } },

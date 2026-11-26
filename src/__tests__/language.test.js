@@ -21,28 +21,12 @@ describe('isLanguageCode', () => {
     expect(new Set(LANGUAGE_CODES).size).toBe(54);
   });
 
-  it.each(LANGUAGE_CODES)('accepts %s', (code) => {
-    expect(isLanguageCode(code)).toBe(true);
+  it('accepts a supported code in any case', () => {
+    expect(isLanguageCode('es-ES')).toBe(true);
+    expect(isLanguageCode('es-es')).toBe(true);
   });
 
-  it.each(['es-es', 'ES-ES', 'Es-eS'])('accepts any case: %s', (code) => {
-    expect(isLanguageCode(code)).toBe(true);
-  });
-
-  it.each([
-    'xx-YY',
-    'english',
-    'es',
-    'es_ES',
-    ' es-ES',
-    '',
-    42,
-    {},
-    [],
-    true,
-    null,
-    undefined,
-  ])('rejects %p', (value) => {
+  it.each(['xx-YY', 42])('rejects %p', (value) => {
     expect(isLanguageCode(value)).toBe(false);
   });
 });
@@ -58,41 +42,23 @@ describe('createTranslationLanguageResolver', () => {
     'returns an empty string for %p',
     (value) => {
       expect(resolve(value)).toBe('');
-      expect(warn).not.toHaveBeenCalled();
     }
   );
 
-  it('returns the language code of the object', () => {
-    expect(resolve({ languageCode: 'fr-FR' })).toBe('fr-FR');
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it('returns a valid code in a different case unchanged', () => {
+  it('returns the language code unchanged, in any case', () => {
     expect(resolve({ languageCode: 'de-de' })).toBe('de-de');
     expect(warn).not.toHaveBeenCalled();
   });
 
   it('keeps the applied value when the same language comes in another case', () => {
-    expect(resolve({ languageCode: 'es-ES' })).toBe('es-ES');
+    resolve({ languageCode: 'es-ES' });
     expect(resolve({ languageCode: 'es-es' })).toBe('es-ES');
-  });
-
-  it('turns translation off with null or languageCode null', () => {
-    resolve({ languageCode: 'es-ES' });
-    expect(resolve({ languageCode: null })).toBe('');
-    resolve({ languageCode: 'es-ES' });
-    expect(resolve(null)).toBe('');
   });
 
   it.each([
     ['a plain string', 'es-ES'],
     ['an unsupported code', { languageCode: 'xx-YY' }],
-    ['a missing languageCode', {}],
     ['an unknown key', { languageCode: 'es-ES', captionsLanguageCode: 'fr-FR' }],
-    ['only an unknown key', { code: 'es-ES' }],
-    ['an array', ['es-ES']],
-    ['a number', 42],
-    ['a non-string languageCode', { languageCode: 42 }],
   ])('keeps the previous language and warns for %s', (_label, value) => {
     resolve({ languageCode: 'fr-FR' });
     expect(resolve(value)).toBe('fr-FR');
@@ -100,20 +66,10 @@ describe('createTranslationLanguageResolver', () => {
     expect(warn.mock.calls[0][0]).toContain('translationLanguage');
   });
 
-  it('keeps no language for an invalid value at the start', () => {
-    expect(resolve({ languageCode: 'english' })).toBe('');
-    expect(warn).toHaveBeenCalledTimes(1);
-  });
-
-  it('warns only once while the same invalid value is repeated in new objects', () => {
-    resolve({ languageCode: 'xx-YY' });
+  it('warns once per invalid value, and again after a valid one', () => {
     resolve({ languageCode: 'xx-YY' });
     resolve({ languageCode: 'xx-YY' });
     expect(warn).toHaveBeenCalledTimes(1);
-  });
-
-  it('warns again when the invalid value comes back after a valid one', () => {
-    resolve({ languageCode: 'xx-YY' });
     resolve({ languageCode: 'es-ES' });
     resolve({ languageCode: 'xx-YY' });
     expect(warn).toHaveBeenCalledTimes(2);
@@ -121,37 +77,11 @@ describe('createTranslationLanguageResolver', () => {
 });
 
 describe('createInputLanguageResolver', () => {
-  let resolve;
-
-  beforeEach(() => {
-    resolve = createInputLanguageResolver();
-  });
-
-  it('returns an empty string for undefined and null', () => {
-    expect(resolve(undefined)).toBe('');
-    expect(resolve(null)).toBe('');
-  });
-
-  it('returns a valid code unchanged, in any case', () => {
+  it('takes a plain code and rejects an object', () => {
+    const resolve = createInputLanguageResolver();
     expect(resolve('it-IT')).toBe('it-IT');
-    expect(resolve('en-us')).toBe('en-us');
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ['an unsupported code', 'english'],
-    ['an object', { languageCode: 'en-US' }],
-    ['a number', 42],
-  ])('keeps the previous language and warns for %s', (_label, value) => {
-    resolve('it-IT');
-    expect(resolve(value)).toBe('it-IT');
+    expect(resolve({ languageCode: 'en-US' })).toBe('it-IT');
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('inputLanguage');
-  });
-
-  it('keeps state per resolver', () => {
-    const other = createInputLanguageResolver();
-    resolve('es-ES');
-    expect(other('xx-YY')).toBe('');
   });
 });

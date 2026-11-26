@@ -246,11 +246,6 @@ export type OTPublisherProperties = {
   preferredVideoCodecs?: PreferredVideoCodecs | '';
   publishAudio?: boolean;
   publishCaptions?: boolean;
-  /**
-   * The language spoken by this publisher, used to transcribe its audio.
-   * Use a supported language code (any case), or `null` to let the server choose.
-   * Defaults to `null`. An unsupported value logs a warning and keeps the current value.
-   */
   inputLanguage?: LanguageCode | null;
   publishSenderStats?: boolean;
   publishVideo?: boolean;
@@ -301,12 +296,6 @@ export type OTSubscriberProperties = {
    */
   subscribeToAudio?: boolean;
   subscribeToCaptions?: boolean;
-  /**
-   * The language to translate the captions of this subscriber into.
-   * Use `{ languageCode }` with a supported code (any case). Use `null` or
-   * `{ languageCode: null }` to turn translation off. Defaults to `null`.
-   * An unsupported value logs a warning and keeps the current value.
-   */
   translationLanguage?: TranslationLanguage | null;
 
   /**
