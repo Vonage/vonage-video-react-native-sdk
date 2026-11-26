@@ -120,6 +120,9 @@ import React
             properties["subscribeToVideo"] as Any)
         subscriber.subscribeToCaptions = Utils.sanitizeBooleanProperty(
             properties["subscribeToCaptions"] as Any)
+        appliedTranslationLanguage = nil
+        applyTranslationLanguage(
+            properties["translationLanguage"] as? String, to: subscriber)
         subscriber.preferredFrameRate = (properties["preferredFrameRate"] as? NSNumber)?.floatValue
             ?? Float.greatestFiniteMagnitude
         subscriber.preferredResolution = Self.preferredSize(properties["preferredResolution"] as? String)
@@ -174,6 +177,29 @@ import React
         guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""]
         else { return }
         subscriber.subscribeToCaptions = subscribeToCaptions
+    }
+
+    // Value the native subscriber has now (nil = no language).
+    private var appliedTranslationLanguage: String?
+
+    @objc public func setTranslationLanguage(_ language: String) {
+        guard let subscriber = OTRN.sharedState.subscribers[streamId ?? ""]
+        else { return }
+        applyTranslationLanguage(language, to: subscriber)
+    }
+
+    private func applyTranslationLanguage(
+        _ value: String?, to subscriber: OTSubscriber
+    ) {
+        let language = Utils.languageOrNil(value)
+        if language == appliedTranslationLanguage { return }
+        subscriber.captionsTranslationLanguage = language
+        // The native setter drops a value it cannot apply without an error, so read it back.
+        if Utils.isSameLanguage(subscriber.captionsTranslationLanguage, language) {
+            appliedTranslationLanguage = language
+        } else {
+            print("OTRN: translationLanguage not applied: \(language ?? "nil")")
+        }
     }
 
     private static func preferredSize(_ resolution: String?) -> CGSize {

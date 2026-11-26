@@ -111,6 +111,7 @@ export E2E_JS_SDK_URL="https://static.opentok.com/v2/js/opentok.min.js"
 | DTX | `dtx.e2e.js` | Publish/subscribe with DTX enabled and disabled |
 | Encryption | `encryption.e2e.js` | E2EE session connect, publish/subscribe, reconnect |
 | Screen Sharing | `screenShare.e2e.js` | Swap mode (one publisher switches between camera and screen) and simultaneous mode (a camera publisher and a screen publisher at the same time). The bot checks the streams it receives, their audio and video state, and that a stopped source leaves no stream behind |
+| Captions Translation | `captionsTranslation.e2e.js` | Changes the subscriber `translationLanguage` and the publisher `inputLanguage` at runtime (valid, `null` and invalid values). Checks that the app does not crash, reports no error and keeps the media flowing. Does not need captions enabled in the session |
 
 ## Architecture
 

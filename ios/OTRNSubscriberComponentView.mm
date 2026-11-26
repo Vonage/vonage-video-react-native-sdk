@@ -129,6 +129,7 @@ using namespace facebook::react;
             @"subscribeToAudio": @(newViewProps.subscribeToAudio),
             @"subscribeToVideo": @(newViewProps.subscribeToVideo),
             @"subscribeToCaptions": @(newViewProps.subscribeToCaptions),
+            @"translationLanguage": RCTNSStringFromString(newViewProps.translationLanguage),
             @"audioVolume": @(newViewProps.audioVolume),
             @"preferredFrameRate": @(newViewProps.preferredFrameRate),
             @"preferredResolution": RCTNSStringFromString(newViewProps.preferredResolution),
@@ -156,6 +157,10 @@ using namespace facebook::react;
 
     if (oldViewProps.subscribeToCaptions != newViewProps.subscribeToCaptions) {
         [_impl setSubscribeToCaptions:newViewProps.subscribeToCaptions];
+    }
+
+    if (oldViewProps.translationLanguage != newViewProps.translationLanguage) {
+        [_impl setTranslationLanguage:RCTNSStringFromString(newViewProps.translationLanguage)];
     }
 
     if (oldViewProps.audioVolume != newViewProps.audioVolume) {

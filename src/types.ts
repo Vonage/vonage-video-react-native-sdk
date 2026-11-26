@@ -32,8 +32,11 @@ import type {
   VideoDisabledEvent,
   VideoEnabledEvent,
 } from './OTSubscriberNativeComponent';
+import type { LanguageCode, TranslationLanguage } from './helpers/language';
 
 export type {
+  LanguageCode,
+  TranslationLanguage,
   ArchiveEvent,
   Connection,
   ConnectionEvent,
@@ -243,6 +246,7 @@ export type OTPublisherProperties = {
   preferredVideoCodecs?: PreferredVideoCodecs | '';
   publishAudio?: boolean;
   publishCaptions?: boolean;
+  inputLanguage?: LanguageCode | null;
   publishSenderStats?: boolean;
   publishVideo?: boolean;
   resolution?: '1920x1080' | '1280x720' | '640x480' | '352x288' | 'MEDIUM';
@@ -292,7 +296,8 @@ export type OTSubscriberProperties = {
    */
   subscribeToAudio?: boolean;
   subscribeToCaptions?: boolean;
-  
+  translationLanguage?: TranslationLanguage | null;
+
   /**
    * Defaults to `true` when omitted.
    */

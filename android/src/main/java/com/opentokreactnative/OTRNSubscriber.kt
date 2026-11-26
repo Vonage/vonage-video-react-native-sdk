@@ -1,6 +1,7 @@
 package com.opentokreactnative
 
 import android.content.Context
+import android.util.Log
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet
 import android.widget.FrameLayout;
@@ -244,6 +245,30 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         subscriber?.subscribeToCaptions = value
     }
 
+    // Latest value from the prop setter ("" = no language); null until the setter runs.
+    private var translationLanguage: String? = null
+    // Value the native object has now (null = no language).
+    private var appliedTranslationLanguage: String? = null
+
+    fun setTranslationLanguage(value: String?) {
+        translationLanguage = value ?: ""
+        applyTranslationLanguage()
+    }
+
+    private fun applyTranslationLanguage() {
+        val target = subscriber ?: return
+        val language = (translationLanguage
+            ?: this.props?.get("translationLanguage") as? String)
+            ?.ifEmpty { null }
+        if (language == appliedTranslationLanguage) return
+        try {
+            target.setCaptionsTranslationLanguage(language)
+            appliedTranslationLanguage = language
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "translationLanguage not applied: ${e.message}")
+        }
+    }
+
     fun setAudioVolume(value: Float) {
         subscriber?.audioVolume = value.toDouble()
     }
@@ -306,6 +331,8 @@ class OTRNSubscriber : FrameLayout, SubscriberListener,
         if (this.props?.get("subscribeToCaptions") != null) {
             subscriber?.setSubscribeToCaptions(this.props?.get("subscribeToCaptions") as Boolean)
         }
+        appliedTranslationLanguage = null
+        applyTranslationLanguage()
         if (this.props?.get("audioVolume") != null) {
             subscriber?.setAudioVolume(this.props?.get("audioVolume") as Double)
         }

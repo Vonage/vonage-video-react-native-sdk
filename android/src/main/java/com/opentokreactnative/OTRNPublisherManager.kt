@@ -86,6 +86,11 @@ class OTRNPublisherManager(context: ReactApplicationContext) :
         view.setPublishCaptions(value)
     }
 
+    @ReactProp(name = "inputLanguage")
+    override public fun setInputLanguage(view: OTRNPublisher, value: String?) {
+        view.setInputLanguage(value)
+    }
+
     @ReactProp(name = "audioBitrate")
     override public fun setAudioBitrate(view: OTRNPublisher, value: Int) {
         view.setAudioBitrate(value)

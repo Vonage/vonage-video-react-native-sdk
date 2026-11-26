@@ -68,6 +68,7 @@ export interface NativeProps extends ViewProps {
   scaleBehavior?: string;
 
   subscribeToCaptions?: boolean;
+  translationLanguage?: CodegenTypes.WithDefault<string, ''>;
   audioVolume?: CodegenTypes.Float;
   preferredFrameRate?: CodegenTypes.Int32;
   preferredResolution?: string;

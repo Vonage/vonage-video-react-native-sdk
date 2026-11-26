@@ -61,6 +61,21 @@ class Utils {
         return sanitizedZoomFactor
     }
 
+    /// Empty string from the codegen prop means no language.
+    static func languageOrNil(_ value: String?) -> String? {
+        guard let value = value, !value.isEmpty else { return nil }
+        return value
+    }
+
+    /// The native SDK normalizes the case, so compare without case.
+    static func isSameLanguage(_ a: String?, _ b: String?) -> Bool {
+        switch (a, b) {
+        case (nil, nil): return true
+        case let (a?, b?): return a.caseInsensitiveCompare(b) == .orderedSame
+        default: return false
+        }
+    }
+
     static func sanitizeBooleanProperty(_ property: Any) -> Bool {
         guard let prop = property as? Bool else { return true }
         return prop

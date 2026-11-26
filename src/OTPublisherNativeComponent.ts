@@ -53,6 +53,7 @@ export interface NativeProps extends ViewProps {
   publishAudio?: boolean;
   publishVideo?: boolean;
   publishCaptions?: boolean;
+  inputLanguage?: CodegenTypes.WithDefault<string, ''>;
   audioBitrate?: CodegenTypes.Int32;
   publisherAudioFallback?: boolean;
   subscriberAudioFallback?: boolean;

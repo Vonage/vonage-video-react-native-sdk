@@ -30,6 +30,7 @@ export const createPublisherHandlers = (
   },
   error: (event: any) => {
     updateEvent('publisherEvents', 'error', true);
+    captureEvent('publisherError', event);
   },
   videoDisabled: (event: any) => {
     updateEvent('publisherEvents', 'videoDisabled', true);
