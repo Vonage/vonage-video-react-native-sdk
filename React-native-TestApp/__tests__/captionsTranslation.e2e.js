@@ -33,6 +33,11 @@ describe('Captions translation', () => {
   });
 
   afterEach(async () => {
+    // tapControl may scroll the main view down. Scroll back so cleanup can
+    // reach the disconnect button at the top.
+    await element(by.id('mainScrollView'))
+      .scrollTo('top')
+      .catch(() => {});
     if (session) await session.cleanup();
   });
 
