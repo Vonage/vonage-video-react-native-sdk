@@ -33,20 +33,12 @@ describe('Captions translation', () => {
   });
 
   afterEach(async () => {
-    // tapControl may scroll the main view down. Scroll back so cleanup can
-    // reach the disconnect button at the top.
-    await element(by.id('mainScrollView'))
-      .scrollTo('top')
-      .catch(() => {});
     if (session) await session.cleanup();
   });
 
-  // The new buttons are at the end of the controls grid, so scroll if needed.
+  // The tab controls are in the fixed action bar, outside mainScrollView.
   const tapControl = async (testID) => {
-    await waitFor(element(by.id(testID)))
-      .toBeVisible()
-      .whileElement(by.id('mainScrollView'))
-      .scroll(200, 'down');
+    await waitFor(element(by.id(testID))).toBeVisible().withTimeout(5000);
     await element(by.id(testID)).tap();
   };
 
